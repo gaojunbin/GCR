@@ -1,0 +1,448 @@
+# =========How to use=============
+# for bash
+# >> echo 'source ~/.ohmyshell' >> ~/.bashrc
+# for zsh
+# >> echo 'source ~/.ohmyshell' >> ~/.zshrc
+# =========Outline================
+# --- tool - Some basic tools for common using.
+# |
+# --- mypip - pip tools.
+# |
+# --- env2 - Anaconda tools.
+# |
+# --- gpu2 - useful functions for GPU and cuda.
+# |
+# --- permission - some functions for permission, passward, etc.
+# |
+# --- mygit - Git tools.
+# |
+# --- Others
+# ========Outline end============
+
+# shell type [~/.bashrc or ~/.zshrc]
+if [[ "$SHELL" == *"zsh" ]];then
+    shell_file=~/.zshrc
+elif [[ "$SHELL" == *"bash" ]];then
+    shell_file=~/.bashrc
+else
+    echo 'Invalid shell type: ' $SHELL
+fi
+
+# >>> Tool >>>
+# Funtion:
+# 1. jp - open jupyter lab
+# 2. listen - ssh -NL listen remote host
+# 3. pathadd - add environment variable to PATH 
+
+# open jupyter notebook
+jp(){
+    echo -e 'Jupyter notebook starting...'
+    echo -e 'Input port: \c'
+    read port
+    jupyter lab --port ${port} --no-browser
+}
+
+# ssh -NL
+listen(){
+    echo -e 'The Host: \c'
+    read Host
+    echo -e 'The Port: \c'
+    read Port
+    echo -e "Running at: \033[4mlocalhost:${Port}\033[0m"
+    ssh -NL localhost:${Port}:localhost:${Port} ${Host}
+}
+
+# add environment variable to PATH
+pathadd(){
+    echo -e 'This is a funtion to add environment variable to PATH. 
+    Note: We will not help you to judge whether the input is valid, please be careful!'
+    echo -e 'path: \c'
+    read pth
+    echo -e 'whether to add to .bashrc (add permanently)? ([y]/n)? \c'
+    read yon
+    if [ "${yon}" = "y" ];then
+        echo "export PATH=${pth}:"'$PATH' >> ${shell_file}
+    else
+        export PATH=${pth}:$PATH
+    fi
+}
+
+# Integrate all tool commands
+tool(){
+    echo -e 'Choose the Function [Number] for tools you want:'
+    echo -e '[1] jp - open jupyter lab'
+    echo -e '[2] listen - ssh -NL listen remote host'
+    echo -e '[3] pathadd - add environment variable to PATH'
+    echo -e 'input you choose: \c'
+    read func_num
+    if [ "${func_num}" = 1 ];then
+        jp
+    elif [ "${func_num}" = 2 ];then
+        listen
+    elif [ "${func_num}" = 3 ];then
+        pathadd
+    else
+        echo -e 'Invalid Input!'
+    fi
+}
+# <<< Tool end <<<
+
+# >>> pip >>>
+# Function:
+# 1. pipset - modify pip source
+# 2. pipbase - pip install some base module
+# 3. pipl - pip list and pip show
+# 4. pipi - pip install
+# 5. pipu - pip uninstall
+
+# modify pip source
+pipset(){
+    THU_SOURCE=https://pypi.tuna.tsinghua.edu.cn/simple
+    ALI_SOURCE=https://mirrors.aliyun.com/pypi/simple/
+    TENCENT_SOURCE=http://mirrors.cloud.tencent.com/pypi/simple
+    echo -e 'pip source:'
+    echo -e '[1] Tsinghua Source'
+    echo -e '[2] ALibaba Source'
+    echo -e '[3] Tencent Source'
+    echo -e 'Input your choose: \c'
+    read func_num
+    if [ "${func_num}" = 1 ];then
+        SOURCE=${THU_SOURCE}
+    elif [ "${func_num}" = 2 ];then
+        SOURCE=${ALI_SOURCE}
+    elif [ "${func_num}" = 3 ];then
+        SOURCE=${TENCENT_SOURCE}
+    else
+        echo -e 'Invalid Input! Using THU default.'
+
+    fi
+    pip config set global.index-url ${SOURCE}
+}
+
+# pip install some base module
+pipbase(){
+    base_module=('pygments' 'gpustat' 'jupyter lab' 'ipykernel' 'tensorboard' 'woaigpu')
+    for i in ${base_module[*]}; do
+    echo -e "whether to pip install ${i}? ([y]/n)? \c"
+    read yon
+    if [ "${yon}" = "y" ]; then
+    pip install ${i}
+    fi
+    done
+}
+
+# pip list and pip show
+pipl(){
+    if [ "${1}" = "" ]; then
+        pip list
+    else
+        pip show ${1}
+    fi
+}
+
+# pip install
+pipi(){
+    if [ "${1}" = "" ]; then
+        echo -e 'whether to install req*.txt file? ([y]/n)? \c'
+        read yon
+        if [ "${yon}" = "y" ];then
+            pip install -r req*.txt
+        fi
+    else
+        pip install ${1}
+    fi
+}
+
+# pip uninstall
+pipu(){
+    if [ "${1}" = "" ]; then
+        pipl
+        echo -e 'choose which to uninstall: \c'
+        read pkg
+        pip uninstall ${pkg} 
+    else
+       pip uninstall ${1}
+    fi
+}
+
+# Integrate all tool commands
+mypip(){
+    echo -e 'Choose the Function [Number] for tools you want:'
+    echo -e '[1] pipset - modify pip source'
+    echo -e '[2] pipbase - pip install some base module'
+    echo -e '[3] pipl - pip list or pip show'
+    echo -e '[4] pipi - pip install'
+    echo -e '[5] pipu - pip uninstall'
+    echo -e 'input you choose: \c'
+    read func_num
+    if [ "${func_num}" = 1 ];then
+        pipset
+    elif [ "${func_num}" = 2 ];then
+        pipbase
+    elif [ "${func_num}" = 3 ];then
+        pipl
+    elif [ "${func_num}" = 4 ];then
+        pipi
+    elif [ "${func_num}" = 5 ];then
+        pipu
+    else
+        echo -e 'Invalid Input!'
+    fi
+}
+# <<< pip end <<<
+
+# >>> anaconda >>>
+# Funtion:
+# 1. env - Activate an environment
+# 2. lenv - List installed environments
+# 3. cenv - Create new environments
+# 4. denv - Delete an installed environment
+
+# conda activate
+env(){
+    if [ "${1}" = "" ]; then
+        conda env list
+        echo -e 'environment name: \c'
+        read Env_name
+        if [ "${Env_name}" = "" ]; then
+            conda deactivate
+        else
+            conda activate ${Env_name};
+        fi
+	else
+		conda activate ${1}
+	fi
+}
+
+# list conda envs
+alias lenv='conda info -e'
+
+# create conda env
+cenv(){
+    echo -e 'The name of the environment to create: \c'
+    read Env_name
+    echo -e 'Python version (default 3.6): \c'
+    read Py_version
+    if [ "${Py_version}" = "" ];then
+        conda create --name ${Env_name} python=3.6;
+    else
+        conda create --name ${Env_name} python=${Py_version};
+    fi
+}
+
+# delete conda env
+denv(){
+    conda env list
+    echo -e 'The name of the environment to delete: \c'
+    read Env_name
+    echo -e "Do you want to delete the environment: ${Env_name}? ([y]/n)? \c"
+    read yon
+    if [ "${yon}" = "y" ];then
+        conda remove -n ${Env_name} --all;
+    else
+        echo -e "${Env_name} not deleted."
+    fi
+}
+
+# Integrate all conda commands
+env2(){
+    echo -e 'Choose the Function [Number] for conda you want:'
+    echo -e '[1] env - Activate an environment'
+    echo -e '[2] lenv - List installed environments'
+    echo -e '[3] cenv - Create new environments'
+    echo -e '[4] denv - Delete an installed environment'
+    echo -e 'input you choose: \c'
+    read func_num
+    if [ "${func_num}" = 1 ];then
+        env
+    elif [ "${func_num}" = 2 ];then
+        lenv
+    elif [ "${func_num}" = 3 ];then
+        cenv
+    elif [ "${func_num}" = 4 ];then
+        denv
+    else
+        echo -e 'Invalid Input!'
+    fi
+}
+# <<< anaconda end <<<
+
+# >>> GPU >>>
+# Function:
+# 1. gpu - gpustat realtime
+# 2. nvidia - nvidia-smi realtime
+# 3. pid - view pids for all gpus
+# 4. gpus - CUDA_VISIBLE_DEVICES
+
+# gpu listen
+alias gpu='gpustat -i 0.2 -p'
+alias nvidia='watch -n 0.2 nvidia-smi'
+alias pid='fuser -v /dev/nvidia*'
+alias gpus='CUDA_VISIBLE_DEVICES'
+
+# Integrate all GPU commands
+gpu2(){
+    echo -e 'Choose the Function [Number] for GPU you want:'
+    echo -e '[1] gpu - gpustat realtime'
+    echo -e '[2] nvidia - nvidia-smi realtime'
+    echo -e '[3] pid - view pids for all gpus'
+    echo -e '[4] gpus - CUDA_VISIBLE_DEVICES'
+    echo -e 'input you choose: \c'
+    read func_num
+    if [ "${func_num}" = 1 ];then
+        gpu
+    elif [ "${func_num}" = 2 ];then
+        nvidia
+    elif [ "${func_num}" = 3 ];then
+        pid
+    elif [ "${func_num}" = 4 ];then
+        echo 'CUDA_VISIBLE_DEVICES'
+    else
+        echo -e 'Invalid Input!'
+    fi
+}
+# <<< GPU end <<<
+
+# >>> Permission >>>
+# Function:
+# 1. mychmod - modify directory permissions levels
+# 2. mychown - modify directory owners
+# 3. passwd - change passwards
+
+# chmod
+mychmod(){
+    echo -e 'This is a funtion for [chmod] to modify directory permission levels.'
+    echo -e 'Input directory: \c'
+    read dir
+    if [ -d "${dir}" ];then
+        echo -e 'Input permission level (e.g. 777): \c'
+        read permission
+        echo -e "Do you want to change the directory [${dir}] to [${permission}]? ([y]/n)? \c"
+        read yon
+        if [ "${yon}" = "y" ];then
+            chmod -R ${permission} ${dir}
+        fi
+    else
+        echo -e 'Invalid direcctory!'
+    fi
+}
+
+# chown 
+mychown(){
+    echo -e 'This is a funtion for [chown] to modify directory owners.'
+    echo -e 'Input directory: \c'
+    read dir
+    if [ -d "${dir}" ];then
+        echo -e 'Input new owner (user or user:group): \c'
+        read owner
+        echo -e "Do you want to change the directory [${dir}] to the owner [${owner}]? ([y]/n)? \c"
+        read yon
+        if [ "${yon}" = "y" ];then
+            chown -R ${owner} ${dir}
+        fi
+    else
+        echo -e 'Invalid direcctory!'
+    fi
+}
+
+# Integrate all Permission commands
+permission(){
+    echo -e 'Choose the Function [Number] for Permission you want:'
+    echo -e '[1] mychmod - modify directory permissions levels'
+    echo -e '[2] mychown - modify directory owners'
+    echo -e '[3] passwd - change passward'
+    echo -e 'input you choose: \c'
+    read func_num
+    if [ "${func_num}" = 1 ];then
+        mychmod
+    elif [ "${func_num}" = 2 ];then
+        mychown
+    elif [ "${func_num}" = 3 ];then
+        passwd
+    else
+        echo -e 'Invalid Input!'
+    fi
+}
+# <<< Permission end <<<
+
+# >>> Git >>>
+# some git config
+alias gita='git add'
+alias gitaa='git add .'
+alias gitb='git branch'
+gitc(){
+    echo -e 'Commit content: \c'
+    read commit
+    git commit -m ${commit}
+}
+alias gitl='git log'
+alias gitr='git reset'
+alias gc='git clone'
+gitco(){
+    if [ "${1}" = "" ]; then
+        gitb
+        echo -e 'which branch to checkout: \c'
+        read branch_name
+        git checkout ${branch_name};
+	else
+		git checkout ${1}
+	fi
+}
+alias gitps='git push origin master'
+alias gitpl='git pull'
+alias gitst='git status'
+
+# Integrate all Git commands
+mygit(){
+    echo -e 'Choose the Function [Number] for Git you want:'
+    echo -e '[1] gita - git add'
+    echo -e '[2] gitaa - git add .'
+    echo -e '[3] gitc - git commit'
+    echo -e '[4] gitl - git log'
+    echo -e '[5] gitr - git reset'
+    echo -e '[6] gc - git clone'
+    echo -e '[7] gitco - git checkout'
+    echo -e '[8] gitps - git push origin master'
+    echo -e '[9] gitbpl - git pull'
+    echo -e '[10] gitst - git status'
+    echo -e '[11] gitb - git branch'
+    echo -e 'input you choose: \c'
+    read func_num
+    if [ "${func_num}" = 1 ];then
+        gita
+    elif [ "${func_num}" = 2 ];then
+        gitaa
+    elif [ "${func_num}" = 3 ];then
+        gitc
+    elif [ "${func_num}" = 4 ];then
+        gitl
+    elif [ "${func_num}" = 5 ];then
+        gitr
+    elif [ "${func_num}" = 6 ];then
+        gc
+    elif [ "${func_num}" = 7 ];then
+        gitco
+    elif [ "${func_num}" = 8 ];then
+        gitps
+    elif [ "${func_num}" = 9 ];then
+        gitpl
+    elif [ "${func_num}" = 10 ];then
+        gitst
+    elif [ "${func_num}" = 11 ];then
+        gitb
+    else
+        echo -e 'Invalid Input!'
+    fi
+}
+# <<< Git end <<<
+
+# >>> Others >>>
+# update bash/zsh profile
+alias sc="source ${shell_file}"
+# list directory
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+# view code with format
+alias pcat='pygmentize -g'
+# <<< Others end <<<
