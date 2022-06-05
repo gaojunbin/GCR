@@ -17,13 +17,13 @@ some common shell
 
    ```
    # =========Outline================
-   # --- tool - Some basic tools for common using.
+   # --- mytool - Some basic tools for common using.
    # |
-   # --- env2 - Anaconda tools.
+   # --- myenv - Anaconda tools.
    # |
-   # --- gpu2 - useful functions for GPU and cuda.
+   # --- mygpu - useful functions for GPU and cuda.
    # |
-   # --- permission - some functions for permission, passward, etc.
+   # --- mypermission - some functions for permission, passward, etc.
    # |
    # --- mygit - Git tools.
    # |
