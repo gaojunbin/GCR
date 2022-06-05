@@ -35,7 +35,7 @@ some common shell
 
 ### .ohmyzsh
 
-![img](zsh_demo.png)
+https://raw.githubusercontent.com/gaojunbin/images/master/zsh_demo.mp4
 1. How to use
 
    First, git clone this repo to $HOME.
