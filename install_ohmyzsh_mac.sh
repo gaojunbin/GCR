@@ -30,13 +30,15 @@ git clone https://github.com/zsh-users/zsh-autosuggestions.git ~/.oh-my-zsh/cust
 git clone https://github.com/gaojunbin/zsh-myincr.git ~/.oh-my-zsh/custom/plugins/zsh-myincr
 
 # add to .zshrc file
-echo -e 'whether to rewrite .zshrc? ([y]/n)? \c'
+echo 'whether to rewrite .zshrc? ([y]/n)? \c'
 read yon
 if [ "${yon}" = "y" ];then
     cd ~/
     rm -f .zshrc
     torch .zshrc
     echo 'source ~/.ohmyzsh' >> ~/.zshrc
+    echo 'source ~/.p9k.zsh' >> ~/.zshrc
 else
     echo 'source ~/.ohmyzsh' >> ~/.zshrc
+    echo 'source ~/.p9k.zsh' >> ~/.zshrc
 fi

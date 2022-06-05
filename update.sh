@@ -44,3 +44,23 @@ if [ "${yon}" = "y" ];then
     rsync .ohmyzsh sys4:~/
     rsync .ohmyzsh sys5:~/
 fi
+
+# sync .p9k.zsh to remote
+echo 'whether to sync .p9k.zsh to remote? ([y]/n)? \c'
+read yon
+if [ "${yon}" = "y" ];then
+    rsync .p9k.zsh img16:~/
+    rsync .p9k.zsh img17:~/
+    rsync .p9k.zsh img18:~/
+    rsync .p9k.zsh img72:~/
+    rsync .p9k.zsh img73:~/
+    rsync .p9k.zsh img74:~/
+    rsync .p9k.zsh img75:~/
+    rsync .p9k.zsh img77:~/
+    rsync .p9k.zsh img81:~/
+    rsync .p9k.zsh img82:~/
+    rsync .p9k.zsh sys2:~/
+    rsync .p9k.zsh sys3:~/
+    rsync .p9k.zsh sys4:~/
+    rsync .p9k.zsh sys5:~/
+fi
