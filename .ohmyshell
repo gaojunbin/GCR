@@ -4,15 +4,15 @@
 # for zsh
 # >> echo 'source ~/.ohmyshell' >> ~/.zshrc
 # =========Outline================
-# --- tool - Some basic tools for common using.
+# --- mytool - Some basic tools for common using.
 # |
 # --- mypip - pip tools.
 # |
-# --- env2 - Anaconda tools.
+# --- myenv - Anaconda tools.
 # |
-# --- gpu2 - useful functions for GPU and cuda.
+# --- mygpu - useful functions for GPU and cuda.
 # |
-# --- permission - some functions for permission, passward, etc.
+# --- mypermission - some functions for permission, passward, etc.
 # |
 # --- mygit - Git tools.
 # |
@@ -28,11 +28,12 @@ else
     echo 'Invalid shell type: ' $SHELL
 fi
 
-# >>> Tool >>>
+# >>> mytool >>>
 # Funtion:
 # 1. jp - open jupyter lab
 # 2. listen - ssh -NL listen remote host
 # 3. pathadd - add environment variable to PATH 
+# 4. condainit - set conda initial and add startup shell to bashrc/zshrc
 
 # open jupyter notebook
 jp(){
@@ -58,21 +59,40 @@ pathadd(){
     Note: We will not help you to judge whether the input is valid, please be careful!'
     echo -e 'path: \c'
     read pth
-    echo -e 'whether to add to .bashrc (add permanently)? ([y]/n)? \c'
+    echo -e "whether to add to ${shell_file} (add permanently)? ([y]/n)? \c"
     read yon
     if [ "${yon}" = "y" ];then
+        echo '# >>> [Added by .ohmyshell] Add PATH to env >>>' >> ${shell_file}
         echo "export PATH=${pth}:"'$PATH' >> ${shell_file}
+        echo '# <<< [Added by .ohmyshell] Add PATH to env end <<<' >> ${shell_file}
     else
         export PATH=${pth}:$PATH
     fi
 }
 
+# Set conda initial and add startup shell to bashrc/zshrc.
+condainit(){
+    echo -e 'This is a funtion to set conda initial and add startup shell to bashrc/zshrc.'
+    echo -e 'anaconda installed path (e.g. /usr/local/anaconda3): \c'
+    read pth
+    cpth=${pth}'/etc/profile.d/conda.sh'
+    echo -e "whether to startup ${cpth} in ${shell_file}? ([y]/n)? \c"
+    read yon
+    if [ "${yon}" = "y" ];then
+        echo '# >>> [Added by .ohmyshell] Conda initial >>>' >> ${shell_file}
+        echo "source ${cpth}" >> ${shell_file}
+        echo '# <<< [Added by .ohmyshell] Conda initial end <<<' >> ${shell_file}
+        echo 'Complete!'
+    fi
+}
+
 # Integrate all tool commands
-tool(){
+mytool(){
     echo -e 'Choose the Function [Number] for tools you want:'
     echo -e '[1] jp - open jupyter lab'
     echo -e '[2] listen - ssh -NL listen remote host'
     echo -e '[3] pathadd - add environment variable to PATH'
+    echo -e '[4] condainit - set conda initial and add startup shell to bashrc/zshrc'
     echo -e 'input you choose: \c'
     read func_num
     if [ "${func_num}" = 1 ];then
@@ -81,13 +101,15 @@ tool(){
         listen
     elif [ "${func_num}" = 3 ];then
         pathadd
+    elif [ "${func_num}" = 4 ];then
+        condainit
     else
         echo -e 'Invalid Input!'
     fi
 }
-# <<< Tool end <<<
+# <<< myool end <<<
 
-# >>> pip >>>
+# >>> mypip >>>
 # Function:
 # 1. pipset - modify pip source
 # 2. pipbase - pip install some base module
@@ -189,9 +211,9 @@ mypip(){
         echo -e 'Invalid Input!'
     fi
 }
-# <<< pip end <<<
+# <<< mypip end <<<
 
-# >>> anaconda >>>
+# >>> myenv >>>
 # Funtion:
 # 1. env - Activate an environment
 # 2. lenv - List installed environments
@@ -245,7 +267,7 @@ denv(){
 }
 
 # Integrate all conda commands
-env2(){
+myenv(){
     echo -e 'Choose the Function [Number] for conda you want:'
     echo -e '[1] env - Activate an environment'
     echo -e '[2] lenv - List installed environments'
@@ -265,9 +287,9 @@ env2(){
         echo -e 'Invalid Input!'
     fi
 }
-# <<< anaconda end <<<
+# <<< myenv end <<<
 
-# >>> GPU >>>
+# >>> mygpu >>>
 # Function:
 # 1. gpu - gpustat realtime
 # 2. nvidia - nvidia-smi realtime
@@ -278,10 +300,9 @@ env2(){
 alias gpu='gpustat -i 0.2 -p'
 alias nvidia='watch -n 0.2 nvidia-smi'
 alias pid='fuser -v /dev/nvidia*'
-alias gpus='CUDA_VISIBLE_DEVICES'
 
 # Integrate all GPU commands
-gpu2(){
+mygpu(){
     echo -e 'Choose the Function [Number] for GPU you want:'
     echo -e '[1] gpu - gpustat realtime'
     echo -e '[2] nvidia - nvidia-smi realtime'
@@ -303,7 +324,7 @@ gpu2(){
 }
 # <<< GPU end <<<
 
-# >>> Permission >>>
+# >>> mypermission >>>
 # Function:
 # 1. mychmod - modify directory permissions levels
 # 2. mychown - modify directory owners
@@ -346,7 +367,7 @@ mychown(){
 }
 
 # Integrate all Permission commands
-permission(){
+mypermission(){
     echo -e 'Choose the Function [Number] for Permission you want:'
     echo -e '[1] mychmod - modify directory permissions levels'
     echo -e '[2] mychown - modify directory owners'
@@ -363,9 +384,9 @@ permission(){
         echo -e 'Invalid Input!'
     fi
 }
-# <<< Permission end <<<
+# <<< mypermission end <<<
 
-# >>> Git >>>
+# >>> mygit >>>
 # some git config
 alias gita='git add'
 alias gitaa='git add .'
@@ -434,7 +455,7 @@ mygit(){
         echo -e 'Invalid Input!'
     fi
 }
-# <<< Git end <<<
+# <<< mygit end <<<
 
 # >>> Others >>>
 # update bash/zsh profile
