@@ -1,4 +1,15 @@
 cd ~/GCR
+
+# uninstall old version
+echo 'whether to uninstall old version? ([y]/n)? \c'
+read yon
+if [ "${yon}" = "y" ];then
+    rm -rf ~/.ohmyshell
+    rm -rf ~/.ohmyzsh
+    rm -rf ~/.p9k.zsh
+    rm -rf ~/.oh-my-zsh
+fi
+
 # mv to $HOME
 cp .ohmyshell ~/
 cp .ohmyzsh ~/
