@@ -35,7 +35,12 @@ some common shell
 
 ### .ohmyzsh
 
-https://raw.githubusercontent.com/gaojunbin/images/master/zsh_demo.mp4
+
+
+![](https://raw.githubusercontent.com/gaojunbin/images/master/zsh_demo.mp4)
+
+
+
 1. How to use
 
    First, git clone this repo to $HOME.
