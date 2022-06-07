@@ -512,4 +512,6 @@ alias l='ls -CF'
 alias pcat='pygmentize -g'
 # open with vs code (only on MacOS)
 alias code='open -a "Visual Studio Code"'
+# open tensorboard with tb
+alias tb='tensorboard --logdir=./'
 # <<< Others end <<<
