@@ -34,6 +34,7 @@ fi
 # 2. listen - ssh -NL listen remote host
 # 3. pathadd - add environment variable to PATH 
 # 4. condainit - set conda initial and add startup shell to bashrc/zshrc
+# 5. sz - view folder and file size
 
 # open jupyter notebook
 jp(){
@@ -86,6 +87,46 @@ condainit(){
     fi
 }
 
+# view folder and file size
+# TODO: add some param such like sz $1 $2
+sz(){
+    echo -e 'This is a funtion to view folder and file size.'
+    echo -e 'Choose the Function [Number] you want:'
+    echo -e '[1] view all computer'
+    echo -e '[2] view folder or file'
+    echo -e 'input you choose: \c'
+    read func_num
+    if [ "${func_num}" = 1 ];then
+        df -h
+    elif [ "${func_num}" = 2 ];then
+        echo -e 'input the folder or file to view (default: *): \c'
+        read fod_name
+        echo -e 'input the max depth to view (default: 0): \c'
+        read max_depth
+        if [ "${max_depth}" = "" ];then
+            max_depth=0
+        fi
+        # Different for MacOs and Linux
+        if [ "$(uname -s)" = Linux ];then
+            if [[ "${fod_name}" = "" ]] || [[ "${fod_name}" = "*" ]];then
+                du -h --max-depth=${max_depth} *
+            else
+                du -h --max-depth=${max_depth} ${fod_name}
+            fi
+        elif [ "$(uname -s)" = Darwin ];then
+            if [[ "${fod_name}" = "" ]] || [[ "${fod_name}" = "*" ]];then
+                du -h -d ${max_depth} *
+            else
+                du -h -d ${max_depth} ${fod_name}
+            fi
+        else
+            echo -e 'Not support current OS!'
+        fi
+    else
+        echo -e 'Invalid Input!'
+    fi
+}
+
 # Integrate all tool commands
 mytool(){
     echo -e 'Choose the Function [Number] for tools you want:'
@@ -93,6 +134,7 @@ mytool(){
     echo -e '[2] listen - ssh -NL listen remote host'
     echo -e '[3] pathadd - add environment variable to PATH'
     echo -e '[4] condainit - set conda initial and add startup shell to bashrc/zshrc'
+    echo -e '[5] sz - view folder and file size'
     echo -e 'input you choose: \c'
     read func_num
     if [ "${func_num}" = 1 ];then
@@ -103,6 +145,8 @@ mytool(){
         pathadd
     elif [ "${func_num}" = 4 ];then
         condainit
+    elif [ "${func_num}" = 5 ];then
+        sz
     else
         echo -e 'Invalid Input!'
     fi
