@@ -49,7 +49,7 @@ listen(){
     read Host
     echo -e 'The Port: \c'
     read Port
-    echo -e "Running at: \033[4mlocalhost:${Port}\033[0m"
+    echo -e "Running at: \033[4mhttp://localhost:${Port}\033[0m"
     ssh -NL localhost:${Port}:localhost:${Port} ${Host}
 }
 
@@ -466,4 +466,6 @@ alias la='ls -A'
 alias l='ls -CF'
 # view code with format
 alias pcat='pygmentize -g'
+# open with vs code (only on MacOS)
+alias code='open -a "Visual Studio Code"'
 # <<< Others end <<<
