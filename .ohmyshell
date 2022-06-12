@@ -290,9 +290,9 @@ cenv(){
     echo -e 'Python version (default 3.6): \c'
     read Py_version
     if [ "${Py_version}" = "" ];then
-        conda create --name ${Env_name} python=3.6;
+        conda create --name ${Env_name} python=3.6 -y;
     else
-        conda create --name ${Env_name} python=${Py_version};
+        conda create --name ${Env_name} python=${Py_version} -y;
     fi
 }
 
