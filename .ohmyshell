@@ -35,6 +35,8 @@ fi
 # 3. pathadd - add environment variable to PATH 
 # 4. condainit - set conda initial and add startup shell to bashrc/zshrc
 # 5. sz - view folder and file size
+# 6. install_vpn - install vpn with clash (Only support Linux)
+# 7. listen_vpn - listen remote server vpn (Only support Local)
 
 # open jupyter notebook
 jp(){
@@ -127,6 +129,31 @@ sz(){
     fi
 }
 
+# install vpn with clash (Only support Linux)
+install_vpn(){
+    echo 'Install vpn with clash (Only support Linux)'
+    git clone https://gitee.com/gao-junbin/LinuxVPN ~/clash_tmp
+    cd ~/clash_tmp
+    sh ./install.sh
+    cd
+    rm -rf ~/clash_tmp
+}
+
+# listen remote server vpn (Only support Local)
+listen_vpn(){
+    echo 'Listen remote server vpn (Only support Local)'
+    echo -e 'The Host: \c'
+    read Host
+    echo -e "Running at: 
+    \033[4mhttp://clash.razord.top\033[0m
+    Host: 120.0.0.1
+    Port: 9090
+    HTTP proxy port: 7890
+    Socks5 proxy port: 7891
+    Mode: Rules"
+    ssh -NL localhost:9090:localhost:9090 ${Host}
+}
+
 # Integrate all tool commands
 mytool(){
     echo -e 'Choose the Function [Number] for tools you want:'
@@ -135,6 +162,8 @@ mytool(){
     echo -e '[3] pathadd - add environment variable to PATH'
     echo -e '[4] condainit - set conda initial and add startup shell to bashrc/zshrc'
     echo -e '[5] sz - view folder and file size'
+    echo -e '[6] install_vpn - install vpn with clash (Only support Linux)'
+    echo -e '[7] listen_vpn - listen remote server vpn (Only support Local)'
     echo -e 'input you choose: \c'
     read func_num
     if [ "${func_num}" = 1 ];then
@@ -147,6 +176,10 @@ mytool(){
         condainit
     elif [ "${func_num}" = 5 ];then
         sz
+    elif [ "${func_num}" = 6 ];then
+        install_vpn
+    elif [ "${func_num}" = 7 ];then
+        listen_vpn
     else
         echo -e 'Invalid Input!'
     fi
@@ -516,4 +549,15 @@ alias pcat='pygmentize -g'
 alias code='open -a "Visual Studio Code"'
 # open tensorboard with tb
 alias tb='tensorboard --logdir=./'
+# VPN commands (only for Linux)
+alias startvpn='echo \
+"Note: only for linux after run install_vpn
+Start!
+You can input: [curl cip.cc] to see status. " \
+&& export ALL_PROXY=socks5://127.0.0.1:7891'
+alias stopvpn='echo \
+"Note: only for linux after run install_vpn
+Stop!
+You can input: [curl cip.cc] to see status. " \
+&& unset ALL_PROXY'
 # <<< Others end <<<
