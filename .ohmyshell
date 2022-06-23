@@ -508,6 +508,8 @@ alias sc="source ${shell_file}"
 alias ll='ls -alF'
 alias la='ls -A'
 alias l='ls -CF'
+# clear terminal
+alias cl='clear'
 # view code with format
 alias pcat='pygmentize -g'
 # open with vs code (only on MacOS)
