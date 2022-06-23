@@ -554,10 +554,13 @@ alias startvpn='echo \
 "Note: only for linux after run install_vpn
 Start!
 You can input: [curl cip.cc] to see status. " \
-&& export ALL_PROXY=socks5://127.0.0.1:7891'
+&& export ALL_PROXY=socks5://127.0.0.1:7891 \
+&& export http_proxy=http://127.0.0.1:7890 \
+&& export https_proxy=http://127.0.0.1:7890'
+
 alias stopvpn='echo \
 "Note: only for linux after run install_vpn
 Stop!
 You can input: [curl cip.cc] to see status. " \
-&& unset ALL_PROXY'
+&& unset ALL_PROXY && unset http_proxy && unset https_proxy'
 # <<< Others end <<<
