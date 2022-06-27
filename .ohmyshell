@@ -50,10 +50,12 @@ jp(){
 listen(){
     echo -e 'The Host: \c'
     read Host
-    echo -e 'The Port: \c'
-    read Port
-    echo -e "Running at: \033[4mhttp://localhost:${Port}\033[0m"
-    ssh -NL localhost:${Port}:localhost:${Port} ${Host}
+    echo -e 'The Remote Port: \c'
+    read RPort
+    echo -e 'The Local Port: \c'
+    read LPort
+    echo -e "Running at: \033[4mhttp://localhost:${LPort}\033[0m"
+    ssh -NL localhost:${LPort}:localhost:${RPort} ${Host}
 }
 
 # add environment variable to PATH
@@ -143,15 +145,17 @@ install_vpn(){
 listen_vpn(){
     echo 'Listen remote server vpn (Only support Local)'
     echo -e 'The Host: \c'
-    read Host
+    read listen_vpn_Host
+    echo -e 'The Local Port: \c'
+    read listen_vpn_LPort
     echo -e "Running at: 
     \033[4mhttp://clash.razord.top\033[0m
     Host: 120.0.0.1
-    Port: 9090
+    Port: Local Port
     HTTP proxy port: 7890
     Socks5 proxy port: 7891
     Mode: Rules"
-    ssh -NL localhost:9090:localhost:9090 ${Host}
+    ssh -NL localhost:${listen_vpn_LPort}:localhost:9090 ${listen_vpn_Host}
 }
 
 # Integrate all tool commands
