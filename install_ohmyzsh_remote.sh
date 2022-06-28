@@ -5,6 +5,7 @@ echo 'whether to uninstall old version? ([y]/n)? \c'
 read yon
 if [ "${yon}" = "y" ];then
     rm -rf ~/.ohmyshell
+    rm -rf ~/.ohmytool
     rm -rf ~/.ohmyzsh
     rm -rf ~/.p9k.zsh
     rm -rf ~/.oh-my-zsh
@@ -12,6 +13,7 @@ fi
 
 # mv to $HOME
 cp .ohmyshell ~/
+cp .ohmytool ~/
 cp .ohmyzsh ~/
 cp .p9k.zsh ~/
 cp -r oh-my-zsh ~/.oh-my-zsh

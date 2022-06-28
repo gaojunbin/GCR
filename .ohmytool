@@ -12,10 +12,10 @@ ohmytool(){
     echo -e 'This is a ToolKit for server manager by
 one-click installation and environment set.'
     echo -e 'List all tookit in .ohmytool'
-    echo -e '[*] install_vpn    - install vpn with clash (Only support Linux)'
+    echo -e '[*] install_vpn    - Install vpn with clash (Only support Linux)'
 }
 
-# install vpn with clash (Only support Linux)
+# Install vpn with clash (Only support Linux)
 install_vpn(){
     echo 'Install vpn with clash (Only support Linux)'
     git clone https://gitee.com/gao-junbin/LinuxVPN ~/clash_tmp
@@ -23,4 +23,38 @@ install_vpn(){
     sh ./install.sh
     cd
     rm -rf ~/clash_tmp
+}
+
+# Install Docker
+install_docker(){
+    echo 'Install docker (Only support Ubuntu).'
+    echo 'You Must be in the root group!!'
+    sudo curl -sS https://get.docker.com/ | sh
+    echo -e "Have Nvidia GPU? ([y]/n)? \c"
+    read yon
+    if [ "${yon}" = "y" ];then
+        distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+        curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+        curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+        sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+    sudo systemctl restart docker
+}
+
+# Install Overleaf
+install_overleaf(){
+    echo 'You must fisrt install docker and docker-compose fisrt!!'
+    sudo su -
+    mkdir sharelatex
+    cd sharelatex
+    wget https://raw.githubusercontent.com/sharelatex/sharelatex/master/docker-compose.yml
+    echo 'Please edit *Port* and *PATH for sharelatex/mongo/redis* in [docker-compose.yml]'
+    echo 'After that,'
+    echo 'input: [docker-compose up -d] to start.'
+    echo 'After that,'
+    echo 'input: [docker exec -it sharelatex bash] to open.'
+    echo 'After that,'
+    echo 'input in the container to install full texlive as below:'
+    echo 'tlmgr option repository https://mirrors.tuna.tsinghua.edu.cn/CTAN/systems/texlive/tlnet/'
+    echo 'tlmgr update --self --all'
+    echo 'tlmgr install scheme-full &'
 }
