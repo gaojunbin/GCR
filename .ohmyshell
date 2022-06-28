@@ -28,6 +28,22 @@ else
     echo 'Invalid shell type: ' $SHELL
 fi
 
+# source .ohmytool
+if [ -f ~/.ohmytool ];then
+    source ~/.ohmytool
+fi
+
+ohmyshell(){
+    echo -e 'List all func in .ohmyshell'
+    echo -e '[*] mytool       - Some basic tools for common using.'
+    echo -e '[*] mypip        - pip tools.'
+    echo -e '[*] myenv        - Anaconda tools.'
+    echo -e '[*] mygpu        - useful functions for GPU and cuda.'
+    echo -e '[*] mygpu        - useful functions for GPU and cuda.'
+    echo -e '[*] mypermission - some functions for permission, passward, etc.'
+    echo -e '[*] mygit        - Git tools.'
+}
+
 # >>> mytool >>>
 # Funtion:
 # 1. jp - open jupyter lab
@@ -35,8 +51,7 @@ fi
 # 3. pathadd - add environment variable to PATH 
 # 4. condainit - set conda initial and add startup shell to bashrc/zshrc
 # 5. sz - view folder and file size
-# 6. install_vpn - install vpn with clash (Only support Linux)
-# 7. listen_vpn - listen remote server vpn (Only support Local)
+# 6. listen_vpn - listen remote server vpn (Only support Local)
 
 # open jupyter notebook
 jp(){
@@ -87,7 +102,7 @@ condainit(){
         echo '# >>> [Added by .ohmyshell] Conda initial >>>' >> ${shell_file}
         echo "source ${cpth}" >> ${shell_file}
         echo '# <<< [Added by .ohmyshell] Conda initial end <<<' >> ${shell_file}
-        echo 'Complete!'
+        echo "Complete add [source ${cpth}] to ${shell_file}"
     fi
 }
 
@@ -131,16 +146,6 @@ sz(){
     fi
 }
 
-# install vpn with clash (Only support Linux)
-install_vpn(){
-    echo 'Install vpn with clash (Only support Linux)'
-    git clone https://gitee.com/gao-junbin/LinuxVPN ~/clash_tmp
-    cd ~/clash_tmp
-    sh ./install.sh
-    cd
-    rm -rf ~/clash_tmp
-}
-
 # listen remote server vpn (Only support Local)
 listen_vpn(){
     echo 'Listen remote server vpn (Only support Local)'
@@ -166,8 +171,7 @@ mytool(){
     echo -e '[3] pathadd - add environment variable to PATH'
     echo -e '[4] condainit - set conda initial and add startup shell to bashrc/zshrc'
     echo -e '[5] sz - view folder and file size'
-    echo -e '[6] install_vpn - install vpn with clash (Only support Linux)'
-    echo -e '[7] listen_vpn - listen remote server vpn (Only support Local)'
+    echo -e '[6] listen_vpn - listen remote server vpn (Only support Local)'
     echo -e 'input you choose: \c'
     read func_num
     if [ "${func_num}" = 1 ];then
@@ -181,8 +185,6 @@ mytool(){
     elif [ "${func_num}" = 5 ];then
         sz
     elif [ "${func_num}" = 6 ];then
-        install_vpn
-    elif [ "${func_num}" = 7 ];then
         listen_vpn
     else
         echo -e 'Invalid Input!'
@@ -226,11 +228,11 @@ pipset(){
 pipbase(){
     base_module=('pygments' 'gpustat' 'jupyter lab' 'ipykernel' 'tensorboard' 'woaigpu')
     for i in ${base_module[*]}; do
-    echo -e "whether to pip install ${i}? ([y]/n)? \c"
-    read yon
-    if [ "${yon}" = "y" ]; then
-    pip install ${i}
-    fi
+        echo -e "whether to pip install ${i}? ([y]/n)? \c"
+        read yon
+        if [ "${yon}" = "y" ]; then
+            pip install ${i}
+        fi
     done
 }
 
@@ -380,7 +382,17 @@ myenv(){
 # gpu listen
 alias gpu='gpustat -i 0.2 -p'
 alias nvidia='watch -n 0.2 nvidia-smi'
-alias pid='fuser -v /dev/nvidia*'
+
+# View pids for all gpus 
+pid(){
+    echo -e "Use sudo? ([y]/n)? \c"
+    read yon
+    if [ "${yon}" = "y" ];then
+        sudo fuser -v /dev/nvidia*
+    else
+        fuser -v /dev/nvidia*
+    fi
+}
 
 # Integrate all GPU commands
 mygpu(){
@@ -422,7 +434,13 @@ mychmod(){
         echo -e "Do you want to change the directory [${dir}] to [${permission}]? ([y]/n)? \c"
         read yon
         if [ "${yon}" = "y" ];then
-            chmod -R ${permission} ${dir}
+            echo -e "Use sudo? ([y]/n)? \c"
+            read yyon
+            if [ "${yyon}" = "y" ];then
+                sudo chmod -R ${permission} ${dir}
+            else
+                chmod -R ${permission} ${dir}
+            fi
         fi
     else
         echo -e 'Invalid direcctory!'
@@ -440,7 +458,13 @@ mychown(){
         echo -e "Do you want to change the directory [${dir}] to the owner [${owner}]? ([y]/n)? \c"
         read yon
         if [ "${yon}" = "y" ];then
-            chown -R ${owner} ${dir}
+            echo -e "Use sudo? ([y]/n)? \c"
+            read yyon
+            if [ "${yyon}" = "y" ];then
+                sudo chown -R ${owner} ${dir}
+            else
+                chown -R ${owner} ${dir}
+            fi
         fi
     else
         echo -e 'Invalid direcctory!'
@@ -480,7 +504,7 @@ gitc(){
 alias gitl='git log'
 alias gitr='git reset'
 alias gc='git clone'
-gitco(){
+gitch(){
     if [ "${1}" = "" ]; then
         gitb
         echo -e 'which branch to checkout: \c'
@@ -503,7 +527,7 @@ mygit(){
     echo -e '[4] gitl - git log'
     echo -e '[5] gitr - git reset'
     echo -e '[6] gc - git clone'
-    echo -e '[7] gitco - git checkout'
+    echo -e '[7] gitch - git checkout'
     echo -e '[8] gitps - git push origin master'
     echo -e '[9] gitbpl - git pull'
     echo -e '[10] gitst - git status'
@@ -523,7 +547,7 @@ mygit(){
     elif [ "${func_num}" = 6 ];then
         gc
     elif [ "${func_num}" = 7 ];then
-        gitco
+        gitch
     elif [ "${func_num}" = 8 ];then
         gitps
     elif [ "${func_num}" = 9 ];then

@@ -1,0 +1,26 @@
+# ==============  How to use  ==============
+# Add .ohmytool to $HOME/;
+# It will be auto-sourced by .ohmyshell;
+# You can use this file independently 
+# or with .ohmyshell (recommended).
+# ==============    Outline   ==============
+# This is a ToolKit for server manager by 
+# one-click installation and environment set.
+# ==============  Outline end ==============
+
+ohmytool(){
+    echo -e 'This is a ToolKit for server manager by
+one-click installation and environment set.'
+    echo -e 'List all tookit in .ohmytool'
+    echo -e '[*] install_vpn    - install vpn with clash (Only support Linux)'
+}
+
+# install vpn with clash (Only support Linux)
+install_vpn(){
+    echo 'Install vpn with clash (Only support Linux)'
+    git clone https://gitee.com/gao-junbin/LinuxVPN ~/clash_tmp
+    cd ~/clash_tmp
+    sh ./install.sh
+    cd
+    rm -rf ~/clash_tmp
+}

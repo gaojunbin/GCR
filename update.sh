@@ -1,5 +1,6 @@
 # sync to mac
 rsync .ohmyshell ~/
+rsync .ohmytool ~/
 rsync .ohmyzsh ~/
 rsync .p9k.zsh ~/
 
@@ -23,6 +24,26 @@ if [ "${yon}" = "y" ];then
     rsync .ohmyshell sys3:~/
     rsync .ohmyshell sys4:~/
     rsync .ohmyshell sys5:~/
+fi
+
+# sync .ohmytool to remote
+echo 'whether to sync .ohmyzsh to remote? ([y]/n)? \c'
+read yon
+if [ "${yon}" = "y" ];then
+    rsync .ohmytool img16:~/
+    rsync .ohmytool img17:~/
+    rsync .ohmytool img18:~/
+    rsync .ohmytool img72:~/
+    rsync .ohmytool img73:~/
+    rsync .ohmytool img74:~/
+    rsync .ohmytool img75:~/
+    rsync .ohmytool img77:~/
+    rsync .ohmytool img81:~/
+    rsync .ohmytool img82:~/
+    rsync .ohmytool sys2:~/
+    rsync .ohmytool sys3:~/
+    rsync .ohmytool sys4:~/
+    rsync .ohmytool sys5:~/
 fi
 
 # sync .ohmyzsh to remote
