@@ -69,6 +69,7 @@ listen(){
     read RPort
     echo -e 'The Local Port: \c'
     read LPort
+    echo -e "$ ssh -NL localhost:${LPort}:localhost:${RPort} ${Host}"
     echo -e "Running at: \033[4mhttp://localhost:${LPort}\033[0m"
     ssh -NL localhost:${LPort}:localhost:${RPort} ${Host}
 }
@@ -116,9 +117,10 @@ sz(){
     echo -e 'input you choose: \c'
     read func_num
     if [ "${func_num}" = 1 ];then
+        echo "$ df -h"
         df -h
     elif [ "${func_num}" = 2 ];then
-        echo -e 'input the folder or file to view (default: *): \c'
+        echo -e 'input the folder or file to view (default: *, not support ~): \c'
         read fod_name
         echo -e 'input the max depth to view (default: 0): \c'
         read max_depth
@@ -128,21 +130,25 @@ sz(){
         # Different for MacOs and Linux
         if [ "$(uname -s)" = Linux ];then
             if [[ "${fod_name}" = "" ]] || [[ "${fod_name}" = "*" ]];then
+                echo -e "$ du -h --max-depth=${max_depth} *"
                 du -h --max-depth=${max_depth} *
             else
+                echo -e "$ du -h --max-depth=${max_depth} ${fod_name}"
                 du -h --max-depth=${max_depth} ${fod_name}
             fi
         elif [ "$(uname -s)" = Darwin ];then
             if [[ "${fod_name}" = "" ]] || [[ "${fod_name}" = "*" ]];then
+                echo -e "$ du -h -d ${max_depth} *"
                 du -h -d ${max_depth} *
             else
+                echo -e "$ du -h -d ${max_depth} ${fod_name}"
                 du -h -d ${max_depth} ${fod_name}
             fi
         else
-            echo -e 'Not support current OS!'
+            echo 'Not support current OS!'
         fi
     else
-        echo -e 'Invalid Input!'
+        echo 'Invalid Input!'
     fi
 }
 
@@ -153,6 +159,7 @@ listen_vpn(){
     read listen_vpn_Host
     echo -e 'The Local Port: \c'
     read listen_vpn_LPort
+    echo -e "$ ssh -NL localhost:${listen_vpn_LPort}:localhost:9090 ${listen_vpn_Host}"
     echo -e "Running at: 
     \033[4mhttp://clash.razord.top\033[0m
     Host: 120.0.0.1
@@ -221,6 +228,7 @@ pipset(){
         echo -e 'Invalid Input! Using THU default.'
 
     fi
+    echo -e "$ pip config set global.index-url ${SOURCE}"
     pip config set global.index-url ${SOURCE}
 }
 
@@ -228,7 +236,7 @@ pipset(){
 pipbase(){
     base_module=('pygments' 'gpustat' 'jupyter lab' 'ipykernel' 'tensorboard' 'woaigpu')
     for i in ${base_module[*]}; do
-        echo -e "whether to pip install ${i}? ([y]/n)? \c"
+        echo -e "whether to $ pip install ${i}? ([y]/n)? \c"
         read yon
         if [ "${yon}" = "y" ]; then
             pip install ${i}
@@ -239,8 +247,10 @@ pipbase(){
 # pip list and pip show
 pipl(){
     if [ "${1}" = "" ]; then
+        echo '$ pip list'
         pip list
     else
+        echo -e "$ pip show ${1}"
         pip show ${1}
     fi
 }
@@ -248,12 +258,13 @@ pipl(){
 # pip install
 pipi(){
     if [ "${1}" = "" ]; then
-        echo -e 'whether to install req*.txt file? ([y]/n)? \c'
+        echo -e 'whether to $ pip install req*.txt? ([y]/n)? \c'
         read yon
         if [ "${yon}" = "y" ];then
             pip install -r req*.txt
         fi
     else
+        echo -e "$ pip install ${1}"
         pip install ${1}
     fi
 }
@@ -310,6 +321,7 @@ env(){
         echo -e 'environment name: \c'
         read Env_name
         if [ "${Env_name}" = "" ]; then
+            echo '$ conda deactivate'
             conda deactivate
         else
             conda activate ${Env_name};
@@ -329,9 +341,11 @@ cenv(){
     echo -e 'Python version (default 3.6): \c'
     read Py_version
     if [ "${Py_version}" = "" ];then
-        conda create --name ${Env_name} python=3.6 -y;
+        echo -e "$ conda create --name ${Env_name} python=3.6 -y"
+        conda create --name ${Env_name} python=3.6 -y
     else
-        conda create --name ${Env_name} python=${Py_version} -y;
+        echo -e "$ conda create --name ${Env_name} python=${Py_version} -y"
+        conda create --name ${Env_name} python=${Py_version} -y
     fi
 }
 
@@ -343,7 +357,8 @@ denv(){
     echo -e "Do you want to delete the environment: ${Env_name}? ([y]/n)? \c"
     read yon
     if [ "${yon}" = "y" ];then
-        conda remove -n ${Env_name} --all;
+        echo -e "$ conda remove -n ${Env_name} --all"
+        conda remove -n ${Env_name} --all
     else
         echo -e "${Env_name} not deleted."
     fi
@@ -382,14 +397,17 @@ myenv(){
 # gpu listen
 alias gpu='gpustat -i 0.2 -p'
 alias nvidia='watch -n 0.2 nvidia-smi'
+alias gpus='echo "CUDA_VISIBLE_DEVICES"'
 
 # View pids for all gpus 
 pid(){
     echo -e "Use sudo? ([y]/n)? \c"
     read yon
     if [ "${yon}" = "y" ];then
+        echo '$ sudo fuser -v /dev/nvidia*'
         sudo fuser -v /dev/nvidia*
     else
+        echo '$ fuser -v /dev/nvidia*'
         fuser -v /dev/nvidia*
     fi
 }
@@ -437,8 +455,10 @@ mychmod(){
             echo -e "Use sudo? ([y]/n)? \c"
             read yyon
             if [ "${yyon}" = "y" ];then
+                echo -e "$ sudo chmod -R ${permission} ${dir}"
                 sudo chmod -R ${permission} ${dir}
             else
+                echo -e "$ chmod -R ${permission} ${dir}"
                 chmod -R ${permission} ${dir}
             fi
         fi
@@ -461,8 +481,10 @@ mychown(){
             echo -e "Use sudo? ([y]/n)? \c"
             read yyon
             if [ "${yyon}" = "y" ];then
+                echo -e "$ sudo chown -R ${owner} ${dir}"
                 sudo chown -R ${owner} ${dir}
             else
+                echo -e "$ chown -R ${owner} ${dir}"
                 chown -R ${owner} ${dir}
             fi
         fi
@@ -578,17 +600,35 @@ alias code='open -a "Visual Studio Code"'
 # open tensorboard with tb
 alias tb='tensorboard --logdir=./'
 # VPN commands (only for Linux)
-alias startvpn='echo \
-"Note: only for linux after run install_vpn
-Start!
-You can input: [curl cip.cc] to see status. " \
-&& export ALL_PROXY=socks5://127.0.0.1:7891 \
-&& export http_proxy=http://127.0.0.1:7890 \
-&& export https_proxy=http://127.0.0.1:7890'
+startvpn(){
+    echo 'Start VPN in terminal!'
+    echo 'Must be install vpn before. If not, run install_vpn for linux.'
+    echo -e "ALL_PROXY(default: 7891): \c"
+    read all_port
+    echo -e "http_proxy(default: 7890): \c"
+    read http_port
+    echo -e "https_proxy(default: 7890): \c"
+    read https_port
+    if [ "${all_port}" = "" ];then
+        all_port=7891
+    fi
+    if [ "${http_port}" = "" ];then
+        http_port=7890
+    fi
+    if [ "${https_port}" = "" ];then
+        https_port=7890
+    fi
+    echo -e "$ export ALL_PROXY=socks5://127.0.0.1:${all_port}"
+    echo -e "$ export http_proxy=http://127.0.0.1:${http_port}"
+    echo -e "$ export https_proxy=http://127.0.0.1:${https_port}"
+    export ALL_PROXY=socks5://127.0.0.1:${all_port}
+    export http_proxy=http://127.0.0.1:${http_port}
+    export https_proxy=http://127.0.0.1:${https_port}
+    echo 'You can see status by $ curl cip.cc'
 
+}
 alias stopvpn='echo \
-"Note: only for linux after run install_vpn
-Stop!
-You can input: [curl cip.cc] to see status. " \
+"Stop VPN in terminal!
+You can see status by $ curl cip.cc" \
 && unset ALL_PROXY && unset http_proxy && unset https_proxy'
 # <<< Others end <<<

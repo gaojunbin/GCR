@@ -8,6 +8,9 @@ rsync .p9k.zsh ~/
 echo 'whether to sync .ohmyshell to remote? ([y]/n)? \c'
 read yon
 if [ "${yon}" = "y" ];then
+    # sync to Homeweb
+    rsync .ohmyshell homeweb-huawei:~/
+    rsync .ohmyshell homeweb-tencent:~/
     # sync to THU Host
     rsync .ohmyshell img16:~/
     rsync .ohmyshell img17:~/
@@ -27,9 +30,11 @@ if [ "${yon}" = "y" ];then
 fi
 
 # sync .ohmytool to remote
-echo 'whether to sync .ohmyzsh to remote? ([y]/n)? \c'
+echo 'whether to sync .ohmytool to remote? ([y]/n)? \c'
 read yon
 if [ "${yon}" = "y" ];then
+    rsync .ohmytool homeweb-huawei:~/
+    rsync .ohmytool homeweb-tencent:~/
     rsync .ohmytool img16:~/
     rsync .ohmytool img17:~/
     rsync .ohmytool img18:~/
@@ -50,6 +55,8 @@ fi
 echo 'whether to sync .ohmyzsh to remote? ([y]/n)? \c'
 read yon
 if [ "${yon}" = "y" ];then
+    rsync .ohmyzsh homeweb-huawei:~/
+    rsync .ohmyzsh homeweb-tencent:~/
     rsync .ohmyzsh img16:~/
     rsync .ohmyzsh img17:~/
     rsync .ohmyzsh img18:~/
@@ -70,6 +77,8 @@ fi
 echo 'whether to sync .p9k.zsh to remote? ([y]/n)? \c'
 read yon
 if [ "${yon}" = "y" ];then
+    rsync .p9k.zsh homeweb-huawei:~/
+    rsync .p9k.zsh homeweb-tencent:~/
     rsync .p9k.zsh img16:~/
     rsync .p9k.zsh img17:~/
     rsync .p9k.zsh img18:~/

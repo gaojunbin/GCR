@@ -25,36 +25,57 @@ install_vpn(){
     rm -rf ~/clash_tmp
 }
 
-# Install Docker
+# Install Docker (Only support Ubuntu)
 install_docker(){
     echo 'Install docker (Only support Ubuntu).'
+    echo 'Note: Due to differences in the system environment, 
+this automated script may not be successfully installed. 
+If the installation fails, please refer to this script process 
+to install it yourself or visit the docker official website.'
     echo 'You Must be in the root group!!'
-    sudo curl -sS https://get.docker.com/ | sh
-    echo -e "Have Nvidia GPU? ([y]/n)? \c"
-    read yon
-    if [ "${yon}" = "y" ];then
-        distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-        curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
-        curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
-        sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
-    sudo systemctl restart docker
+    echo 'Manual installation process:
+$ sudo su -
+$ sudo curl -sS https://get.docker.com/ | sh
+# If need install docker with GPU, please go on!
+$ distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+$ curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+$ curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+$ sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+$ sudo systemctl restart docker'
+    echo -e "Continue? ([y]/n)? \c"
+    read continue_yon
+    if [ "${continue_yon}" = "y" ];then
+        sudo su -
+        sudo curl -sS https://get.docker.com/ | sh
+        echo -e "Have Nvidia GPU? ([y]/n)? \c"
+        read yon
+        if [ "${yon}" = "y" ];then
+            distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+            curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
+            curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
+            sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+        fi
+        sudo systemctl restart docker
+    fi
 }
 
 # Install Overleaf
 install_overleaf(){
     echo 'You must fisrt install docker and docker-compose fisrt!!'
+    echo 'You Must be in the root group!!'
     sudo su -
     mkdir sharelatex
     cd sharelatex
     wget https://raw.githubusercontent.com/sharelatex/sharelatex/master/docker-compose.yml
-    echo 'Please edit *Port* and *PATH for sharelatex/mongo/redis* in [docker-compose.yml]'
-    echo 'After that,'
-    echo 'input: [docker-compose up -d] to start.'
-    echo 'After that,'
-    echo 'input: [docker exec -it sharelatex bash] to open.'
-    echo 'After that,'
-    echo 'input in the container to install full texlive as below:'
-    echo 'tlmgr option repository https://mirrors.tuna.tsinghua.edu.cn/CTAN/systems/texlive/tlnet/'
-    echo 'tlmgr update --self --all'
-    echo 'tlmgr install scheme-full &'
+    echo 'Please follow the steps below to install manually:'
+    echo '
+1. Please edit docker-compose.yml:
+    Port in sharelatex (e.g. 8080:80)
+    PATH for sharelatex/mongo/redis (e.g. /root/sharelatex/...)
+2. $ docker-compose up -d
+3. $ docker exec -it sharelatex bash
+4. You should install full texlive as below in the container.
+5. $ tlmgr option repository https://mirrors.tuna.tsinghua.edu.cn/CTAN/systems/texlive/tlnet/
+6. $ tlmgr update --self --all
+7. $ tlmgr install scheme-full &'
 }
