@@ -67,8 +67,11 @@ listen(){
     read Host
     echo -e 'The Remote Port: \c'
     read RPort
-    echo -e 'The Local Port: \c'
+    echo -e 'The Local Port (default: = Remote Port): \c'
     read LPort
+    if [ "${LPort}" = "" ];then
+        LPort=${RPort}
+    fi
     echo -e "$ ssh -NL localhost:${LPort}:localhost:${RPort} ${Host}"
     echo -e "Running at: \033[4mhttp://localhost:${LPort}\033[0m"
     ssh -NL localhost:${LPort}:localhost:${RPort} ${Host}
