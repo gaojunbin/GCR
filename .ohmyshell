@@ -63,18 +63,51 @@ jp(){
 
 # ssh -NL
 listen(){
-    echo -e 'The Host: \c'
-    read Host
-    echo -e 'The Remote Port: \c'
-    read RPort
-    echo -e 'The Local Port (default: = Remote Port): \c'
-    read LPort
-    if [ "${LPort}" = "" ];then
-        LPort=${RPort}
+    echo 'This is a funtion for SSH port forwarding. It has 3 modes.'
+    echo '[1] -L :Local Forwarding - Local port listen the remote port.'
+    echo '[2] -R :Remote Forwarding - Remote port listen the local port.'
+    echo '[3] -D :Dynamic Forwarding - Use remote to forward local port. (socks5)'
+    echo -e 'input you choose(default: 1) : \c'
+    read func_num
+    if [[ "${func_num}" = 1 ]] || [[ "${func_num}" = "" ]];then
+        echo '[1] -L :Local Forwarding - Local port listen the remote port.'
+        echo -e 'The Host: \c'
+        read Host
+        echo -e 'The Remote Port: \c'
+        read RPort
+        echo -e 'The Local Port (default: = Remote Port): \c'
+        read LPort
+        if [ "${LPort}" = "" ];then
+            LPort=${RPort}
+        fi
+        echo -e "$ ssh -L localhost:${LPort}:localhost:${RPort} ${Host} -N"
+        echo -e "Running at: \033[4mhttp://localhost:${LPort}\033[0m"
+        ssh -L localhost:${LPort}:localhost:${RPort} ${Host} -N
+    elif [ "${func_num}" = 2 ];then
+        echo '[2] -R :Remote Forwarding - Remote port listen the local port.'
+        echo -e 'The Host: \c'
+        read Host
+        echo -e 'The Local Port: \c'
+        read LPort
+        echo -e 'The Remote Port (default: = Local Port): \c'
+        read RPort
+        if [ "${RPort}" = "" ];then
+            RPort=${LPort}
+        fi
+        echo -e "$ ssh -R localhost:${RPort}:localhost:${LPort} ${Host} -N"
+        ssh -R localhost:${RPort}:localhost:${LPort} ${Host} -N
+    elif [ "${func_num}" = 3 ];then
+        echo '[3] -D :Dynamic Forwarding - Use remote to forward local port. (socks5)'
+        echo -e 'The Host: \c'
+        read Host
+        echo -e 'The LPort Port: \c'
+        read LPort
+        echo -e "$ ssh -D {LPort} ${Host} -N"
+        ssh -D ${LPort} ${Host} -N
+    else
+        echo -e 'Invalid Input!'
     fi
-    echo -e "$ ssh -NL localhost:${LPort}:localhost:${RPort} ${Host}"
-    echo -e "Running at: \033[4mhttp://localhost:${LPort}\033[0m"
-    ssh -NL localhost:${LPort}:localhost:${RPort} ${Host}
+    
 }
 
 # add environment variable to PATH
@@ -606,11 +639,11 @@ alias tb='tensorboard --logdir=./'
 startvpn(){
     echo 'Start VPN in terminal!'
     echo 'Must be install vpn before. If not, run install_vpn for linux.'
-    echo -e "ALL_PROXY(default: 7891): \c"
+    echo -e "socks5 proxy(default: 7891): \c"
     read all_port
-    echo -e "http_proxy(default: 7890): \c"
+    echo -e "http proxy(default: 7890): \c"
     read http_port
-    echo -e "https_proxy(default: 7890): \c"
+    echo -e "https proxy(default: 7890): \c"
     read https_port
     if [ "${all_port}" = "" ];then
         all_port=7891
@@ -627,7 +660,7 @@ startvpn(){
     export ALL_PROXY=socks5://127.0.0.1:${all_port}
     export http_proxy=http://127.0.0.1:${http_port}
     export https_proxy=http://127.0.0.1:${https_port}
-    echo 'You can see status by $ curl cip.cc'
+    echo 'You can see status by $ curl cip.cc / $ curl -x $ALL_PROXY cip.cc'
 
 }
 alias stopvpn='echo \
