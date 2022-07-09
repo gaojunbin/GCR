@@ -80,6 +80,37 @@ install_overleaf(){
 7. $ tlmgr install scheme-full &'
 }
 
+# Install colorls and ruby
+# TODO: may have error in install ruby - openssl
+install_colorls(){
+    echo "This is a function to install colorls, as well as ruby 3.1.2."
+    echo "Note: If you have the root permission, suggest to install/update ruby your self, then run this function."
+    echo "Because this function install ruby without root only for $USER."
+    echo -e "Do you have ruby >= 2.6? ([y]/n)? \c" 
+    read yon
+    if [ "${yon}" = "y" ];then
+        gem install colorls
+    else
+        echo -e "Do you want to install ruby-3.1? ([y]/n)? \c" 
+        read install_yon
+        if [ "${install_yon}" = "y" ];then
+            mkdir ~/colorls_tmp
+            cd ~/colorls_tmp
+            wget https://cache.ruby-lang.org/pub/ruby/3.1/ruby-3.1.2.tar.gz
+            extract ruby-3.1.2.tar.gz
+            cd ruby-3.1.2
+            ./configure --prefix=$HOME/.ruby
+            make && make install
+            export PATH=~/.ruby/bin:$PATH
+            echo "may have error in install ruby - openssl!"
+            gem install colorls
+        else
+            echo 'Install colorls stoped! You must install ruby >= 2.6 first.'
+        fi
+    fi
+}
+
+# TODO: install server-administration
 install_server-administration(){
     echo 'This is a toolkit for server administration.'
     echo 'You must be the root user to use this tool!'

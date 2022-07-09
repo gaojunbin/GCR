@@ -629,9 +629,19 @@ mygit(){
 # update bash/zsh profile
 alias sc="source ${shell_file}"
 # list directory
-alias ll='ls -alF'
-alias la='ls -A'
-alias l='ls -CF'
+if [[ -f ~/.ruby/bin/colorls ]] || [[ -f /usr/local/bin/colorls ]];then
+    if [[ -f ~/.ruby/bin/colorls ]];then
+        export PATH=~/.ruby/bin:$PATH
+    fi
+    alias ls='colorls --sd'
+    alias la='colorls --sd --all'
+    alias ll='colorls --sd --all -l'
+    alias tree='colorls --tree'
+else
+    alias ll='ls -alF'
+    alias la='ls -A'
+    alias l='ls -CF'
+fi
 # clear terminal
 alias cl='clear'
 # view code with format
