@@ -104,6 +104,8 @@ install_colorls(){
             export PATH=~/.ruby/bin:$PATH
             echo "may have error in install ruby - openssl!"
             gem install colorls
+            cd
+            rm -rf ~/colorls_tmp
         else
             echo 'Install colorls stoped! You must install ruby >= 2.6 first.'
         fi
