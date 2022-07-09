@@ -28,9 +28,14 @@ else
     echo 'Invalid shell type: ' $SHELL
 fi
 
-# source .ohmytool
+# support .ohmytool
 if [ -f ~/.ohmytool ];then
     source ~/.ohmytool
+fi
+
+# support server-administration
+if [ -d ~/server-administration ];then
+    source ~/server-administration/init.sh
 fi
 
 ohmyshell(){

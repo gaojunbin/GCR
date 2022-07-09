@@ -79,3 +79,11 @@ install_overleaf(){
 6. $ tlmgr update --self --all
 7. $ tlmgr install scheme-full &'
 }
+
+install_server-administration(){
+    echo 'This is a toolkit for server administration.'
+    echo 'You must be the root user to use this tool!'
+
+    echo 'Have not prepared! Plase hold on...'
+    # git clone ... ~/server-administration
+}
