@@ -275,7 +275,7 @@ pipset(){
 
 # pip install some base module
 pipbase(){
-    base_module=('pygments' 'gpustat' 'jupyter lab' 'ipykernel' 'tensorboard' 'woaigpu')
+    base_module=('pygments' 'gpustat' 'jupyter lab' 'ipykernel' 'tensorboard' 'woaigpu' 'trzsz')
     for i in ${base_module[*]}; do
         echo -e "whether to $ pip install ${i}? ([y]/n)? \c"
         read yon
