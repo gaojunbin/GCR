@@ -97,7 +97,7 @@ if [ "${yon}" = "y" ];then
 fi
 
 # sync .vimrc to remote
-echo 'whether to sync .p9k.zsh to remote? ([y]/n)? \c'
+echo 'whether to sync .vimrc to remote? ([y]/n)? \c'
 read yon
 if [ "${yon}" = "y" ];then
     rsync .vimrc homeweb-huawei:~/
