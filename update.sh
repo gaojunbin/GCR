@@ -96,3 +96,24 @@ if [ "${yon}" = "y" ];then
     rsync .p9k.zsh sys5:~/
 fi
 
+# sync .vimrc to remote
+echo 'whether to sync .p9k.zsh to remote? ([y]/n)? \c'
+read yon
+if [ "${yon}" = "y" ];then
+    rsync .vimrc homeweb-huawei:~/
+    rsync .vimrc homeweb-tencent:~/
+    rsync .vimrc img16:~/
+    rsync .vimrc img17:~/
+    rsync .vimrc img18:~/
+    rsync .vimrc img72:~/
+    rsync .vimrc img73:~/
+    rsync .vimrc img74:~/
+    rsync .vimrc img75:~/
+    rsync .vimrc img77:~/
+    rsync .vimrc img81:~/
+    rsync .vimrc img82:~/
+    rsync .vimrc sys2:~/
+    rsync .vimrc sys3:~/
+    rsync .vimrc sys4:~/
+    rsync .vimrc sys5:~/
+fi
