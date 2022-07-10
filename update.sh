@@ -3,6 +3,7 @@ rsync .ohmyshell ~/
 rsync .ohmytool ~/
 rsync .ohmyzsh ~/
 rsync .p9k.zsh ~/
+rsync .vimrc ~/
 
 # sync .ohmyshell to remote
 echo 'whether to sync .ohmyshell to remote? ([y]/n)? \c'
@@ -94,3 +95,4 @@ if [ "${yon}" = "y" ];then
     rsync .p9k.zsh sys4:~/
     rsync .p9k.zsh sys5:~/
 fi
+

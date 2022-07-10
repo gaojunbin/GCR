@@ -39,3 +39,12 @@ set noswapfile
 " 不需要备份
 set nobackup
 
+" 激活/禁止鼠标使用
+set mouse-=a
+" set mouse=a
+set selection=exclusive
+set selectmode=mouse,key
+
+" 允许空格键和光标键跨越行边界
+set whichwrap+=<,>,h,l
+

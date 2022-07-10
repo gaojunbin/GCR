@@ -82,6 +82,7 @@ install_overleaf(){
 
 # Install colorls and ruby
 # TODO: may have error in install ruby - openssl
+# ref https://github.com/athityakumar/colorls
 install_colorls(){
     echo "This is a function to install colorls, as well as ruby 3.1.2."
     echo "Note: If you have the root permission, suggest to install/update ruby your self, then run this function."
@@ -110,6 +111,27 @@ install_colorls(){
             echo 'Install colorls stoped! You must install ruby >= 2.6 first.'
         fi
     fi
+}
+
+# Install vim and SpaceVim
+# ref vim: https://www.vim.org/download.php#unix
+# ref SpaceVim: https://spacevim.org/cn/quick-start-guide/
+install_spacevim(){
+    echo "This is a function to install SpaceVim, as well as vim latest."
+    echo "SpaceVim makes vim powerful!"
+    echo "Note: SpaceVim need new version of vim!"
+    echo -e "Install vim latest from source or not? ([y]/n)? \c" 
+    read yon
+    if [ "${yon}" = "y" ];then
+       git clone https://github.com/vim/vim.git $HOME/.vim-source
+       cd .vim-source/src
+       make
+       echo "export PATH=$HOME/.vim-source/src:"'$PATH' >> ${shell_file}
+       sc
+    fi
+    curl -sLf https://spacevim.org/cn/install.sh | bash -s -- --install vim
+    echo "See more information via type:"
+    echo "$ curl -sLf https://spacevim.org/cn/install.sh | bash -s -- -h"
 }
 
 # TODO: install server-administration
