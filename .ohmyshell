@@ -44,7 +44,6 @@ ohmyshell(){
     echo -e '[*] mypip        - pip tools.'
     echo -e '[*] myenv        - Anaconda tools.'
     echo -e '[*] mygpu        - useful functions for GPU and cuda.'
-    echo -e '[*] mygpu        - useful functions for GPU and cuda.'
     echo -e '[*] mypermission - some functions for permission, passward, etc.'
     echo -e '[*] mygit        - Git tools.'
 }
@@ -52,7 +51,7 @@ ohmyshell(){
 # >>> mytool >>>
 # Funtion:
 # 1. jp - open jupyter lab
-# 2. listen - ssh -NL listen remote host
+# 2. listen - ssh port forwarding
 # 3. pathadd - add environment variable to PATH 
 # 4. condainit - set conda initial and add startup shell to bashrc/zshrc
 # 5. sz - view folder and file size
@@ -266,6 +265,7 @@ pipset(){
     elif [ "${func_num}" = 3 ];then
         SOURCE=${TENCENT_SOURCE}
     else
+        SOURCE=${THU_SOURCE}
         echo -e 'Invalid Input! Using THU default.'
 
     fi
@@ -379,14 +379,21 @@ alias lenv='conda info -e'
 cenv(){
     echo -e 'The name of the environment to create: \c'
     read Env_name
-    echo -e 'Python version (default 3.6): \c'
-    read Py_version
-    if [ "${Py_version}" = "" ];then
-        echo -e "$ conda create --name ${Env_name} python=3.6 -y"
-        conda create --name ${Env_name} python=3.6 -y
+    conda env list
+    echo -e 'Copy from existing env (default no copy): \c'
+    read Source_Env_name
+    if [ "${Source_Env_name}" = "" ];then
+        echo -e 'Python version (default 3.6): \c'
+        read Py_version
+        if [ "${Py_version}" = "" ];then
+            echo -e "$ conda create --name ${Env_name} python=3.6 -y"
+            conda create --name ${Env_name} python=3.6 -y
+        else
+            echo -e "$ conda create --name ${Env_name} python=${Py_version} -y"
+            conda create --name ${Env_name} python=${Py_version} -y
+        fi
     else
-        echo -e "$ conda create --name ${Env_name} python=${Py_version} -y"
-        conda create --name ${Env_name} python=${Py_version} -y
+        conda create --name ${Env_name} --clone ${Source_Env_name}
     fi
 }
 

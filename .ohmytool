@@ -12,7 +12,13 @@ ohmytool(){
     echo -e 'This is a ToolKit for server manager by
 one-click installation and environment set.'
     echo -e 'List all tookit in .ohmytool'
-    echo -e '[*] install_vpn    - Install vpn with clash (Only support Linux)'
+    echo -e '[*] install_vpn      - Install vpn with clash (Only support Linux)'
+    echo -e '[*] install_docker   - Install Docker (Only support Ubuntu)'
+    echo -e '[*] install_overleaf - Install OverLeaf'
+    echo -e '[*] install_colorls  - Install colorls and ruby (not suggestion!)'
+    echo -e '[*] install_spacevim - Install new version vim and spacevim'
+    echo -e '[*] install_server-administration - TODO: install server-administration'
+
 }
 
 # Install vpn with clash (Only support Linux)
