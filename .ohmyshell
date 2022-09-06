@@ -20,10 +20,13 @@
 # ========Outline end============
 
 # shell type [~/.bashrc or ~/.zshrc]
+# support tabby shell working directory reporting
 if [[ "$SHELL" == *"zsh" ]];then
     shell_file=~/.zshrc
+    precmd () { echo -n "\x1b]1337;CurrentDir=$(pwd)\x07" }
 elif [[ "$SHELL" == *"bash" ]];then
     shell_file=~/.bashrc
+    export PS1="$PS1\[\e]1337;CurrentDir="'$(pwd)\a\]'
 else
     echo 'Invalid shell type: ' $SHELL
 fi
