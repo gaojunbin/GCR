@@ -692,4 +692,24 @@ alias stopvpn='echo \
 "Stop VPN in terminal!
 You can see status by $ curl cip.cc" \
 && unset ALL_PROXY && unset http_proxy && unset https_proxy'
+
+# a uniform function to view files with different formats
+uview(){
+    if [ "${1}" = "" ]; then
+        echo -e 'File Name: \c'
+        read filename
+	else
+		filename=${1}
+	fi
+
+    if [ -f ${filename} ];then
+        case "${filename}" in
+            *.bam ) samtools view ${filename} | less -S;;
+            * ) echo "Not support this format. Supported formats: [.bam]";;
+        esac
+    else
+        echo "${filename} not exist."
+    fi
+}
+
 # <<< Others end <<<

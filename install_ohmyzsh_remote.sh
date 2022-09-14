@@ -45,7 +45,7 @@ fi
 echo 'whether to set zsh as default? ([y]/n)? \c'
 read yon
 if [ "${yon}" = "y" ];then
-    chsh -s /bin/zsh
+    sudo chsh -s $(which zsh) $(whoami)
 fi
 
 # add start zsh to bashrc

@@ -28,6 +28,8 @@ if [ "${yon}" = "y" ];then
     rsync .ohmyshell sys3:~/
     rsync .ohmyshell sys4:~/
     rsync .ohmyshell sys5:~/
+    # sync to NUS Host
+    rsync .ohmyshell liulab:~/
 fi
 
 # sync .ohmytool to remote

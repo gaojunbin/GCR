@@ -18,7 +18,7 @@ one-click installation and environment set.'
     echo -e '[*] install_colorls  - Install colorls and ruby (not suggestion!)'
     echo -e '[*] install_spacevim - Install new version vim and spacevim'
     echo -e '[*] install_server-administration - TODO: install server-administration'
-
+    echo -e '[*] install_samtools - TODO'
 }
 
 # Install vpn with clash (Only support Linux)
@@ -147,4 +147,9 @@ install_server-administration(){
 
     echo 'Have not prepared! Plase hold on...'
     # git clone ... ~/server-administration
+}
+
+# TODO: install samtools
+install_samtools(){
+    # TODO
 }
