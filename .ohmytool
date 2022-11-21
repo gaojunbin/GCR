@@ -146,7 +146,7 @@ install_server-administration(){
     echo 'You must be the root user to use this tool!'
 
     echo 'Have not prepared! Plase hold on...'
-    # git clone ... ~/server-administration
+    git clone https://github.com/gaojunbin/.server-administration.git ~/.server-administration
 }
 
 # TODO: install samtools

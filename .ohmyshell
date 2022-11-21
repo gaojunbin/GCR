@@ -37,9 +37,19 @@ if [ -f ~/.ohmytool ];then
 fi
 
 # support server-administration
-if [ -d ~/server-administration ];then
-    source ~/server-administration/init.sh
+if [ -d ~/.server-administration ];then
+    source ~/.server-administration/init.sh
 fi
+
+# support update GCR Toolkit from GitHub Repo
+myupdate(){
+    curl -o ~/.ohmyshell https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell
+    curl -o ~/.ohmytool https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool 
+    curl -o ~/.ohmyzsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh
+    curl -o ~/.p9k.zsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh
+    curl -o ~/.ohmytool https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool
+    curl -o ~/.vimrc https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc
+}
 
 ohmyshell(){
     echo -e 'List all func in .ohmyshell'
