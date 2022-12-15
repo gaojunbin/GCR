@@ -226,13 +226,26 @@ listen_vpn(){
 
 # download file from google drive
 download_googledrive(){
-    echo -e 'This is a funtion to download file from google drive.'
-    echo -e 'file ID: \c'
+    echo -e 'This is a funtion to download file/files from google drive.'
+
+    # Method 1: use wget to download
+    # echo -e 'file ID: \c'
+    # read fileid
+    # echo -e 'file Name: \c'
+    # read filename
+    # echo -e "$ wget --load-cookies /tmp/cookies.txt \"https://drive.google.com/uc?export=download\&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://drive.google.com/uc?export=download&id=${fileid}' -O- | sed -rn 's/.confirm=([0-9A-Za-z_]+)./\1\n/p')&id=${fileid}\" -O ${filename} && rm -rf /tmp/cookies.txt"
+    # wget --load-cookies /tmp/cookies.txt "https://drive.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://drive.google.com/uc?export=download&id=${fileid}' -O- | sed -rn 's/.confirm=([0-9A-Za-z_]+)./\1\n/p')&id=${fileid}" -O ${filename} && rm -rf /tmp/cookies.txt
+
+    # Method 2: use gdown -  pip install gdown
+    echo -e 'file(s) ID: \c'
     read fileid
-    echo -e 'file Name: \c'
-    read filename
-    echo -e "$ wget --load-cookies /tmp/cookies.txt \"https://drive.google.com/uc?export=download\&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://drive.google.com/uc?export=download&id=${fileid}' -O- | sed -rn 's/.confirm=([0-9A-Za-z_]+)./\1\n/p')&id=${fileid}\" -O ${filename} && rm -rf /tmp/cookies.txt"
-    wget --load-cookies /tmp/cookies.txt "https://drive.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://drive.google.com/uc?export=download&id=${fileid}' -O- | sed -rn 's/.confirm=([0-9A-Za-z_]+)./\1\n/p')&id=${fileid}" -O ${filename} && rm -rf /tmp/cookies.txt
+    echo -e "whether a file folder? ([y]/n)? \c"
+    read yon
+    if [ "${yon}" = "y" ];then
+        gdown ${fileid}
+    else
+        gdown --folder ${fileid}
+    fi
 }
 
 # Integrate all tool commands
@@ -303,7 +316,7 @@ pipset(){
 
 # pip install some base module
 pipbase(){
-    base_module=('pygments' 'gpustat' 'jupyterlab' 'ipykernel' 'tensorboard' 'woaigpu' 'trzsz')
+    base_module=('pygments' 'gpustat' 'jupyterlab' 'ipykernel' 'tensorboard' 'woaigpu' 'trzsz' 'gdown')
     for i in ${base_module[*]}; do
         echo -e "whether to $ pip install ${i}? ([y]/n)? \c"
         read yon
