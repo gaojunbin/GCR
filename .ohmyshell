@@ -69,6 +69,7 @@ ohmyshell(){
 # 4. condainit - set conda initial and add startup shell to bashrc/zshrc
 # 5. sz - view folder and file size
 # 6. listen_vpn - listen remote server vpn (Only support Local)
+# 7. download_googledrive - download file from google drive
 
 # open jupyter notebook
 jp(){
@@ -223,6 +224,17 @@ listen_vpn(){
     ssh -NL localhost:${listen_vpn_LPort}:localhost:9090 ${listen_vpn_Host}
 }
 
+# download file from google drive
+download_googledrive(){
+    echo -e 'This is a funtion to download file from google drive.'
+    echo -e 'file ID: \c'
+    read fileid
+    echo -e 'file Name: \c'
+    read filename
+    echo -e "$ wget --load-cookies /tmp/cookies.txt "https://drive.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://drive.google.com/uc?export=download&id=${fileid}' -O- | sed -rn 's/.confirm=([0-9A-Za-z_]+)./\1\n/p')&id=${fileid}" -O ${filename} && rm -rf /tmp/cookies.txt"
+    wget --load-cookies /tmp/cookies.txt "https://drive.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://drive.google.com/uc?export=download&id=${fileid}' -O- | sed -rn 's/.confirm=([0-9A-Za-z_]+)./\1\n/p')&id=${fileid}" -O ${filename} && rm -rf /tmp/cookies.txt
+}
+
 # Integrate all tool commands
 mytool(){
     echo -e 'Choose the Function [Number] for tools you want:'
@@ -232,6 +244,7 @@ mytool(){
     echo -e '[4] condainit - set conda initial and add startup shell to bashrc/zshrc'
     echo -e '[5] sz - view folder and file size'
     echo -e '[6] listen_vpn - listen remote server vpn (Only support Local)'
+    echo -e '[7] download_googledrive - download file from google drive'
     echo -e 'input you choose: \c'
     read func_num
     if [ "${func_num}" = 1 ];then
@@ -246,6 +259,8 @@ mytool(){
         sz
     elif [ "${func_num}" = 6 ];then
         listen_vpn
+    elif [ "${func_num}" = 7 ];then
+        download_googledrive
     else
         echo -e 'Invalid Input!'
     fi
