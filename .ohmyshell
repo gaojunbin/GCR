@@ -4,6 +4,8 @@
 # for zsh
 # >> echo 'source ~/.ohmyshell' >> ~/.zshrc
 # =========Outline================
+# --- myupdate - support update GCR Toolkit from GitHub Repo.
+# |
 # --- mytool - Some basic tools for common using.
 # |
 # --- mypip - pip tools.
@@ -53,6 +55,7 @@ myupdate(){
 
 ohmyshell(){
     echo -e 'List all func in .ohmyshell'
+    echo -e '[*] myupdate     - support update GCR Toolkit from GitHub Repo.'
     echo -e '[*] mytool       - Some basic tools for common using.'
     echo -e '[*] mypip        - pip tools.'
     echo -e '[*] myenv        - Anaconda tools.'

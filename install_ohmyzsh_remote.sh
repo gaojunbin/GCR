@@ -1,3 +1,4 @@
+git clone https://github.com/gaojunbin/GCR.git ~/GCR
 cd ~/GCR
 
 # uninstall old version
@@ -57,4 +58,6 @@ if [ "${yon}" = "y" ];then
 fi
 
 echo 'Installing for ohmyzsh complete! Now you can resart shell and run:'
-echo 'rm -rf ~/GCR'
+
+cd
+rm -rf ~/GCR
