@@ -319,7 +319,7 @@ pipset(){
 
 # pip install some base module
 pipbase(){
-    base_module=('pygments' 'gpustat' 'jupyterlab' 'ipykernel' 'tensorboard' 'woaigpu' 'trzsz' 'gdown')
+    base_module=('pygments' 'gpustat' 'jupyterlab' 'tensorboard' 'woaigpu' 'trzsz' 'gdown')
     for i in ${base_module[*]}; do
         echo -e "whether to $ pip install ${i}? ([y]/n)? \c"
         read yon
@@ -430,11 +430,15 @@ cenv(){
         echo -e 'Python version (default 3.6): \c'
         read Py_version
         if [ "${Py_version}" = "" ];then
-            echo -e "$ conda create --name ${Env_name} python=3.6 -y"
-            conda create --name ${Env_name} python=3.6 -y
+            echo -e "$ conda create --name ${Env_name} python=3.6 ipykernel -y"
+            conda create --name ${Env_name} python=3.6 ipykernel -y
+            echo -e "$ python -m ipykernel install --user --name ${Env_name}"
+            python -m ipykernel install --user --name ${Env_name}
         else
-            echo -e "$ conda create --name ${Env_name} python=${Py_version} -y"
-            conda create --name ${Env_name} python=${Py_version} -y
+            echo -e "$ conda create --name ${Env_name} python=${Py_version} ipykernel -y"
+            conda create --name ${Env_name} python=${Py_version} ipykernel -y
+            echo -e "$ python -m ipykernel install --user --name ${Env_name}"
+            python -m ipykernel install --user --name ${Env_name}
         fi
     else
         conda create --name ${Env_name} --clone ${Source_Env_name}
