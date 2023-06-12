@@ -2,8 +2,10 @@ git clone https://github.com/gaojunbin/GCR.git ~/GCR
 cd ~/GCR
 
 # uninstall old version
-echo -e "whether to uninstall old version? ([y]/n)? \c"
+echo 'whether to uninstall old version? ([y]/n)? \c'
+
 read yon
+
 if [ "${yon}" = "y" ];then
     rm -rf ~/.ohmyshell
     rm -rf ~/.ohmytool
@@ -20,15 +22,19 @@ cp .p9k.zsh ~/
 cp -r oh-my-zsh ~/.oh-my-zsh
 
 # install zsh
-echo -e "whether to install zsh? ([y]/n)? \c"
+echo 'whether to install zsh? ([y]/n)? \c'
+
 read yon
+
 if [ "${yon}" = "y" ];then
     sudo apt install zsh -y
 fi
 
 # add to .zshrc file
-echo -e "whether to rewrite .zshrc? ([y]/n)? \c"
+echo 'whether to rewrite .zshrc? ([y]/n)? \c'
+
 read yon
+
 if [ "${yon}" = "y" ];then
     cd ~/
     rm -f .zshrc
@@ -43,15 +49,19 @@ else
 fi
 
 # set zsh as default
-echo -e "whether to set zsh as default? ([y]/n)? \c"
+echo 'whether to set zsh as default? ([y]/n)? \c'
+
 read yon
+
 if [ "${yon}" = "y" ];then
     sudo chsh -s $(which zsh) $(whoami)
 fi
 
 # add start zsh to bashrc
-echo -e "whether to add starting zsh in .bashrc? ([y]/n)? \c"
+echo 'whether to add starting zsh in .bashrc? ([y]/n)? \c'
+
 read yon
+
 if [ "${yon}" = "y" ];then
     echo '# [Added by install_ohmyzsh_remote.ssh] starting zsh when starting.' >> ~/.bashrc
     echo 'zsh' >> ~/.bashrc
