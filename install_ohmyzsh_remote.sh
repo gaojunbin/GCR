@@ -2,7 +2,7 @@ git clone https://github.com/gaojunbin/GCR.git ~/GCR
 cd ~/GCR
 
 # uninstall old version
-echo 'whether to uninstall old version? ([y]/n)? \c'
+echo -e "whether to uninstall old version? ([y]/n)? \c"
 
 read yon
 
@@ -22,7 +22,7 @@ cp .p9k.zsh ~/
 cp -r oh-my-zsh ~/.oh-my-zsh
 
 # install zsh
-echo 'whether to install zsh? ([y]/n)? \c'
+echo -e "whether to install zsh? ([y]/n)? \c"
 
 read yon
 
@@ -31,7 +31,7 @@ if [ "${yon}" = "y" ];then
 fi
 
 # add to .zshrc file
-echo 'whether to rewrite .zshrc? ([y]/n)? \c'
+echo -e "whether to rewrite .zshrc? ([y]/n)? \c"
 
 read yon
 
@@ -49,7 +49,7 @@ else
 fi
 
 # set zsh as default
-echo 'whether to set zsh as default? ([y]/n)? \c'
+echo -e "whether to set zsh as default? ([y]/n)? \c"
 
 read yon
 
@@ -58,7 +58,7 @@ if [ "${yon}" = "y" ];then
 fi
 
 # add start zsh to bashrc
-echo 'whether to add starting zsh in .bashrc? ([y]/n)? \c'
+echo -e "whether to add starting zsh in .bashrc? ([y]/n)? \c"
 
 read yon
 
@@ -67,7 +67,7 @@ if [ "${yon}" = "y" ];then
     echo 'zsh' >> ~/.bashrc
 fi
 
-echo 'Installing for ohmyzsh complete! Now you can resart shell.'
+echo -e "Installing for ohmyzsh complete! Now you can resart shell."
 
 cd
 rm -rf ~/GCR
