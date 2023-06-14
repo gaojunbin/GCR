@@ -8,6 +8,8 @@
 # one-click installation and environment set.
 # --- install_vpn - Install vpn with clash (Only support Linux).
 # |
+# --- install_buildvpn - Install buildvpn on oversea server.
+# |
 # --- install_docker - Install Docker (Only support Ubuntu).
 # |
 # --- install_overleaf - Install OverLeaf.
@@ -26,6 +28,7 @@ ohmytool(){
 one-click installation and environment set.'
     echo -e 'List all tookit in .ohmytool'
     echo -e '[*] install_vpn      - Install vpn with clash (Only support Linux)'
+    echo -e '[*] install_buildvpn - Install buildvpn on oversea server'
     echo -e '[*] install_docker   - Install Docker (Only support Ubuntu)'
     echo -e '[*] install_overleaf - Install OverLeaf'
     echo -e '[*] install_colorls  - Install colorls and ruby (not suggestion!)'
@@ -42,6 +45,16 @@ install_vpn(){
     sh ./install.sh
     cd
     rm -rf ~/clash_tmp
+}
+
+# Install buildvpn on oversea server
+install_buildvpn(){
+    echo 'Install buildvpn on oversea server.'
+    echo 'The content is relatively sensitive in mainland China, so please contact me directly for related repository permissions.'
+    git clone git@github.com:gaojunbin/buildvpn-trojan.git ~/.buildvpn-trojan
+    cd ~/.buildvpn-trojan
+    bash ./build.sh
+    cd
 }
 
 # Install Docker (Only support Ubuntu)
@@ -156,9 +169,6 @@ install_spacevim(){
 # TODO: install server-administration
 install_server-administration(){
     echo 'This is a toolkit for server administration.'
-    echo 'You must be the root user to use this tool!'
-
-    echo 'Have not prepared! Plase hold on...'
     git clone https://github.com/gaojunbin/.server-administration.git ~/.server-administration
 }
 
