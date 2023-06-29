@@ -279,6 +279,9 @@ install_overleaf(){
     echo '$ tlmgr option repository https://mirrors.tuna.tsinghua.edu.cn/CTAN/systems/texlive/tlnet/'
     echo '$ tlmgr update --self --all'
     echo '$ tlmgr install scheme-full &'
+    echo 'Success!'
+    echo 'Run on port: 10080'
+    echo 'first-admin page: localhost:10080/launchpad'
 }
 
 
