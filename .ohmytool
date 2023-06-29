@@ -192,6 +192,7 @@ install_nginxproxy(){
 # Install HomeWeb for Junbin Gao
 install_homeweb(){
     echo 'This is a function for installing homeweb of Junbin Gao (junbingao.com)'
+    echo 'The repo is private. You must have the keygen to access.'
     echo -e 'Where to save data: (default: /root): \c'
     read homeweb_path
     if [ "${homeweb_path}" = "" ];then
@@ -200,7 +201,7 @@ install_homeweb(){
         cd ${homeweb_path}
     fi
 
-    git clone https://github.com/gaojunbin/HomeWeb.git --recurse-submodules && cd HomeWeb
+    git clone git@github.com:gaojunbin/HomeWeb.git --recurse-submodules && cd HomeWeb
     docker build -t homeweb:latest .
 
     echo -e 'The port for HomeWeb (default: 80 ): \c'
