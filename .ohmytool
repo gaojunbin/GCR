@@ -89,7 +89,6 @@ $ sudo systemctl restart docker'
     echo -e "Continue? ([y]/n)? \c"
     read continue_yon
     if [ "${continue_yon}" = "y" ];then
-        sudo su -
         sudo curl -sS https://get.docker.com/ | sh
         echo -e "Have Nvidia GPU? ([y]/n)? \c"
         read yon
@@ -255,21 +254,31 @@ install_cloudreve(){
 install_overleaf(){
     echo 'You must fisrt install docker and docker-compose fisrt!!'
     echo 'You Must be in the root group!!'
-    sudo su -
-    mkdir sharelatex
-    cd sharelatex
-    wget https://raw.githubusercontent.com/sharelatex/sharelatex/master/docker-compose.yml
-    echo 'Please follow the steps below to install manually:'
-    echo '
-1. Please edit docker-compose.yml:
-    Port in sharelatex (e.g. 8080:80)
-    PATH for sharelatex/mongo/redis (e.g. /root/sharelatex/...)
-2. $ docker-compose up -d
-3. $ docker exec -it sharelatex bash
-4. You should install full texlive as below in the container.
-5. $ tlmgr option repository https://mirrors.tuna.tsinghua.edu.cn/CTAN/systems/texlive/tlnet/
-6. $ tlmgr update --self --all
-7. $ tlmgr install scheme-full &'
+    echo -e 'Where to save data: (default: /root): \c'
+    read overleaf_path
+    if [ "${overleaf_path}" = "" ];then
+        cd /root
+    else
+        cd ${overleaf_path}
+    fi
+    mkdir overleaf
+    cd overleaf
+    curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/overleaf/docker-compose.yml -o docker-compose.yml
+    mkdir mongo_data
+    mkdir redis_data
+    mkdir sharelatex_data
+    chmod -R 777 mongo_data 
+    chmod -R 777 redis_data 
+    chmod -R 777 sharelatex_data
+
+    docker-compose up -d
+
+    echo 'You should manually install the next steps:'
+    echo '$ docker exec -it sharelatex bash'
+    echo 'You should install full texlive as below in the container.'
+    echo '$ tlmgr option repository https://mirrors.tuna.tsinghua.edu.cn/CTAN/systems/texlive/tlnet/'
+    echo '$ tlmgr update --self --all'
+    echo '$ tlmgr install scheme-full &'
 }
 
 
