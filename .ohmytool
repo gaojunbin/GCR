@@ -220,7 +220,11 @@ install_homeweb(){
 install_deepl(){
     echo -e 'The port for DeepL (default: 11000 ): \c'
     read deepl_port
-    docker run -d --rm -p ${deepl_port}:80 junbingao/deepl:latest
+    if [ "${deepl_port}" = "" ];then
+        docker run -d --rm -p 11000:80 junbingao/deepl:latest
+    else
+        docker run -d --rm -p ${deepl_port}:80 junbingao/deepl:latest
+    fi
 }
 
 # Install cloudreve
