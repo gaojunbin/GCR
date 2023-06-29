@@ -184,7 +184,9 @@ install_nginxproxy(){
     curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/nginx-proxy-zh/docker-compose.yml -o docker-compose.yml
     docker-compose up -d
     echo "Success! Now you can login via localhost:81"
-
+    echo "Initial account:"
+    echo "Email   : admin@example.com"
+    echo "Password: changeme"
 }
 
 # Install HomeWeb for Junbin Gao
