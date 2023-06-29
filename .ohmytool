@@ -228,8 +228,27 @@ install_deepl(){
 }
 
 # Install cloudreve
-install_clouddreve(){
-    # TODO
+install_cloudreve(){
+    echo -e 'Where to save data: (default: /root): \c'
+    read cloudreve_path
+    if [ "${cloudreve_path}" = "" ];then
+        cd /root
+    else
+        cd ${cloudreve_path}
+    fi
+
+    mkdir -vp cloudreve/{uploads,avatar}
+    touch cloudreve/conf.ini
+    touch cloudreve/cloudreve.db
+    mkdir -p aria2/config
+    mkdir -p data/aria2
+    chmod -R 777 data/aria2
+
+    curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/cloudreve/docker-compose.yml -o docker-compose.yml
+    docker-compose up -d
+    echo "Success! Now you can login via localhost:5212"
+    echo "Initial account:"
+    echo "$ docker-compose logs"
 }
 
 # Install Overleaf
