@@ -12,13 +12,21 @@
 # |
 # --- install_docker - Install Docker (Only support Ubuntu).
 # |
-# --- install_overleaf - Install OverLeaf.
-# |
 # --- install_colorls - Install colorls and ruby (not suggestion!).
 # |
 # --- install_spacevim - Install new version vim and spacevim.
 # |
 # --- install_server-administration - Install server-administration.
+# |
+# --- install_nginxproxy - Install nginx proxy.
+# |
+# --- install_homeweb - Install HomeWeb for Junbin Gao.
+# |
+# --- install_deepl - Install DeepL translate.
+# |
+# --- install_cloudreve - Install cloudreve.
+# |
+# --- install_overleaf - Install OverLeaf.
 # |
 # --- install_samtools - TODO.
 # ==============  Outline end ==============
@@ -30,10 +38,14 @@ one-click installation and environment set.'
     echo -e '[*] install_vpn      - Install vpn with clash (Only support Linux)'
     echo -e '[*] install_buildvpn - Install buildvpn on oversea server'
     echo -e '[*] install_docker   - Install Docker (Only support Ubuntu)'
-    echo -e '[*] install_overleaf - Install OverLeaf'
     echo -e '[*] install_colorls  - Install colorls and ruby (not suggestion!)'
     echo -e '[*] install_spacevim - Install new version vim and spacevim'
     echo -e '[*] install_server-administration - Install server-administration'
+    echo -e '[*] install_nginxproxy - Install nginx proxy'
+    echo -e '[*] install_homeweb  - Install HomeWeb for Junbin Gao.'
+    echo -e '[*] install_deepl    - Install DeepL translate'
+    echo -e '[*] install_cloudreve - Install cloudreve'
+    echo -e '[*] install_overleaf - Install OverLeaf'
     echo -e '[*] install_samtools - TODO'
 }
 
@@ -91,27 +103,6 @@ $ sudo systemctl restart docker'
     fi
 }
 
-# Install Overleaf
-install_overleaf(){
-    echo 'You must fisrt install docker and docker-compose fisrt!!'
-    echo 'You Must be in the root group!!'
-    sudo su -
-    mkdir sharelatex
-    cd sharelatex
-    wget https://raw.githubusercontent.com/sharelatex/sharelatex/master/docker-compose.yml
-    echo 'Please follow the steps below to install manually:'
-    echo '
-1. Please edit docker-compose.yml:
-    Port in sharelatex (e.g. 8080:80)
-    PATH for sharelatex/mongo/redis (e.g. /root/sharelatex/...)
-2. $ docker-compose up -d
-3. $ docker exec -it sharelatex bash
-4. You should install full texlive as below in the container.
-5. $ tlmgr option repository https://mirrors.tuna.tsinghua.edu.cn/CTAN/systems/texlive/tlnet/
-6. $ tlmgr update --self --all
-7. $ tlmgr install scheme-full &'
-}
-
 # Install colorls and ruby
 # TODO: may have error in install ruby - openssl
 # ref https://github.com/athityakumar/colorls
@@ -166,11 +157,95 @@ install_spacevim(){
     echo "$ curl -sLf https://spacevim.org/cn/install.sh | bash -s -- -h"
 }
 
-# TODO: install server-administration
+# Install server-administration
 install_server-administration(){
     echo 'This is a toolkit for server administration.'
     git clone https://github.com/gaojunbin/.server-administration.git ~/.server-administration
 }
+
+# Install nginx proxy for server to:
+# 1. One-click deployment of SSL and automatic renewal
+# 2. Reverse proxy domain, achieve binding between domain and port. e.g. nginx.junbingao.com -> ipv4:81
+install_nginxproxy(){
+    echo 'This a function for install nginx-proxy zh. Use port: 80,81,443.'
+    echo 'docker image: https://hub.docker.com/repository/docker/junbingao/nginxproxy'
+    echo 'docker compose file: https://github.com/gaojunbin/ConfigFile/tree/master/nginx-proxy-zh'
+    echo -e 'Where to save data: (default: /root): \c'
+    read nginx_path
+    if [ "${nginx_path}" = "" ];then
+        cd /root
+    else
+        cd ${nginx_path}
+    fi
+    mkdir nginx-proxy
+    cd nginx-proxy
+    mkdir data
+    mkdir letsencrypt
+    curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/nginx-proxy-zh/docker-compose.yml -o docker-compose.yml
+    docker-compose up -d
+    echo "Success! Now you can login via localhost:81"
+
+}
+
+# Install HomeWeb for Junbin Gao
+install_homeweb(){
+    echo 'This is a function for installing homeweb of Junbin Gao (junbingao.com)'
+    echo -e 'Where to save data: (default: /root): \c'
+    read homeweb_path
+    if [ "${homeweb_path}" = "" ];then
+        cd /root
+    else
+        cd ${homeweb_path}
+    fi
+
+    git clone https://github.com/gaojunbin/HomeWeb.git --recurse-submodules && cd HomeWeb
+    docker build -t homeweb:latest .
+
+    echo -e 'The port for HomeWeb (default: 80 ): \c'
+    read homeweb_port
+    if [ "${homeweb_port}" = "" ];then
+        docker run -d --rm -p 80:80 -v $PWD:/var/www/html --name homeweb homeweb:latest
+        echo 'Success! Now you can visit HomeWeb via localhost:80'
+    else
+        docker run -d --rm -p ${homeweb_port}:80 -v $PWD:/var/www/html --name homeweb homeweb:latest
+        echo 'Success! Now you can visit HomeWeb via localhost:${homeweb_port}'
+    fi
+}
+
+
+# Install DeepL translate
+install_deepl(){
+    echo -e 'The port for DeepL (default: 11000 ): \c'
+    read deepl_port
+    docker run -d --rm -p ${deepl_port}:80 junbingao/deepl:latest
+}
+
+# Install cloudreve
+install_clouddreve(){
+    # TODO
+}
+
+# Install Overleaf
+install_overleaf(){
+    echo 'You must fisrt install docker and docker-compose fisrt!!'
+    echo 'You Must be in the root group!!'
+    sudo su -
+    mkdir sharelatex
+    cd sharelatex
+    wget https://raw.githubusercontent.com/sharelatex/sharelatex/master/docker-compose.yml
+    echo 'Please follow the steps below to install manually:'
+    echo '
+1. Please edit docker-compose.yml:
+    Port in sharelatex (e.g. 8080:80)
+    PATH for sharelatex/mongo/redis (e.g. /root/sharelatex/...)
+2. $ docker-compose up -d
+3. $ docker exec -it sharelatex bash
+4. You should install full texlive as below in the container.
+5. $ tlmgr option repository https://mirrors.tuna.tsinghua.edu.cn/CTAN/systems/texlive/tlnet/
+6. $ tlmgr update --self --all
+7. $ tlmgr install scheme-full &'
+}
+
 
 # TODO: install samtools
 install_samtools(){
