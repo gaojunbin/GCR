@@ -235,7 +235,9 @@ install_cloudreve(){
     else
         cd ${cloudreve_path}
     fi
-
+    mkdir cloudreve
+    cd cloudreve
+    
     mkdir -vp cloudreve/{uploads,avatar}
     touch cloudreve/conf.ini
     touch cloudreve/cloudreve.db
