@@ -6,6 +6,8 @@
 # ==============    Outline   ==============
 # This is a ToolKit for server manager by 
 # one-click installation and environment set.
+# --- new_vpns_help - Reminde you what to install when you get a new server.
+# |
 # --- install_vpn - Install vpn with clash (Only support Linux).
 # |
 # --- install_buildvpn - Install buildvpn on oversea server.
@@ -28,6 +30,8 @@
 # |
 # --- install_overleaf - Install OverLeaf.
 # |
+# --- install_serverstatus - Monitor you server status.
+# |
 # --- install_samtools - TODO.
 # ==============  Outline end ==============
 
@@ -35,6 +39,7 @@ ohmytool(){
     echo -e 'This is a ToolKit for server manager by
 one-click installation and environment set.'
     echo -e 'List all tookit in .ohmytool'
+    echo -e '[*] new_vpns_help    - Reminde you what to install when you get a new server.'
     echo -e '[*] install_vpn      - Install vpn with clash (Only support Linux)'
     echo -e '[*] install_buildvpn - Install buildvpn on oversea server'
     echo -e '[*] install_docker   - Install Docker (Only support Ubuntu)'
@@ -46,7 +51,23 @@ one-click installation and environment set.'
     echo -e '[*] install_deepl    - Install DeepL translate'
     echo -e '[*] install_cloudreve - Install cloudreve'
     echo -e '[*] install_overleaf - Install OverLeaf'
+    echo -e '[*] install_serverstatus - Monitor you server status.'
     echo -e '[*] install_samtools - TODO'
+}
+
+# Reminde you what to install when you get a new server.
+new_vpns_help(){
+    echo 'Reminde you what to install when you get a new server.'
+    echo '1. If the network of your server is in China, please [ install_vpn ] first to over the wall.'
+    echo '2. If you are now logging with ssh password, please [ install_server-administration ] and run [myadduser] to generate key.'
+    echo '3. Please install docker and docker compose because most app are built by docker. please [ install_docker ].'
+    echo '4. Please install nginx proxy manager to help you manage all your web server. [ install_nginxproxy ].'
+    echo '5. If you need deploy deepl translate, [ install_deepl ].'
+    echo '6. If you need deploy your homeweb, [ install_homeweb ].'
+    echo '7. If you need deploy latex editor overleaf, [ install_cloudreve ].'
+    echo '8. If you need deploy your own cloud drive, [ install_cloudreve ].'
+    echo '9. If you need deploy server monitor, [ install_serverstatus ].'
+    echo 'After you installed all the server you needed, please config the nginx proxy.'
 }
 
 # Install vpn with clash (Only support Linux)
@@ -286,6 +307,35 @@ install_overleaf(){
     echo 'first-admin page: localhost:10080/launchpad'
 }
 
+
+# Monitor you server status.
+install_serverstatus(){
+    echo 'Monitor you server status.'
+    echo -e 'Choose the Function [Number] you want:'
+    echo -e '[1] Single - Ward'
+    echo -e '[2] Multiple - ServerStatus'
+    echo -e 'input you choose: \c'
+    read func_num
+    if [ "${func_num}" = 1 ];then
+        echo -e 'Where to save data: (default: /root): \c'
+        read serverstatus_path
+        if [ "${serverstatus_path}" = "" ];then
+            cd /root
+        else
+            cd ${serverstatus_path}
+        fi
+        mkdir ward
+        cd ward
+        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/ward/docker-compose.yml -o docker-compose.yml
+        docker-compose up -d
+        echo 'Success!'
+        echo 'Run on port: 4000'
+    elif [ "${func_num}" = 2 ];then
+        echo 'Have not prepared...'
+    else
+        echo 'Invalid Input!'
+    fi
+}
 
 # TODO: install samtools
 install_samtools(){
