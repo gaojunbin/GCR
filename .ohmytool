@@ -404,11 +404,7 @@ EOF
         read server_port
         echo -e 'token: \c'
         read token
-        echo -e 'ssh_local_port: \c'
-        read ssh_local_port
-        echo -e 'ssh_remote_port: \c'
-        read ssh_remote_port
-
+        
         cat > frpc.ini <<EOF
 # frpc.ini
 [common]
