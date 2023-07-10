@@ -365,11 +365,16 @@ install_serverstatus(){
 # Intranet Penetration Tool.
 install_frp(){
     generate_frps_ini() {
-        read -p "frps listening port（bind_port）: " bind_port
-        read -p "dashboard username（dashboard_user）: " dashboard_user
-        read -p "dashboard password（dashboard_pwd）: " dashboard_pwd
-        read -p "dashboard port（dashboard_port）: " dashboard_port
-        read -p "token (tocken): " token
+        echo -e 'frps listening port（bind_port）: \c'
+        read bind_port
+        echo -e 'dashboard username（dashboard_user）: \c'
+        read dashboard_user
+        echo -e 'dashboard password（dashboard_pwd）: \c'
+        read dashboard_pwd
+        echo -e 'dashboard port（dashboard_port）: \c'
+        read dashboard_port
+        echo -e 'token (tocken): \c'
+        read token
 
         cat > frps.ini <<EOF
 [common]
@@ -393,11 +398,16 @@ EOF
     }
 
     generate_frpc_ini() {
-        read -p "server_addr: " server_addr
-        read -p "server_port: " server_port
-        read -p "token: " token
-        read -p "ssh_local_port: " ssh_local_port
-        read -p "ssh_remote_port: " ssh_remote_port
+        echo -e 'server_addr: \c'
+        read server_addr
+        echo -e 'server_port: \c'
+        read server_port
+        echo -e 'token: \c'
+        read token
+        echo -e 'ssh_local_port: \c'
+        read ssh_local_port
+        echo -e 'ssh_remote_port: \c'
+        read ssh_remote_port
 
         cat > frpc.ini <<EOF
 # frpc.ini
@@ -412,11 +422,15 @@ local_ip = 127.0.0.1
 local_port = $ssh_local_port
 remote_port = $ssh_remote_port 
 EOF
-        read -p "Add new service？(y/n): " add_block
+        echo -e 'Add new service？(y/n): \c'
+        read add_block
         while [[ "$add_block" == "y" || "$add_block" == "Y" ]]; do
-            read -p "service_name: " service_name
-            read -p "service_local_port: " service_local_port
-            read -p "service_remote_port: " service_remote_port
+            echo -e 'service_name: \c'
+            read service_name
+            echo -e 'service_local_port: \c'
+            read service_local_port
+            echo -e 'service_remote_port: \c'
+            read service_remote_port
 
             echo >> frpc.ini
             echo "[$service_name]" >> frpc.ini
@@ -425,7 +439,8 @@ EOF
             echo "local_port = $service_local_port" >> frpc.ini
             echo "remote_port = $service_remote_port" >> frpc.ini
 
-            read -p "Add new service？(y/n): " add_block
+            echo -e 'Add new service？(y/n): \c'
+            read add_block
         done
         echo "frpc.ini has been generated. Please keep the documents properly and do not pass them on."
     }
