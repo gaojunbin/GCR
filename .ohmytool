@@ -415,12 +415,6 @@ EOF
 server_addr = $server_addr
 server_port = $server_port
 token = $token
-
-[ssh]
-type = tcp
-local_ip = 127.0.0.1
-local_port = $ssh_local_port
-remote_port = $ssh_remote_port 
 EOF
         echo -e 'Add new service？(y/n): \c'
         read add_block
