@@ -34,6 +34,8 @@
 # |
 # --- install_serverstatus - Monitor you server status.
 # |
+# --- install_frp - Intranet Penetration Tool.
+# |
 # --- install_samtools - TODO.
 # ==============  Outline end ==============
 
@@ -55,6 +57,7 @@ one-click installation and environment set.'
     echo -e '[*] install_cloudreve - Install cloudreve'
     echo -e '[*] install_overleaf - Install OverLeaf'
     echo -e '[*] install_serverstatus - Monitor you server status.'
+    echo -e '[*] install_frp      - Intranet Penetration Tool.'
     echo -e '[*] install_samtools - TODO'
 }
 
@@ -67,9 +70,11 @@ new_vpns_help(){
     echo '4. Please install nginx proxy manager to help you manage all your web server. [ install_nginxproxy ].'
     echo '5. If you need deploy deepl translate, [ install_deepl ].'
     echo '6. If you need deploy your homeweb, [ install_homeweb ].'
-    echo '7. If you need deploy latex editor overleaf, [ install_cloudreve ].'
-    echo '8. If you need deploy your own cloud drive, [ install_cloudreve ].'
-    echo '9. If you need deploy server monitor, [ install_serverstatus ].'
+    echo '7. If you need deploy NewTab, [ install_newtab ].'
+    echo '8. If you need deploy latex editor overleaf, [ install_cloudreve ].'
+    echo '9. If you need deploy your own cloud drive, [ install_cloudreve ].'
+    echo '10. If you need deploy server monitor, [ install_serverstatus ].'
+    echo '11. If you need deploy intranet penetration tool, [ install_frp ].'
     echo 'After you installed all the server you needed, please config the nginx proxy.'
 }
 
@@ -234,7 +239,7 @@ install_homeweb(){
         echo 'Success! Now you can visit HomeWeb via localhost:80'
     else
         docker run -d --rm -p ${homeweb_port}:80 -v $PWD:/var/www/html --name homeweb homeweb:latest
-        echo 'Success! Now you can visit HomeWeb via localhost:${homeweb_port}'
+        echo 'Success! Now you can visit HomeWeb.'
     fi
 }
 
@@ -352,6 +357,112 @@ install_serverstatus(){
         echo 'Run on port: 4000'
     elif [ "${func_num}" = 2 ];then
         echo 'Have not prepared...'
+    else
+        echo 'Invalid Input!'
+    fi
+}
+
+# Intranet Penetration Tool.
+install_frp(){
+    generate_frps_ini() {
+        read -p "frps listening port（bind_port）: " bind_port
+        read -p "dashboard username（dashboard_user）: " dashboard_user
+        read -p "dashboard password（dashboard_pwd）: " dashboard_pwd
+        read -p "dashboard port（dashboard_port）: " dashboard_port
+        read -p "token (tocken): " token
+
+        cat > frps.ini <<EOF
+[common]
+#frp listening port
+bind_port = $bind_port
+kcp_bind_port = $bind_port
+
+#dashboard username
+dashboard_user = $dashboard_user
+
+#dashboard password
+dashboard_pwd = $dashboard_pwd
+
+#dashboard port，you can visit http://ip:$dashboard_port
+dashboard_port = $dashboard_port
+
+#tocken
+token = $token
+EOF
+        echo "frps.ini has been generated. Please keep the documents properly and do not pass them on."
+    }
+
+    generate_frpc_ini() {
+        read -p "server_addr: " server_addr
+        read -p "server_port: " server_port
+        read -p "token: " token
+        read -p "ssh_local_port: " ssh_local_port
+        read -p "ssh_remote_port: " ssh_remote_port
+
+        cat > frpc.ini <<EOF
+# frpc.ini
+[common]
+server_addr = $server_addr
+server_port = $server_port
+token = $token
+
+[ssh]
+type = tcp
+local_ip = 127.0.0.1
+local_port = $ssh_local_port
+remote_port = $ssh_remote_port 
+EOF
+        read -p "Add new service？(y/n): " add_block
+        while [[ "$add_block" == "y" || "$add_block" == "Y" ]]; do
+            read -p "service_name: " service_name
+            read -p "service_local_port: " service_local_port
+            read -p "service_remote_port: " service_remote_port
+
+            echo >> frpc.ini
+            echo "[$service_name]" >> frpc.ini
+            echo "type = tcp" >> frpc.ini
+            echo "local_ip = 127.0.0.1" >> frpc.ini
+            echo "local_port = $service_local_port" >> frpc.ini
+            echo "remote_port = $service_remote_port" >> frpc.ini
+
+            read -p "Add new service？(y/n): " add_block
+        done
+        echo "frpc.ini has been generated. Please keep the documents properly and do not pass them on."
+    }
+    
+    echo 'Intranet Penetration Tool.'
+    echo -e 'Choose the Function [Number] you want:'
+    echo -e '[1] Server - frps'
+    echo -e '[2] Client - frpc'
+    echo -e 'input you choose: \c'
+    read frp_func_num
+    if [ "${frp_func_num}" = 1 ];then
+        echo -e 'Where to save data: (default: /root): \c'
+        read frps_path
+        if [ "${frps_path}" = "" ];then
+            cd /root
+        else
+            cd ${frps_path}
+        fi
+        mkdir frps
+        cd frps
+        generate_frps_ini
+        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/frp/frps/docker-compose.yml -o docker-compose.yml
+        docker-compose up -d
+
+    elif [ "${frp_func_num}" = 2 ];then
+        echo -e 'Where to save data: (default: /root): \c'
+        read frpc_path
+        if [ "${frpc_path}" = "" ];then
+            cd /root
+        else
+            cd ${frpc_path}
+        fi
+        mkdir frpc
+        cd frpc
+        generate_frpc_ini
+        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/frp/frpc/docker-compose.yml -o docker-compose.yml
+        docker-compose up -d
     else
         echo 'Invalid Input!'
     fi
