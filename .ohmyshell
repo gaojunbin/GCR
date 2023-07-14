@@ -251,6 +251,13 @@ download_googledrive(){
     fi
 }
 
+# test the speed of the server
+speedtest(){
+    echo 'Test the speed of the server'
+    echo '$ wget -qO- bench.sh|bash'
+    wget -qO- bench.sh|bash
+}
+
 # Integrate all tool commands
 mytool(){
     echo -e 'Choose the Function [Number] for tools you want:'
@@ -261,6 +268,7 @@ mytool(){
     echo -e '[5] sz - view folder and file size'
     echo -e '[6] listen_vpn - listen remote server vpn (Only support Local)'
     echo -e '[7] download_googledrive - download file from google drive'
+    echo -e '[8] speedtest - test the speed of the server'
     echo -e 'input you choose: \c'
     read func_num
     if [ "${func_num}" = 1 ];then
@@ -277,6 +285,8 @@ mytool(){
         listen_vpn
     elif [ "${func_num}" = 7 ];then
         download_googledrive
+    elif [ "${func_num}" = 8 ];then
+        speedtest
     else
         echo -e 'Invalid Input!'
     fi
