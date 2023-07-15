@@ -109,6 +109,10 @@ to install it yourself or visit the docker official website.'
     echo 'Manual installation process:
 $ sudo su -
 $ sudo curl -sS https://get.docker.com/ | sh
+# Install docker-compose
+$ sudo curl -L "https://github.com/docker/compose/releases/download/v2.2.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+$ sudo chmod +x /usr/local/bin/docker-compose
+$ sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 # If need install docker with GPU, please go on!
 $ distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
 $ curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
@@ -119,6 +123,11 @@ $ sudo systemctl restart docker'
     read continue_yon
     if [ "${continue_yon}" = "y" ];then
         sudo curl -sS https://get.docker.com/ | sh
+        sudo curl -L "https://github.com/docker/compose/releases/download/v2.2.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+        docker -v
+        docker-compose -v
         echo -e "Have Nvidia GPU? ([y]/n)? \c"
         read yon
         if [ "${yon}" = "y" ];then
