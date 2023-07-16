@@ -309,8 +309,6 @@ install_cloudreve(){
 
 # Install Overleaf
 install_overleaf(){
-    echo 'You must fisrt install docker and docker-compose fisrt!!'
-    echo 'You Must be in the root group!!'
     echo -e 'Where to save data: (default: /root): \c'
     read overleaf_path
     if [ "${overleaf_path}" = "" ];then
@@ -320,7 +318,6 @@ install_overleaf(){
     fi
     mkdir overleaf
     cd overleaf
-    curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/overleaf/docker-compose.yml -o docker-compose.yml
     mkdir mongo_data
     mkdir redis_data
     mkdir sharelatex_data
@@ -328,17 +325,105 @@ install_overleaf(){
     chmod -R 777 redis_data 
     chmod -R 777 sharelatex_data
 
-    docker-compose up -d
+    # Prompt for port number
+    echo -e "Enter the local port number for Sharelatex: \c"
+    read sharelatex_port
 
-    echo 'You should manually install the next steps:'
-    echo '$ docker exec -it sharelatex bash'
-    echo 'You should install full texlive as below in the container.'
-    echo '$ tlmgr option repository https://mirrors.tuna.tsinghua.edu.cn/CTAN/systems/texlive/tlnet/'
-    echo '$ tlmgr update --self --all'
-    echo '$ tlmgr install scheme-full &'
-    echo 'Success!'
-    echo 'Run on port: 10080'
-    echo 'first-admin page: localhost:10080/launchpad'
+    # Prompt for SHARELATEX_SITE_URL
+    echo -e "Enter the value for SHARELATEX_SITE_URL [default: https://overleaf.junbingao.com]: \c"
+    read sharelatex_site_url
+    sharelatex_site_url=${sharelatex_site_url:-https://overleaf.junbingao.com}
+
+    # Prompt for SHARELATEX_EMAIL_ values
+    echo -e "Enter the value for SHARELATEX_EMAIL_FROM_ADDRESS: \c"
+    read sharelatex_email_from_address
+    echo -e "Enter the value for SHARELATEX_EMAIL_SMTP_HOST: \c"
+    read sharelatex_email_smtp_host
+    echo -e "Enter the value for SHARELATEX_EMAIL_SMTP_PORT: \c"
+    read sharelatex_email_smtp_port
+    echo -e "Enter the value for SHARELATEX_EMAIL_SMTP_PASS: \c"
+    read sharelatex_email_smtp_pass
+
+    # Generate docker-compose.yml
+    cat > docker-compose.yml <<EOF
+version: '2.2'
+services:
+    sharelatex:
+        restart: always
+        image: junbingao/sharelatex:latest
+        container_name: sharelatex
+        depends_on:
+            mongo:
+                condition: service_healthy
+            redis:
+                condition: service_started
+        ports:
+            - $sharelatex_port:80
+        links:
+            - mongo
+            - redis
+        volumes:
+            - ./sharelatex_data:/var/lib/sharelatex
+            - ./sharelatex_data/register.pug:/overleaf/services/web/app/views/user/register.pug:ro
+            - ./sharelatex_data/router.js:/overleaf/services/web/app/src/router.js:ro
+            - ./sharelatex_data/UserController.js:/overleaf/services/web/app/src/Features/User/UserController.js:ro
+            - ./sharelatex_data/UserPagesController.js:/overleaf/services/web/app/src/Features/User/UserPagesController.js:ro
+        environment:
+            SHARELATEX_APP_NAME: Overleaf Community Edition
+            SHARELATEX_MONGO_URL: mongodb://mongo/sharelatex
+            SHARELATEX_REDIS_HOST: redis
+            REDIS_HOST: redis
+            ENABLED_LINKED_FILE_TYPES: 'url,project_file'
+            ENABLE_CONVERSIONS: 'true'
+            EMAIL_CONFIRMATION_DISABLED: 'true'
+            TEXMFVAR: /var/lib/sharelatex/tmp/texmf-var
+            SHARELATEX_SITE_URL: $sharelatex_site_url
+            SHARELATEX_EMAIL_FROM_ADDRESS: "$sharelatex_email_from_address"
+            SHARELATEX_EMAIL_SMTP_HOST: $sharelatex_email_smtp_host
+            SHARELATEX_EMAIL_SMTP_PORT: $sharelatex_email_smtp_port
+            SHARELATEX_EMAIL_SMTP_SECURE: 'true'
+            SHARELATEX_EMAIL_SMTP_USER: $sharelatex_email_from_address
+            SHARELATEX_EMAIL_SMTP_PASS: $sharelatex_email_smtp_pass
+            SHARELATEX_EMAIL_SMTP_TLS_REJECT_UNAUTH: 'true'
+            SHARELATEX_EMAIL_SMTP_IGNORE_TLS: 'false'
+
+    mongo:
+        restart: always
+        image: junbingao/mongo:latest
+        container_name: mongo
+        expose:
+            - 27017
+        volumes:
+            - ./mongo_data:/data/db
+        healthcheck:
+            test: echo 'db.stats().ok' | mongo localhost:27017/test --quiet
+            interval: 10s
+            timeout: 10s
+            retries: 5
+
+    redis:
+        restart: always
+        image: junbingao/redis:latest
+        container_name: redis
+        expose:
+            - 6379
+        volumes:
+            - ./redis_data:/data
+EOF
+
+    echo "docker-compose.yml file generated successfully."
+    
+    curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/overleaf/register.pug -o sharelatex_data/register.pug
+    curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/overleaf/router.js -o sharelatex_data/router.js
+    curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/overleaf/UserController.js -o sharelatex_data/UserController.js
+    curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/overleaf/UserPagesController.js -o sharelatex_data/UserPagesController.js
+
+    echo 'Congratulations! You have installed overleaf successfully.'
+    echo '!!Important!! Please change the invitation code in UserController.js Line 195 like:'
+    echo '$ vim sharelatex_data/UserController.js'
+    echo 'Then start the service with:'
+    echo '$ docker-compose up -d'
+    echo 'first-admin page: ip:$sharelatex_port/launchpad'
 }
 
 
