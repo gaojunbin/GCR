@@ -36,6 +36,8 @@
 # |
 # --- install_frp - Intranet Penetration Tool.
 # |
+# --- install_chatgpt - Install chat web with chatgpt API.
+# |
 # --- install_samtools - TODO.
 # ==============  Outline end ==============
 
@@ -58,6 +60,7 @@ one-click installation and environment set.'
     echo -e '[*] install_overleaf - Install OverLeaf'
     echo -e '[*] install_serverstatus - Monitor you server status.'
     echo -e '[*] install_frp      - Intranet Penetration Tool.'
+    echo -e '[*] install_chatgpt  - Install chat web with chatgpt API.'
     echo -e '[*] install_samtools - TODO'
 }
 
@@ -565,6 +568,23 @@ EOF
     else
         echo 'Invalid Input!'
     fi
+}
+
+# Install chat web with chatgpt API
+install_chatgpt(){
+    echo -e 'Install chat web with chatgpt API.'
+    echo -e 'Where to save data: (default: /root): \c'
+    read chat_path
+    if [ "${chat_path}" = "" ];then
+        cd /root
+    else
+        cd ${chat_path}
+    fi
+    mkdir chatgpt
+    cd chatgpt
+    curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/chatgpt/docker-compose.yml -o docker-compose.yml
+    echo -e 'Please modify the docker-compose file as the comments suggesting.'
+    echo -e 'Then run $ docker-compose up -d'
 }
 
 # TODO: install samtools
