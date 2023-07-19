@@ -18,6 +18,8 @@
 # |
 # --- install_trzsz - The trzsz ( trz / tsz ) is a simple file transfer tools.
 # |
+# --- install_tssh - A ssh client that supports trzsz.
+# |
 # --- install_spacevim - Install new version vim and spacevim.
 # |
 # --- install_server-administration - Install server-administration.
@@ -53,6 +55,7 @@ one-click installation and environment set.'
     echo -e '[*] install_docker   - Install Docker (Only support Ubuntu)'
     echo -e '[*] install_colorls  - Install colorls and ruby (not suggestion!)'
     echo -e '[*] install_trzsz    - The trzsz ( trz / tsz ) is a simple file transfer tools.'
+    echo -e '[*] install_tssh     - A ssh client that supports trzsz.'
     echo -e '[*] install_spacevim - Install new version vim and spacevim'
     echo -e '[*] install_server-administration - Install server-administration'
     echo -e '[*] install_nginxproxy - Install nginx proxy'
@@ -252,6 +255,34 @@ install_trzsz(){
         scoop install trzsz
     elif [ "${os_num}" = 5 ];then
         echo "Other OS, please visit https://trzsz.github.io/cn/go"
+    else
+        echo 'Invalid input!'
+    fi
+}
+
+# A ssh client that supports trzsz.
+install_tssh(){
+    echo 'A ssh client that supports trzsz. (https://github.com/trzsz/trzsz-ssh)'
+    echo -e 'Choose the OS [Number] you use now:'
+    echo -e '[1] MacOS'
+    echo -e '[2] Ubuntu'
+    echo -e '[3] Windows (Beta)'
+    echo -e 'input you choose: \c'
+    read os_num
+    if [ "${os_num}" = 1 ];then
+        echo "Install with homebrew..."
+        brew update
+        brew install trzsz-ssh
+    elif [ "${os_num}" = 2 ];then
+        echo "Install with apt..."
+        sudo apt update && sudo apt install software-properties-common
+        sudo add-apt-repository ppa:trzsz/ppa && sudo apt update
+        sudo apt install tssh
+    elif [ "${os_num}" = 3 ];then
+        echo "Install with scoop... (https://scoop.sh)"
+        scoop bucket add extras
+        scoop update
+        scoop install tssh
     else
         echo 'Invalid input!'
     fi

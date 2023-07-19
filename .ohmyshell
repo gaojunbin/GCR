@@ -715,8 +715,6 @@ alias pcat='pygmentize -g'
 alias code='open -a "Visual Studio Code"'
 # open tensorboard with tb
 alias tb='tensorboard --logdir=./'
-# ssh with trzsz (https://github.com/trzsz/trzsz)
-alias tssh='trzsz -d ssh'
 # VPN commands (only for Linux)
 startvpn(){
     echo 'Start VPN in terminal!'
