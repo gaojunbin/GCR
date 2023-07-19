@@ -206,7 +206,7 @@ install_trzsz(){
         else
             echo 'Invalid input!'
         fi
-    elif [ "${frp_func_num}" = 2 ];then
+    elif [ "${os_num}" = 2 ];then
         echo -e 'Choose the Installation method [Number] you want (default: 1):'
         echo -e '[1] apt with sudo (recommend)'
         echo -e '[2] pip'
@@ -223,7 +223,7 @@ install_trzsz(){
         else
             echo 'Invalid input!'
         fi
-    elif [ "${frp_func_num}" = 3 ];then
+    elif [ "${os_num}" = 3 ];then
         echo -e 'Choose the Installation method [Number] you want (default: 1):'
         echo -e '[1] apt with sudo (recommend)'
         echo -e '[2] pip'
@@ -242,12 +242,12 @@ install_trzsz(){
         else
             echo 'Invalid input!'
         fi
-    elif [ "${frp_func_num}" = 4 ];then
+    elif [ "${os_num}" = 4 ];then
         echo "Install with scoop... (https://scoop.sh)"
         scoop bucket add extras
         scoop update
         scoop install trzsz
-    elif [ "${frp_func_num}" = 5 ];then
+    elif [ "${os_num}" = 5 ];then
         echo "Other OS, please visit https://trzsz.github.io/cn/go"
     else
         echo 'Invalid input!'
