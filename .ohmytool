@@ -194,6 +194,7 @@ install_trzsz(){
         echo -e 'Choose the Installation method [Number] you want (default: 1):'
         echo -e '[1] homebrew (recommend)'
         echo -e '[2] pip'
+        echo -e 'input you choose: \c'
         read method_num
         method_num=${method_num:-1}
         if [ "${method_num}" = 1 ];then
@@ -210,6 +211,7 @@ install_trzsz(){
         echo -e 'Choose the Installation method [Number] you want (default: 1):'
         echo -e '[1] apt with sudo (recommend)'
         echo -e '[2] pip'
+        echo -e 'input you choose: \c'
         read method_num
         method_num=${method_num:-1}
         if [ "${method_num}" = 1 ];then
@@ -227,6 +229,7 @@ install_trzsz(){
         echo -e 'Choose the Installation method [Number] you want (default: 1):'
         echo -e '[1] apt with sudo (recommend)'
         echo -e '[2] pip'
+        echo -e 'input you choose: \c'
         read method_num
         method_num=${method_num:-1}
         if [ "${method_num}" = 1 ];then
