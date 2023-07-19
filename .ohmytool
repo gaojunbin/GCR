@@ -16,6 +16,8 @@
 # |
 # --- install_colorls - Install colorls and ruby (not suggestion!).
 # |
+# --- install_trzsz - The trzsz ( trz / tsz ) is a simple file transfer tools.
+# |
 # --- install_spacevim - Install new version vim and spacevim.
 # |
 # --- install_server-administration - Install server-administration.
@@ -50,6 +52,7 @@ one-click installation and environment set.'
     echo -e '[*] install_buildvpn - Install buildvpn on oversea server'
     echo -e '[*] install_docker   - Install Docker (Only support Ubuntu)'
     echo -e '[*] install_colorls  - Install colorls and ruby (not suggestion!)'
+    echo -e '[*] install_trzsz    - The trzsz ( trz / tsz ) is a simple file transfer tools.'
     echo -e '[*] install_spacevim - Install new version vim and spacevim'
     echo -e '[*] install_server-administration - Install server-administration'
     echo -e '[*] install_nginxproxy - Install nginx proxy'
@@ -173,6 +176,81 @@ install_colorls(){
         else
             echo 'Install colorls stoped! You must install ruby >= 2.6 first.'
         fi
+    fi
+}
+
+# The trzsz ( trz / tsz ) is a simple file transfer tools.
+install_trzsz(){
+    echo 'The trzsz ( trz / tsz ) is a simple file transfer tools.'
+    echo -e 'Choose the OS [Number] you use now:'
+    echo -e '[1] MacOS'
+    echo -e '[2] Ubuntu'
+    echo -e '[3] Debian (Beta)'
+    echo -e '[4] Windows (Beta)'
+    echo -e '[5] Other'
+    echo -e 'input you choose: \c'
+    read os_num
+    if [ "${os_num}" = 1 ];then
+        echo -e 'Choose the Installation method [Number] you want (default: 1):'
+        echo -e '[1] homebrew (recommend)'
+        echo -e '[2] pip'
+        read method_num
+        method_num=${method_num:-1}
+        if [ "${method_num}" = 1 ];then
+            echo "Install with homebrew..."
+            brew update
+            brew install trzsz-go
+        elif [ "${method_num}" = 2 ];then
+            echo "Install with pip..."
+            pip install trzsz
+        else
+            echo 'Invalid input!'
+        fi
+    elif [ "${frp_func_num}" = 2 ];then
+        echo -e 'Choose the Installation method [Number] you want (default: 1):'
+        echo -e '[1] apt with sudo (recommend)'
+        echo -e '[2] pip'
+        read method_num
+        method_num=${method_num:-1}
+        if [ "${method_num}" = 1 ];then
+            echo "Install with apt..."
+            sudo apt update && sudo apt install software-properties-common
+            sudo add-apt-repository ppa:trzsz/ppa && sudo apt update
+            sudo apt install trzsz
+        elif [ "${method_num}" = 2 ];then
+            echo "Install with pip..."
+            pip install trzsz
+        else
+            echo 'Invalid input!'
+        fi
+    elif [ "${frp_func_num}" = 3 ];then
+        echo -e 'Choose the Installation method [Number] you want (default: 1):'
+        echo -e '[1] apt with sudo (recommend)'
+        echo -e '[2] pip'
+        read method_num
+        method_num=${method_num:-1}
+        if [ "${method_num}" = 1 ];then
+            echo "Install with apt..."
+            sudo apt install curl gpg
+            curl -s 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x7074ce75da7cc691c1ae1a7c7e51d1ad956055ca' | gpg --dearmor -o /usr/share/keyrings/trzsz.gpg
+            echo 'deb [signed-by=/usr/share/keyrings/trzsz.gpg] https://ppa.launchpadcontent.net/trzsz/ppa/ubuntu jammy main' | sudo tee /etc/apt/sources.list.d/trzsz.list
+            sudo apt update
+            sudo apt install trzsz
+        elif [ "${method_num}" = 2 ];then
+            echo "Install with pip..."
+            pip install trzsz
+        else
+            echo 'Invalid input!'
+        fi
+    elif [ "${frp_func_num}" = 4 ];then
+        echo "Install with scoop... (https://scoop.sh)"
+        scoop bucket add extras
+        scoop update
+        scoop install trzsz
+    elif [ "${frp_func_num}" = 5 ];then
+        echo "Other OS, please visit https://trzsz.github.io/cn/go"
+    else
+        echo 'Invalid input!'
     fi
 }
 

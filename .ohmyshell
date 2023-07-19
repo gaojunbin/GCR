@@ -329,7 +329,7 @@ pipset(){
 
 # pip install some base module
 pipbase(){
-    base_module=('pygments' 'gpustat' 'jupyterlab' 'tensorboard' 'woaigpu' 'trzsz' 'gdown')
+    base_module=('pygments' 'gpustat' 'jupyterlab' 'tensorboard' 'woaigpu' 'gdown')
     for i in ${base_module[*]}; do
         echo -e "whether to $ pip install ${i}? ([y]/n)? \c"
         read yon
@@ -715,6 +715,8 @@ alias pcat='pygmentize -g'
 alias code='open -a "Visual Studio Code"'
 # open tensorboard with tb
 alias tb='tensorboard --logdir=./'
+# ssh with trzsz (https://github.com/trzsz/trzsz)
+alias tssh='trzsz -d ssh'
 # VPN commands (only for Linux)
 startvpn(){
     echo 'Start VPN in terminal!'
