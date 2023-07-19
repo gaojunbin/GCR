@@ -12,6 +12,8 @@
 # |
 # --- install_buildvpn - Install buildvpn on oversea server.
 # |
+# --- install_xui - Install x-ui to build vpn on oversea server.
+# |
 # --- install_docker - Install Docker (Only support Ubuntu).
 # |
 # --- install_colorls - Install colorls and ruby (not suggestion!).
@@ -52,6 +54,7 @@ one-click installation and environment set.'
     echo -e '[*] new_vpns_help    - Reminde you what to install when you get a new server.'
     echo -e '[*] install_vpn      - Install vpn with clash (Only support Linux)'
     echo -e '[*] install_buildvpn - Install buildvpn on oversea server'
+    echo -e '[*] install_xui      - Install x-ui to build vpn on oversea server'
     echo -e '[*] install_docker   - Install Docker (Only support Ubuntu)'
     echo -e '[*] install_colorls  - Install colorls and ruby (not suggestion!)'
     echo -e '[*] install_trzsz    - The trzsz ( trz / tsz ) is a simple file transfer tools.'
@@ -98,13 +101,30 @@ install_vpn(){
 }
 
 # Install buildvpn on oversea server
+# Old version, recommend to use install_xui instead.
 install_buildvpn(){
-    echo 'Install buildvpn on oversea server.'
-    echo 'The content is relatively sensitive in mainland China, so please contact me directly for related repository permissions.'
-    git clone git@github.com:gaojunbin/buildvpn-trojan.git ~/.buildvpn-trojan
-    cd ~/.buildvpn-trojan
-    bash ./build.sh
-    cd
+    echo 'Old version, recommend to use install_xui instead.'
+    echo 'Continue? ([y]/n)? \c'
+    read continue_yon
+    continue_yon=${continue_yon:-n}
+    if [ "${continue_yon}" = "y" ];then
+        echo 'Install buildvpn on oversea server.'
+        echo 'The content is relatively sensitive in mainland China, so please contact me directly for related repository permissions.'
+        git clone git@github.com:gaojunbin/buildvpn-trojan.git ~/.buildvpn-trojan
+        cd ~/.buildvpn-trojan
+        bash ./build.sh
+        cd
+    else
+        echo 'Install buildvpn stoped!'
+    fi
+}
+
+# Install x-ui on oversea server
+install_xui(){
+    echo 'Install x-ui to build vpn on oversea server.'
+    echo 'Recommend to install_nginxproxy first.'
+    echo 'More infomation can be seen on https://github.com/FranzKafkaYu/x-ui'
+    bash <(curl -Ls https://raw.githubusercontent.com/FranzKafkaYu/x-ui/master/install.sh)
 }
 
 # Install Docker (Only support Ubuntu)
