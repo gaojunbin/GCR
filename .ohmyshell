@@ -51,6 +51,7 @@ myupdate(){
     curl -o ~/.p9k.zsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh
     curl -o ~/.ohmytool https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool
     curl -o ~/.vimrc https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc
+    source ${shell_file}
 }
 
 ohmyshell(){
