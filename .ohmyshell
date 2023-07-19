@@ -715,6 +715,10 @@ alias pcat='pygmentize -g'
 alias code='open -a "Visual Studio Code"'
 # open tensorboard with tb
 alias tb='tensorboard --logdir=./'
+# download files or folder
+alias download='tsz -r'
+# upload folder
+alias upload='trz -r'
 # VPN commands (only for Linux)
 startvpn(){
     echo 'Start VPN in terminal!'
