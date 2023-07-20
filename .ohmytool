@@ -6,7 +6,7 @@
 # ==============    Outline   ==============
 # This is a ToolKit for server manager by 
 # one-click installation and environment set.
-# --- new_vpns_help - Reminde you what to install when you get a new server.
+# --- new_vps_help - Reminde you what to install when you get a new server.
 # |
 # --- install_vpn - Install vpn with clash (Only support Linux).
 # |
@@ -51,7 +51,7 @@ ohmytool(){
     echo -e 'This is a ToolKit for server manager by
 one-click installation and environment set.'
     echo -e 'List all tookit in .ohmytool'
-    echo -e '[*] new_vpns_help    - Reminde you what to install when you get a new server.'
+    echo -e '[*] new_vps_help     - Reminde you what to install when you get a new server.'
     echo -e '[*] install_vpn      - Install vpn with clash (Only support Linux)'
     echo -e '[*] install_buildvpn - Install buildvpn on oversea server'
     echo -e '[*] install_xui      - Install x-ui to build vpn on oversea server'
@@ -74,19 +74,27 @@ one-click installation and environment set.'
 }
 
 # Reminde you what to install when you get a new server.
-new_vpns_help(){
+new_vps_help(){
     echo 'Reminde you what to install when you get a new server.'
     echo '1. If the network of your server is in China, please [ install_vpn ] first to over the wall.'
     echo '2. If you are now logging with ssh password, please [ install_server-administration ] and run [myadduser] to generate key.'
-    echo '3. Please install docker and docker compose because most app are built by docker. please [ install_docker ].'
+    echo '3. Please install docker and docker-compose because most app are built by docker. please [ install_docker ].'
     echo '4. Please install nginx proxy manager to help you manage all your web server. [ install_nginxproxy ].'
     echo '5. If you need deploy deepl translate, [ install_deepl ].'
-    echo '6. If you need deploy your homeweb, [ install_homeweb ].'
+    echo '6. If you need deploy junbin homeweb, [ install_homeweb ].'
     echo '7. If you need deploy NewTab, [ install_newtab ].'
-    echo '8. If you need deploy latex editor overleaf, [ install_cloudreve ].'
+    echo '8. If you need deploy latex editor overleaf, [ install_overleaf ].'
     echo '9. If you need deploy your own cloud drive, [ install_cloudreve ].'
     echo '10. If you need deploy server monitor, [ install_serverstatus ].'
     echo '11. If you need deploy intranet penetration tool, [ install_frp ].'
+    echo '12. If you need deploy chat web with chatgpt API, [ install_chatgpt ].'
+    echo '13. If you need deploy samtools, [ install_samtools ].'
+    echo '14. If you need deploy server-administration, [ install_server-administration ].'
+    echo '15. If you need deploy trzsz, [ install_trzsz ].'
+    echo '16. If you need deploy colorls, [ install_colorls ].'
+    echo '17. If you need deploy tssh, [ install_tssh ].'
+    echo '18. If you need deploy spacevim, [ install_spacevim ].'
+    echo '19. If you need deploy x-ui, [ install_xui ].'
     echo 'After you installed all the server you needed, please config the nginx proxy.'
 }
 
