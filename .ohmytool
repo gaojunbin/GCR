@@ -44,6 +44,8 @@
 # |
 # --- install_chatgpt - Install chat web with chatgpt API.
 # |
+# --- install_webmonitor - Install web monitor.
+# |
 # --- install_samtools - TODO.
 # ==============  Outline end ==============
 
@@ -70,6 +72,7 @@ one-click installation and environment set.'
     echo -e '[*] install_serverstatus - Monitor you server status.'
     echo -e '[*] install_frp      - Intranet Penetration Tool.'
     echo -e '[*] install_chatgpt  - Install chat web with chatgpt API.'
+    echo -e '[*] install_webmonitor - Install web monitor.'
     echo -e '[*] install_samtools - TODO'
 }
 
@@ -723,6 +726,24 @@ install_chatgpt(){
     mkdir chatgpt
     cd chatgpt
     curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/chatgpt/docker-compose.yml -o docker-compose.yml
+    echo -e 'Please modify the docker-compose file as the comments suggesting.'
+    echo -e 'Then run $ docker-compose up -d'
+}
+
+# Install web monitor to monitor your website.
+install_webmonitor(){
+    echo -e 'Install web monitor to monitor your website.'
+    echo -e 'More details: https://github.com/LogicJake/WebMonitor'
+    echo -e 'Where to save data: (default: /root): \c'
+    read webmonitor_path
+    if [ "${webmonitor_path}" = "" ];then
+        cd /root
+    else
+        cd ${webmonitor_path}
+    fi
+    mkdir webmonitor
+    cd webmonitor
+    curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/webmonitor/docker-compose.yml -o docker-compose.yml
     echo -e 'Please modify the docker-compose file as the comments suggesting.'
     echo -e 'Then run $ docker-compose up -d'
 }
