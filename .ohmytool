@@ -164,6 +164,7 @@ $ sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
 $ sudo systemctl restart docker'
     echo -e "Continue? ([y]/n)? \c"
     read continue_yon
+    continue_yon=${continue_yon:-y}
     if [ "${continue_yon}" = "y" ];then
         sudo curl -sS https://get.docker.com/ | sh
         sudo curl -L "https://github.com/docker/compose/releases/download/v2.2.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
@@ -171,8 +172,9 @@ $ sudo systemctl restart docker'
         sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
         docker -v
         docker-compose -v
-        echo -e "Have Nvidia GPU? ([y]/n)? \c"
+        echo -e "Have Nvidia GPU? (y/[n])? \c"
         read yon
+        yon=${yon:-n}
         if [ "${yon}" = "y" ];then
             distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
             curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
@@ -752,7 +754,7 @@ install_webmonitor(){
 }
 
 # Install vnc docker
-install_vnc(){
+install_vncdocker(){
     echo -e 'Install vnc docker.'
     echo -e 'More details: https://github.com/fcwu/docker-ubuntu-vnc-desktop'
     echo -e 'Where to save data: (default: /root): \c'
