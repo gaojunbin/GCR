@@ -46,6 +46,8 @@
 # |
 # --- install_webmonitor - Install web monitor.
 # |
+# --- install_vncdocker - Install vnc docker.
+# |
 # --- install_samtools - TODO.
 # ==============  Outline end ==============
 
@@ -73,6 +75,7 @@ one-click installation and environment set.'
     echo -e '[*] install_frp      - Intranet Penetration Tool.'
     echo -e '[*] install_chatgpt  - Install chat web with chatgpt API.'
     echo -e '[*] install_webmonitor - Install web monitor.'
+    echo -e '[*] install_vncdocker - Install vnc docker.'
     echo -e '[*] install_samtools - TODO'
 }
 
@@ -744,6 +747,24 @@ install_webmonitor(){
     mkdir webmonitor
     cd webmonitor
     curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/webmonitor/docker-compose.yml -o docker-compose.yml
+    echo -e 'Please modify the docker-compose file as the comments suggesting.'
+    echo -e 'Then run $ docker-compose up -d'
+}
+
+# Install vnc docker
+install_vnc(){
+    echo -e 'Install vnc docker.'
+    echo -e 'More details: https://github.com/fcwu/docker-ubuntu-vnc-desktop'
+    echo -e 'Where to save data: (default: /root): \c'
+    read vnc_path
+    if [ "${vnc_path}" = "" ];then
+        cd /root
+    else
+        cd ${vnc_path}
+    fi
+    mkdir vnc
+    cd vnc
+    curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/vnc/docker-compose.yml -o docker-compose.yml
     echo -e 'Please modify the docker-compose file as the comments suggesting.'
     echo -e 'Then run $ docker-compose up -d'
 }
