@@ -771,6 +771,48 @@ install_vncdocker(){
     echo -e 'Then run $ docker-compose up -d'
 }
 
+install_qbittorrent(){
+    echo -e 'Install qbittorrent.'
+    echo -e 'User docker or bash shell? ([d]/b): \c'
+    read db
+    db=${db:-d}
+    if [ "${db}" = "d" ];then
+        echo -e 'Where to save data: (default: /root): \c'
+        read qbittorrent_path
+        if [ "${qbittorrent_path}" = "" ];then
+            cd /root
+        else
+            cd ${qbittorrent_path}
+        fi
+        git clone https://github.com/gaojunbin/qbittorrent.git
+        cd qbittorrent
+        docker-compose up -d
+    elif [ "${db}" = "b" ];then
+        echo -e 'set username: \c'
+        read username
+        echo -e 'set password: \c'
+        read password
+        bash <(wget -qO- https://raw.githubusercontent.com/jerry048/Dedicated-Seedbox/main/Install.sh) ${username} ${password} 1024
+    else
+        echo 'Invalid Input!'
+    fi
+}
+
+install_jellyfin(){
+    echo -e 'Install jellyfin.'
+    echo -e 'where to save data: (default: /root): \c'
+    read jellyfin_path
+    if [ "${jellyfin_path}" = "" ];then
+        cd /root
+    else
+        cd ${jellyfin_path}
+    fi
+    mkdir jellyfin
+    cd jellyfin
+    curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/jellyfin/docker-compose.yml -o docker-compose.yml
+    docker-compose up -d
+}
+
 # TODO: install samtools
 install_samtools(){
     # TODO
