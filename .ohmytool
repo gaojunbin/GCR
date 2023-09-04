@@ -48,6 +48,12 @@
 # |
 # --- install_vncdocker - Install vnc docker.
 # |
+# --- install_qbittorrent - Install qbittorrent.
+# |
+# --- install_jellyfin - Install jellyfin.
+# |
+# --- install_image - Install lsky-pro image.
+# |
 # --- install_samtools - TODO.
 # ==============  Outline end ==============
 
@@ -76,6 +82,9 @@ one-click installation and environment set.'
     echo -e '[*] install_chatgpt  - Install chat web with chatgpt API.'
     echo -e '[*] install_webmonitor - Install web monitor.'
     echo -e '[*] install_vncdocker - Install vnc docker.'
+    echo -e '[*] install_qbittorrent - Install qbittorrent.'
+    echo -e '[*] install_jellyfin - Install jellyfin.'
+    echo -e '[*] install_image    - Install lsky-pro image.'
     echo -e '[*] install_samtools - TODO'
 }
 
@@ -101,6 +110,9 @@ new_vps_help(){
     echo '17. If you need deploy tssh, [ install_tssh ].'
     echo '18. If you need deploy spacevim, [ install_spacevim ].'
     echo '19. If you need deploy x-ui, [ install_xui ].'
+    echo '20. If you need deploy qbittorrent, [ install_qbittorrent ].'
+    echo '21. If you need deploy jellyfin, [ install_jellyfin ].'
+    echo '22. If you need deploy lsky-pro image, [ install_image ].'
     echo 'After you installed all the server you needed, please config the nginx proxy.'
 }
 
@@ -771,6 +783,7 @@ install_vncdocker(){
     echo -e 'Then run $ docker-compose up -d'
 }
 
+# Install qbittorrent
 install_qbittorrent(){
     echo -e 'Install qbittorrent.'
     echo -e 'User docker or bash shell? ([d]/b): \c'
@@ -798,6 +811,7 @@ install_qbittorrent(){
     fi
 }
 
+# Install jellyfin
 install_jellyfin(){
     echo -e 'Install jellyfin.'
     echo -e 'where to save data: (default: /root): \c'
@@ -810,6 +824,22 @@ install_jellyfin(){
     mkdir jellyfin
     cd jellyfin
     curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/jellyfin/docker-compose.yml -o docker-compose.yml
+    docker-compose up -d
+}
+
+# install lsky-pro
+install_image(){
+    echo -e 'Install lsky-pro.'
+    echo -e 'where to save data: (default: /root): \c'
+    read image_path
+    if [ "${image_path}" = "" ];then
+        cd /root
+    else
+        cd ${image_path}
+    fi
+    mkdir lsky-pro
+    cd lsky-pro
+    curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/lsky-pro/docker-compose.yml -o docker-compose.yml
     docker-compose up -d
 }
 
