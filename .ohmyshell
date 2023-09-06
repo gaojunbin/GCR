@@ -719,6 +719,8 @@ alias tb='tensorboard --logdir=./'
 alias download='tsz -r'
 # upload folder
 alias upload='trz -r'
+# open ssh with tssh --dragfile
+alias tsshd='tssh --dragfile'
 # VPN commands (only for Linux)
 startvpn(){
     echo 'Start VPN in terminal!'
