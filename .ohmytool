@@ -117,13 +117,40 @@ new_vps_help(){
 }
 
 # Install vpn with clash (Only support Linux)
+# install_vpn(){
+#     echo 'Install vpn with clash (Only support Linux)'
+#     git clone https://gitee.com/gao-junbin/LinuxVPN ~/clash_tmp
+#     cd ~/clash_tmp
+#     sh ./install.sh
+#     cd
+#     rm -rf ~/clash_tmp
+# }
+
+# Install vpn with clash (with docker)
 install_vpn(){
-    echo 'Install vpn with clash (Only support Linux)'
-    git clone https://gitee.com/gao-junbin/LinuxVPN ~/clash_tmp
-    cd ~/clash_tmp
-    sh ./install.sh
-    cd
-    rm -rf ~/clash_tmp
+    echo 'Install vpn with clash (with docker)'
+    echo 'The docker image is from https://hub.docker.com/r/junbingao/clash'
+    echo 'Where to save data: (default: /root): \c'
+    read vpn_path
+    if [ "${vpn_path}" = "" ];then
+        cd /root
+    else
+        cd ${vpn_path}
+    fi
+    mkdir clash
+    cd clash
+    curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/clash/docker-compose.yml -o docker-compose.yml
+    mkdir clash
+    cd clash
+    echo 'Subscribed Links (you can set it later): \c'
+    read link
+    if [ -n "$link" ]; then
+        wget -O config.yaml $link --no-check-certificate
+    fi
+    cd ..
+    docker-compose up -d
+    echo 'Success! Please run [listen_vpn] in local to set vpn.'
+    echo 'Please run [startvpn] to start vpn server or [stopvpn] to stop vpn server. Defalt is always stop.'
 }
 
 # Install buildvpn on oversea server
