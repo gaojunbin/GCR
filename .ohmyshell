@@ -43,6 +43,11 @@ if [ -d ~/.server-administration ];then
     source ~/.server-administration/init.sh
 fi
 
+# support PBShelper
+if [ -d ~/.PBShelper ];then
+    source ~/.PBShelper/init.sh
+fi
+
 # support update GCR Toolkit from GitHub Repo
 myupdate(){
     curl -o ~/.ohmyshell https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell

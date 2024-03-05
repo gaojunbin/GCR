@@ -55,6 +55,8 @@
 # --- install_image - Install lsky-pro image.
 # |
 # --- install_samtools - TODO.
+# |
+# --- install_PBShelper - Install PBS helper.
 # ==============  Outline end ==============
 
 ohmytool(){
@@ -86,6 +88,7 @@ one-click installation and environment set.'
     echo -e '[*] install_jellyfin - Install jellyfin.'
     echo -e '[*] install_image    - Install lsky-pro image.'
     echo -e '[*] install_samtools - TODO'
+    echo -e '[*] install_PBShelper - Install PBS helper.'
 }
 
 # Reminde you what to install when you get a new server.
@@ -873,4 +876,10 @@ install_image(){
 # TODO: install samtools
 install_samtools(){
     # TODO
+}
+
+# Install PBShelper
+install_PBShelper(){
+    echo -e 'Install PBS helper.'
+    git clone https://github.com/gaojunbin/PBShelper.git ~/.PBShelper
 }
