@@ -44,6 +44,7 @@ if [ "${yon}" = "y" ];then
         ./configure --prefix=$HOME/zsh
         make && make install
         echo 'export PATH=$HOME/zsh/bin:$PATH' >> ~/.bash_profile
+        rm ~/zsh.tar.xz
         cd ~/GCR
     fi
 fi
@@ -77,13 +78,13 @@ if [ "${yon}" = "y" ];then
     if [ "${root_yon}" = "y" ];then
         sudo chsh -s $(which zsh) $(whoami)
     else
-        echo '# [Added by install_ohmyzsh_remote.ssh] starting zsh when starting.' >> ~/.bash_profile
+        echo '# [Added by install_ohmyzsh_remote.ssh] starting zsh when log in.' >> ~/.bash_profile
         echo 'export SHELL=$HOME/zsh/bin/zsh' >> ~/.bash_profile
         echo 'exec $HOME/zsh/bin/zsh -l' >> ~/.bash_profile
     fi
 fi
 
-echo -e "Installing for ohmyzsh complete! Now you can resart shell."
+echo -e "Installing for ohmyzsh complete! Now you can restart shell."
 
 cd
 rm -rf ~/GCR

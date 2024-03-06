@@ -57,6 +57,8 @@
 # --- install_samtools - TODO.
 # |
 # --- install_PBShelper - Install PBS helper.
+# |
+# --- install_htop_wo_sudo - Install htop without sudo.
 # ==============  Outline end ==============
 
 ohmytool(){
@@ -89,6 +91,7 @@ one-click installation and environment set.'
     echo -e '[*] install_image    - Install lsky-pro image.'
     echo -e '[*] install_samtools - TODO'
     echo -e '[*] install_PBShelper - Install PBS helper.'
+    echo -e '[*] install_htop_wo_sudo - Install htop without sudo.'
 }
 
 # Reminde you what to install when you get a new server.
@@ -882,4 +885,25 @@ install_samtools(){
 install_PBShelper(){
     echo -e 'Install PBS helper.'
     git clone https://github.com/gaojunbin/PBShelper.git ~/.PBShelper
+}
+
+# Install htop_wo_sudo
+install_htop_wo_sudo(){
+    echo -e 'Install htop without sudo.'
+    echo -e 'where to save data: (default: $HOME): \c'
+    read htop_path
+    if [ "${htop_path}" = "" ];then
+        cd
+    else
+        cd ${htop_path}
+    fi
+    mkdir htop
+    cd htop
+    wget -O htop.rpm https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/h/htop-2.2.0-3.el7.x86_64.rpm --no-check-certificate
+    rpm2cpio htop.rpm |cpio -idvm
+    
+    if [ -n "${shell_file}" ];then
+        echo "export PATH=$HOME/htop/usr/bin:"'$PATH' >> ${shell_file}
+        source ${shell_file}
+    fi
 }
