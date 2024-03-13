@@ -5,7 +5,7 @@
 1. Linux
 
    ```
-   curl -s https://raw.githubusercontent.com/gaojunbin/GCR/master/install_ohmyzsh_remote.sh -o ~/install_ohmyzsh_remote.sh && bash install_ohmyzsh_remote.sh && rm ~/install_ohmyzsh_remote.sh
+   curl -s https://raw.githubusercontent.com/gaojunbin/GCR/master/install_ohmyzsh_remote.sh -o ~/install_ohmyzsh_remote.sh && bash ~/install_ohmyzsh_remote.sh && rm ~/install_ohmyzsh_remote.sh
    ```
 
 2. MacOS

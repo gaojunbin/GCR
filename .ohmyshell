@@ -442,11 +442,11 @@ cenv(){
     echo -e 'Copy from existing env (default no copy): \c'
     read Source_Env_name
     if [ "${Source_Env_name}" = "" ];then
-        echo -e 'Python version (default 3.6): \c'
+        echo -e 'Python version (default 3.7): \c'
         read Py_version
         if [ "${Py_version}" = "" ];then
-            echo -e "$ conda create --name ${Env_name} python=3.6 ipykernel -y"
-            conda create --name ${Env_name} python=3.6 ipykernel -y
+            echo -e "$ conda create --name ${Env_name} python=3.7 ipykernel -y"
+            conda create --name ${Env_name} python=3.7 ipykernel -y
             echo -e "$ python -m ipykernel install --user --name ${Env_name}"
             python -m ipykernel install --user --name ${Env_name}
         else
