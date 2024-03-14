@@ -59,6 +59,8 @@
 # --- install_PBShelper - Install PBS helper.
 # |
 # --- install_htop_wo_sudo - Install htop without sudo.
+# |
+# --- install_autojump - Install autojump.
 # ==============  Outline end ==============
 
 ohmytool(){
@@ -92,6 +94,7 @@ one-click installation and environment set.'
     echo -e '[*] install_samtools - TODO'
     echo -e '[*] install_PBShelper - Install PBS helper.'
     echo -e '[*] install_htop_wo_sudo - Install htop without sudo.'
+    echo -e '[*] install_autojump - Install autojump.'
 }
 
 # Reminde you what to install when you get a new server.
@@ -907,3 +910,20 @@ install_htop_wo_sudo(){
         source ${shell_file}
     fi
 }
+
+# Install autojump
+install_autojump(){
+    echo -e 'Install autojump.'
+    echo -e 'where to save data: (default: $HOME): \c'
+    read autojump_path
+    if [ "${autojump_path}" = "" ];then
+        cd
+    else
+        mkdir -p ${autojump_path}
+        cd ${autojump_path}
+    fi
+    git clone https://github.com/wting/autojump.git
+    cd autojump
+    ./install.py
+}
+    
