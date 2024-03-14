@@ -925,8 +925,8 @@ install_autojump(){
         mkdir -p ${autojump_path}
         cd ${autojump_path}
     fi
-    git clone https://github.com/wting/autojump.git
-    cd autojump
+    git clone https://github.com/wting/autojump.git .autojump
+    cd .autojump
     ./install.py
 }
 
