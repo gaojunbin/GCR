@@ -8,6 +8,8 @@
 # one-click installation and environment set.
 # --- new_vps_help - Reminde you what to install when you get a new server.
 # |
+# --- install_base - Install some base tools.
+# |
 # --- install_vpn - Install vpn with clash (Only support Linux).
 # |
 # --- install_buildvpn - Install buildvpn on oversea server.
@@ -62,6 +64,8 @@
 # |
 # --- install_autojump - Install autojump.
 # |
+# --- install_fzf - Install fzf.
+# |
 # --- install_copypaste - Install copypaste.
 # ==============  Outline end ==============
 
@@ -70,6 +74,7 @@ ohmytool(){
 one-click installation and environment set.'
     echo -e 'List all tookit in .ohmytool'
     echo -e '[*] new_vps_help     - Reminde you what to install when you get a new server.'
+    echo -e '[*] install_base     - Install some base tools.'
     echo -e '[*] install_vpn      - Install vpn with clash (Only support Linux)'
     echo -e '[*] install_buildvpn - Install buildvpn on oversea server'
     echo -e '[*] install_xui      - Install x-ui to build vpn on oversea server'
@@ -97,12 +102,14 @@ one-click installation and environment set.'
     echo -e '[*] install_PBShelper - Install PBS helper.'
     echo -e '[*] install_htop_wo_sudo - Install htop without sudo.'
     echo -e '[*] install_autojump - Install autojump.'
+    echo -e '[*] install_fzf      - Install fzf.'
     echo -e '[*] install_copypaste - Install copypaste.'
 }
 
 # Reminde you what to install when you get a new server.
 new_vps_help(){
     echo 'Reminde you what to install when you get a new server.'
+    echo '0. Please run [ install_base ] first to install some base tools.'
     echo '1. If the network of your server is in China, please [ install_vpn ] first to over the wall.'
     echo '2. If you are now logging with ssh password, please [ install_server-administration ] and run [myadduser] to generate key.'
     echo '3. Please install docker and docker-compose because most app are built by docker. please [ install_docker ].'
@@ -126,6 +133,26 @@ new_vps_help(){
     echo '21. If you need deploy jellyfin, [ install_jellyfin ].'
     echo '22. If you need deploy lsky-pro image, [ install_image ].'
     echo 'After you installed all the server you needed, please config the nginx proxy.'
+}
+
+# Install some base tools.
+install_base(){
+    echo 'Install some base tools.'
+    echo "[*] whether to install autojump? ([y]/n)? \c"
+    read yon
+    yon=${yon:-y}
+    if [ "${yon}" = "y" ];then
+        install_autojump
+    fi
+    unset yon
+    echo "[*] whether to install fzf? ([y]/n)? \c"
+    read yon
+    yon=${yon:-y}
+    if [ "${yon}" = "y" ];then
+        install_fzf
+    fi
+    unset yon
+
 }
 
 # Install vpn with clash (Only support Linux)
@@ -923,6 +950,13 @@ install_autojump(){
     ./install.py
     cd ..
     rm -rf autojump
+}
+
+# Install fzf
+install_fzf(){
+    echo -e 'Install fzf.'
+    git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+    ~/.fzf/install
 }
 
 # Install copypaste
