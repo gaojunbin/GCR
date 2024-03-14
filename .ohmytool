@@ -917,17 +917,12 @@ install_htop_wo_sudo(){
 # Install autojump
 install_autojump(){
     echo -e 'Install autojump.'
-    echo -e 'where to save data: (default: $HOME): \c'
-    read autojump_path
-    if [ "${autojump_path}" = "" ];then
-        cd
-    else
-        mkdir -p ${autojump_path}
-        cd ${autojump_path}
-    fi
-    git clone https://github.com/wting/autojump.git .autojump
-    cd .autojump
+    cd
+    git clone https://github.com/wting/autojump.git
+    cd autojump
     ./install.py
+    cd ..
+    rm -rf autojump
 }
 
 # Install copypaste
