@@ -61,6 +61,8 @@
 # --- install_htop_wo_sudo - Install htop without sudo.
 # |
 # --- install_autojump - Install autojump.
+# |
+# --- install_copypaste - Install copypaste.
 # ==============  Outline end ==============
 
 ohmytool(){
@@ -95,6 +97,7 @@ one-click installation and environment set.'
     echo -e '[*] install_PBShelper - Install PBS helper.'
     echo -e '[*] install_htop_wo_sudo - Install htop without sudo.'
     echo -e '[*] install_autojump - Install autojump.'
+    echo -e '[*] install_copypaste - Install copypaste.'
 }
 
 # Reminde you what to install when you get a new server.
@@ -926,4 +929,62 @@ install_autojump(){
     cd autojump
     ./install.py
 }
-    
+
+# Install copypaste
+install_copypaste(){
+    echo -e 'Install copypaste.'
+    echo -e 'where to save data: (default: $HOME): \c'
+    read copypaste_path
+    if [ "${copypaste_path}" = "" ];then
+        cd
+    else
+        mkdir -p ${copypaste_path}
+        cd ${copypaste_path}
+    fi
+
+    echo -e 'set MICROBIN_BASIC_AUTH_USERNAME: \c'
+    read MICROBIN_BASIC_AUTH_USERNAME
+    echo -e 'set MICROBIN_ADMIN_USERNAME: \c'
+    read MICROBIN_ADMIN_USERNAME
+    echo -e 'set MICROBIN_ADMIN_PASSWORD: \c'
+    read MICROBIN_ADMIN_PASSWORD
+    echo -e 'set MICROBIN_PUBLIC_PATH: \c'
+    read MICROBIN_PUBLIC_PATH
+    echo -e 'set MICROBIN_TITLE: \c'
+    read MICROBIN_TITLE
+    echo -e 'set MICROBIN_FOOTER_TEXT: \c'
+    read MICROBIN_FOOTER_TEXT
+    echo -e 'set MICROBIN_PORT: \c'
+    read MICROBIN_PORT
+    cat > docker-compose.yml <<EOF
+version: '3'
+services:
+    microbin:
+        image: danielszabo99/microbin:latest
+        container_name: microbin
+        restart: unless-stopped
+        environment:
+        - TZ=Asia/Shanghai
+        - MICROBIN_BASIC_AUTH_USERNAME=$MICROBIN_BASIC_AUTH_USERNAME
+        - MICROBIN_ADMIN_USERNAME=$MICROBIN_ADMIN_USERNAME
+        - MICROBIN_ADMIN_PASSWORD=$MICROBIN_ADMIN_PASSWORD
+        - MICROBIN_PUBLIC_PATH=$MICROBIN_PUBLIC_PATH
+        - MICROBIN_EDITABLE=true
+        - MICROBIN_ENCRYPTION_CLIENT_SIDE=true
+        - MICROBIN_ENCRYPTION_SERVER_SIDE=true
+        - MICROBIN_HIGHLIGHTSYNTAX=true
+        - MICROBIN_HASH_IDS=true
+        - MICROBIN_HELP=true
+        - MICROBIN_SHORT_PATH=true
+        - MICROBIN_NO_LISTING=false
+        - MICROBIN_QR=true
+        - MICROBIN_TITLE=$MICROBIN_TITLE
+        - MICROBIN_HIDE_LOGO=true
+        - MICROBIN_FOOTER_TEXT=$MICROBIN_FOOTER_TEXT
+        ports:
+        - $MICROBIN_PORT:8080
+        volumes:
+        - ./microbin-data:/app/pasta_data
+EOF
+    docker-compose up -d
+}
