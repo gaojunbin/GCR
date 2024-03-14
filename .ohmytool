@@ -152,7 +152,13 @@ install_base(){
         install_fzf
     fi
     unset yon
-
+    echo "[*] whether to install trzsz? ([y]/n)? \c"
+    read yon
+    yon=${yon:-y}
+    if [ "${yon}" = "y" ];then
+        install_trzsz
+    fi
+    unset yon
 }
 
 # Install vpn with clash (Only support Linux)
@@ -310,7 +316,6 @@ install_trzsz(){
     if [ "${os_num}" = 1 ];then
         echo -e 'Choose the Installation method [Number] you want (default: 1):'
         echo -e '[1] homebrew (recommend)'
-        echo -e '[2] pip'
         echo -e 'input you choose: \c'
         read method_num
         method_num=${method_num:-1}
@@ -318,16 +323,13 @@ install_trzsz(){
             echo "Install with homebrew..."
             brew update
             brew install trzsz-go
-        elif [ "${method_num}" = 2 ];then
-            echo "Install with pip..."
-            pip install trzsz
         else
             echo 'Invalid input!'
         fi
     elif [ "${os_num}" = 2 ];then
         echo -e 'Choose the Installation method [Number] you want (default: 1):'
-        echo -e '[1] apt with sudo (recommend)'
-        echo -e '[2] pip'
+        echo -e '[1] apt with sudo'
+        echo -e '[2] github release (w/o sudo)'
         echo -e 'input you choose: \c'
         read method_num
         method_num=${method_num:-1}
@@ -337,8 +339,11 @@ install_trzsz(){
             sudo add-apt-repository ppa:trzsz/ppa && sudo apt update
             sudo apt install trzsz
         elif [ "${method_num}" = 2 ];then
-            echo "Install with pip..."
-            pip install trzsz
+            wget https://github.com/trzsz/trzsz-go/releases/download/v1.1.7/trzsz_1.1.7_linux_x86_64.tar.gz --no-check-certificate
+            tar -xzvf trzsz_1.1.7_linux_x86_64.tar.gz
+            rm trzsz_1.1.7_linux_x86_64.tar.gz
+            mv trzsz_1.1.7_linux_x86_64 $HOME/.trzsz
+            echo "export PATH=$HOME/.trzsz:"'$PATH' >> ${shell_file}
         else
             echo 'Invalid input!'
         fi
