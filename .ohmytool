@@ -959,7 +959,7 @@ install_autojump(){
 
 # Install fzf
 install_fzf(){
-    echo -e 'Install fzf.'
+    echo -e 'Install fzf for zsh-interactive-cd.'
     git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
     ~/.fzf/install
 }
