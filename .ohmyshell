@@ -48,6 +48,14 @@ if [ -d ~/.PBShelper ];then
     source ~/.PBShelper/init.sh
 fi
 
+# support safe-rm
+if [ -f ~/.safe-rm ];then
+    alias rm='~/.safe-rm'
+    alias del='rm -rf'
+else
+    echo 'Your current rm is dangerous! Please run [install_safe-rm] first and restart your shell.'
+fi
+
 # support update GCR Toolkit from GitHub Repo
 myupdate(){
     curl -o ~/.ohmyshell https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell
