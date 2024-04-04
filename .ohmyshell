@@ -154,8 +154,8 @@ myupdate(){
     curl -o ~/.p9k.zsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh
     curl -o ~/.vimrc https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc
     curl -o ~/.ohmyprint https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint
-    source ${shell_file}
     print_table_text "Successful update!" "false" "yellow" "red" $(tput cols)
+    source ${shell_file}
 }
 
 ohmyshell(){
@@ -335,29 +335,30 @@ sz(){
                 du -h -d ${max_depth} ${fod_name}
             fi
         else
-            print_text "green" "Not support current OS!" "false"
+            print_text "red" "Not support current OS!" "false"
         fi
     elif [ "${func_num}" = 3 ];then
-        echo -e 'input the folder to view (default: *): \c'
+        print_text "green" "Input the folder to view (default: .): " "false"
         read fod_name
-        fod_name=${fod_name:-*}
-        echo -e 'input the file type to view ([A]ll, [D]irectory, [F]ile, [L]ink): \c'
+        fod_name=${fod_name:.}
+        print_text "green" "Input the file type to view ([A]ll, [D]irectory, [F]ile, [L]ink): " "false"
         read file_type
         file_type=${file_type:-A}
         # A or a both the same, the same as D, F, L
         if [ "${file_type}" = "A" ] || [ "${file_type}" = "a" ];then
-            echo -e "$ ls -l ${fod_name} | grep -c ^"
+            print_text "green" "$ ls -l ${fod_name} | grep -c ^" "false"
             ls -l ${fod_name} | grep -c ^
         elif [ "${file_type}" = "D" || [ "${file_type}" = "d" ];then
-            echo -e "$ ls -l ${fod_name} | grep -c ^d"
+            print_text "green" "$ ls -l ${fod_name} | grep -c ^d" "false"
             ls -l ${fod_name} | grep -c ^d
         elif [ "${file_type}" = "F" || [ "${file_type}" = "f" ];then
-            echo -e "$ ls -l ${fod_name} | grep -c ^-"
+            print_text "green" "$ ls -l ${fod_name} | grep -c ^-" "false"
             ls -l ${fod_name} | grep -c ^-
         elif [ "${file_type}" = "L" || [ "${file_type}" = "l" ];then
-            echo -e "$ ls -l ${fod_name} | grep -c ^l"
+            print_text "green" "$ ls -l ${fod_name} | grep -c ^l" "false"
             ls -l ${fod_name} | grep -c ^l
         else
+            print_text "red" "Invalid Input!" "false"
             echo 'Invalid Input!'
         fi
 
@@ -485,15 +486,19 @@ pipset(){
 
 # pip install some base module
 pipbase(){
+    unset i
+    unset yon
     base_module=('pygments' 'gpustat' 'jupyterlab' 'tensorboard' 'woaigpu' 'gdown' 'shell-gpt')
-    for i in ${base_module[*]}; do
-        echo -e "whether to $ pip install ${i}? (y/[n])? \c"
+    for i in ${base_module}; do
+        print_text "green" "whether to $ pip install ${i} (y/[n])?" "false"
         read yon
         yon=${yon:-n}
         if [ "${yon}" = "y" ]; then
             pip install ${i}
         fi
     done
+    unset i
+    unset yon
 }
 
 # pip list and pip show
@@ -570,10 +575,10 @@ mypip(){
 env(){
     if [ "${1}" = "" ]; then
         conda env list
-        echo -e 'environment name: \c'
+        print_text "green" "Input the environment name to activate: " "false"
         read Env_name
         if [ "${Env_name}" = "" ]; then
-            echo '$ conda deactivate'
+            print_text "gree" "$ conda deactivate" "false"
             conda deactivate
         else
             conda activate ${Env_name};
