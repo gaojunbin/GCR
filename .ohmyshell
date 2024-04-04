@@ -21,6 +21,16 @@
 # --- Others
 # ========Outline end============
 
+declare -A manual_ohmyshell=(
+    ["myupdate"]="support update GCR Toolkit from GitHub Repo."
+    ["mytool"]="Some basic tools for common using."
+    ["mypip"]="pip tools."
+    ["myenv"]="Anaconda tools."
+    ["mygpu"]="useful functions for GPU and cuda."
+    ["mypermission"]="some functions for permission, passward, etc."
+    ["mygit"]="Git tools"
+)
+
 # shell type [~/.bashrc or ~/.zshrc]
 # support tabby shell working directory reporting
 if [[ "$SHELL" == *"zsh" ]];then
@@ -33,10 +43,28 @@ else
     echo 'Invalid shell type: ' $SHELL
 fi
 
-# support .ohmytool
-if [ -f ~/.ohmytool ];then
-    source ~/.ohmytool
+# autoinstall
+if [ ! -f ~/.ohmyshell ];then
+    curl -o ~/.ohmyshell https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell
 fi
+if [ ! -f ~/.ohmyzsh ];then
+    curl -o ~/.ohmyzsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh
+fi
+if [ ! -f ~/.p9k.zsh ];then
+    curl -o ~/.p9k.zsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh
+fi
+if [ ! -f ~/.ohmyprint ];then
+    curl -o ~/.ohmyprint https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint
+fi
+if [ ! -f ~/.ohmytool ];then
+    curl -o ~/.ohmytool https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool
+fi
+if [ ! -f ~/.vimrc ];then
+    curl -o ~/.vimrc https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc
+fi
+
+source ~/.ohmytool
+source ~/.ohmyprint
 
 # support server-administration
 if [ -d ~/.server-administration ];then
@@ -56,26 +84,104 @@ else
     echo 'Your current rm is dangerous! Please run [install_safe-rm] first and restart your shell.'
 fi
 
+
+# welcome message
+star_line=""
+for ((i = 0; i < $(tput cols); i++)); do
+        star_line+="*"
+done
+print_text "green" $star_line "true"
+printf "\n"
+printf "\n"
+print_text "yellow" "Welcome to GCR Toolkit!" "false" $(tput cols)
+printf "\n"
+printf "\n"
+print_text "green" $star_line "true"
+printf "\n"
+printf "\n"
+print_line "cyan" $(tput cols)
+print_text "cyan" "Basic Info:" "false"
+printf "\n"
+printf "\t"
+print_text "blue" "Author: " "false"
+print_text "white" "Junbin Gao" "false"
+printf "\n"
+printf "\t"
+print_text "blue" "Github: " "false"
+print_text "white" "https://github.com/gaojunbin/GCR" "false"
+printf "\n"
+printf "\t"
+print_text "blue" "Intro : " "false"
+print_text "white" "GCR is a shell plugin that makes it easier and more elegant to use the command line on a unix operating system without having to memorize cumbersome, retarded commands." "false"
+printf "\n"
+print_line "cyan" $(tput cols)
+print_text "cyan" "Manual:" "false"
+printf "\n"
+printf "\t"
+print_text "blue" "ohmyshell: " "false"
+print_text "white" "Some basic command in shell. Type " "false"
+print_text "green" "$ ohmyshell " "false"
+print_text "white" "see all the available functions. " "false"
+printf "\n"
+for k in "${(@k)manual_ohmyshell}"; do
+    printf "\t\t"
+    print_text "green" "$k: " "false"
+    print_text "white" "${manual_ohmyshell[$k]}" "false"
+    printf "\n"
+done
+
+printf "\n"
+printf "\t"
+print_text "blue" "ohmytool: " "false"
+print_text "white" "One-click installation and environment setup toolkit. Type " "false"
+print_text "green" "$ ohmytool " "false"
+print_text "white" "see all the available functions. " "false"
+printf "\n"
+for k in "${(@k)manual_ohmytool}"; do
+    printf "\t\t"
+    print_text "green" "$k: " "false"
+    print_text "white" "${manual_ohmytool[$k]}" "false"
+    printf "\n"
+done
+print_line "cyan" $(tput cols)
+
 # support update GCR Toolkit from GitHub Repo
 myupdate(){
+    print_table_text "Updating GCR ..." "true" "yellow" "red" $(tput cols)
     curl -o ~/.ohmyshell https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell
     curl -o ~/.ohmytool https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool 
     curl -o ~/.ohmyzsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh
     curl -o ~/.p9k.zsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh
-    curl -o ~/.ohmytool https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool
     curl -o ~/.vimrc https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc
+    curl -o ~/.ohmyprint https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint
     source ${shell_file}
+    print_table_text "Successful update!" "false" "yellow" "red" $(tput cols)
 }
 
 ohmyshell(){
-    echo -e 'List all func in .ohmyshell'
-    echo -e '[*] myupdate     - support update GCR Toolkit from GitHub Repo.'
-    echo -e '[*] mytool       - Some basic tools for common using.'
-    echo -e '[*] mypip        - pip tools.'
-    echo -e '[*] myenv        - Anaconda tools.'
-    echo -e '[*] mygpu        - useful functions for GPU and cuda.'
-    echo -e '[*] mypermission - some functions for permission, passward, etc.'
-    echo -e '[*] mygit        - Git tools.'
+    print_table_text "List all func in .ohmyshell" "false" "green" "cyan" $(tput cols)
+    print_text "green" "$ myupdate: " "false"
+    print_text "white" "support update GCR Toolkit from GitHub Repo." "false"
+    printf "\n"
+    print_text "green" "$ mytool: " "false"
+    print_text "white" "Some basic tools for common using." "false"
+    printf "\n"
+    print_text "green" "$ mypip: " "false"
+    print_text "white" "pip tools." "false"
+    printf "\n"
+    print_text "green" "$ myenv: " "false"
+    print_text "white" "Anaconda tools." "false"
+    printf "\n"
+    print_text "green" "$ mygpu: " "false"
+    print_text "white" "useful functions for GPU and cuda." "false"
+    printf "\n"
+    print_text "green" "$ mypermission: " "false"
+    print_text "white" "some functions for permission, passward, etc." "false"
+    printf "\n"
+    print_text "green" "$ mygit: " "false"
+    print_text "white" "Git tools." "false"
+    printf "\n"
+    print_line "cyan" $(tput cols)
 }
 
 # >>> mytool >>>
@@ -90,19 +196,22 @@ ohmyshell(){
 
 # open jupyter notebook
 jp(){
-    echo -e 'Jupyter notebook starting...'
-    echo -e 'Input port: \c'
+    print_table_text "Jupyter notebook starting..." "false" "green" "cyan" $(tput cols)    
+    print_text "green" "Input port: " "false"
     read port
     jupyter lab --port ${port} --no-browser
 }
 
 # ssh -NL
 listen(){
-    echo 'This is a funtion for SSH port forwarding. It has 3 modes.'
-    echo '[1] -L :Local Forwarding - Local port listen the remote port.'
-    echo '[2] -R :Remote Forwarding - Remote port listen the local port.'
-    echo '[3] -D :Dynamic Forwarding - Use remote to forward local port. (socks5)'
-    echo -e 'input you choose(default: 1) : \c'
+    print_table_text "This is a funtion for SSH port forwarding. It has 3 modes." "false" "green" "cyan" $(tput cols)
+    print_text "green" "[1] -L :Local Forwarding - Local port listen the remote port." "false"
+    printf "\n"
+    print_text "green" "[2] -R :Remote Forwarding - Remote port listen the local port." "false"
+    printf "\n"
+    print_text "green" "[3] -D :Dynamic Forwarding - Use remote to forward local port. (socks5)" "false"
+    printf "\n"
+    print_text "green" "Your choose(default: 1): " "false"
     read func_num
     if [[ "${func_num}" = 1 ]] || [[ "${func_num}" = "" ]];then
         echo '[1] -L :Local Forwarding - Local port listen the remote port.'
@@ -142,16 +251,16 @@ listen(){
     else
         echo -e 'Invalid Input!'
     fi
+    unset func_num
     
 }
 
 # add environment variable to PATH
 pathadd(){
-    echo -e 'This is a funtion to add environment variable to PATH. 
-    Note: We will not help you to judge whether the input is valid, please be careful!'
-    echo -e 'path: \c'
+    print_table_text "This is a funtion to add environment variable to PATH." "false" "green" "cyan" $(tput cols)
+    print_text "green" "path: " "false"
     read pth
-    echo -e "whether to add to ${shell_file} (add permanently)? ([y]/n)? \c"
+    print_text "green" "whether to add to ${shell_file} (add permanently)? ([y]/n)? " "false"
     read yon
     if [ "${yon}" = "y" ];then
         echo '# >>> [Added by .ohmyshell] Add PATH to env >>>' >> ${shell_file}
@@ -160,64 +269,98 @@ pathadd(){
     else
         export PATH=${pth}:$PATH
     fi
+    unset pth
+    unset yon
 }
 
 # Set conda initial and add startup shell to bashrc/zshrc.
 condainit(){
-    echo -e 'This is a funtion to set conda initial and add startup shell to bashrc/zshrc.'
-    echo -e 'anaconda installed path (e.g. /usr/local/anaconda3): \c'
+    print_table_text "This is a funtion to set conda initial and add startup shell to bashrc/zshrc." "false" "green" "cyan" $(tput cols)
+    print_text "green" "anaconda installed path (e.g. /usr/local/anaconda3): " "false"
     read pth
     cpth=${pth}'/etc/profile.d/conda.sh'
-    echo -e "whether to startup ${cpth} in ${shell_file}? ([y]/n)? \c"
+    print_text "green" "whether to add [source ${cpth}] to ${shell_file}? ([y]/n)? " "false"
     read yon
+    yon=${yon:-y}
     if [ "${yon}" = "y" ];then
         echo '# >>> [Added by .ohmyshell] Conda initial >>>' >> ${shell_file}
         echo "source ${cpth}" >> ${shell_file}
         echo '# <<< [Added by .ohmyshell] Conda initial end <<<' >> ${shell_file}
         echo "Complete add [source ${cpth}] to ${shell_file}"
     fi
+    unset yon
 }
 
 # view folder and file size
 # TODO: add some param such like sz $1 $2
 sz(){
-    echo -e 'This is a funtion to view folder and file size.'
-    echo -e 'Choose the Function [Number] you want:'
-    echo -e '[1] view all computer'
-    echo -e '[2] view folder or file'
-    echo -e 'input you choose: \c'
+    print_table_text "This is a funtion to view folder and file information." "false" "green" "cyan" $(tput cols)
+    print_text "green" "Choose the Function [Number] you want:" "false"
+    printf "\n"
+    print_text "green" "[1] view all computer disk size" "false"
+    printf "\n"
+    print_text "green" "[2] view folder or file size" "false"
+    printf "\n"
+    print_text "green" "[3] view file number in folder" "false"
+    printf "\n"
+    print_text "green" "Your choose: " "false"
     read func_num
     if [ "${func_num}" = 1 ];then
-        echo "$ df -h"
+        print_text "green" "$ df -h" "false"
         df -h
     elif [ "${func_num}" = 2 ];then
-        echo -e 'input the folder or file to view (default: *, not support ~): \c'
+        print_text "green" "Input the folder or file to view (default: *, not support ~): " "false"
         read fod_name
-        echo -e 'input the max depth to view (default: 0): \c'
+        print_text "green" "Input the max depth to view (default: 0): " "false"
         read max_depth
+
         if [ "${max_depth}" = "" ];then
             max_depth=0
         fi
         # Different for MacOs and Linux
         if [ "$(uname -s)" = Linux ];then
             if [[ "${fod_name}" = "" ]] || [[ "${fod_name}" = "*" ]];then
-                echo -e "$ du -h --max-depth=${max_depth} *"
+                print_text "green" "$ du -h --max-depth=${max_depth} *" "false"
                 du -h --max-depth=${max_depth} *
             else
-                echo -e "$ du -h --max-depth=${max_depth} ${fod_name}"
+                print_text "green" "$ du -h --max-depth=${max_depth} ${fod_name}" "false"
                 du -h --max-depth=${max_depth} ${fod_name}
             fi
         elif [ "$(uname -s)" = Darwin ];then
             if [[ "${fod_name}" = "" ]] || [[ "${fod_name}" = "*" ]];then
-                echo -e "$ du -h -d ${max_depth} *"
+                print_text "green" "$ du -h -d ${max_depth} *" "false"
                 du -h -d ${max_depth} *
             else
-                echo -e "$ du -h -d ${max_depth} ${fod_name}"
+                print_text "green" "$ du -h -d ${max_depth} ${fod_name}" "false"
                 du -h -d ${max_depth} ${fod_name}
             fi
         else
-            echo 'Not support current OS!'
+            print_text "green" "Not support current OS!" "false"
         fi
+    elif [ "${func_num}" = 3 ];then
+        echo -e 'input the folder to view (default: *): \c'
+        read fod_name
+        fod_name=${fod_name:-*}
+        echo -e 'input the file type to view ([A]ll, [D]irectory, [F]ile, [L]ink): \c'
+        read file_type
+        file_type=${file_type:-A}
+        # A or a both the same, the same as D, F, L
+        if [ "${file_type}" = "A" ] || [ "${file_type}" = "a" ];then
+            echo -e "$ ls -l ${fod_name} | grep -c ^"
+            ls -l ${fod_name} | grep -c ^
+        elif [ "${file_type}" = "D" || [ "${file_type}" = "d" ];then
+            echo -e "$ ls -l ${fod_name} | grep -c ^d"
+            ls -l ${fod_name} | grep -c ^d
+        elif [ "${file_type}" = "F" || [ "${file_type}" = "f" ];then
+            echo -e "$ ls -l ${fod_name} | grep -c ^-"
+            ls -l ${fod_name} | grep -c ^-
+        elif [ "${file_type}" = "L" || [ "${file_type}" = "l" ];then
+            echo -e "$ ls -l ${fod_name} | grep -c ^l"
+            ls -l ${fod_name} | grep -c ^l
+        else
+            echo 'Invalid Input!'
+        fi
+
     else
         echo 'Invalid Input!'
     fi
@@ -342,7 +485,7 @@ pipset(){
 
 # pip install some base module
 pipbase(){
-    base_module=('pygments' 'gpustat' 'jupyterlab' 'tensorboard' 'woaigpu' 'gdown', 'shell-gpt')
+    base_module=('pygments' 'gpustat' 'jupyterlab' 'tensorboard' 'woaigpu' 'gdown' 'shell-gpt')
     for i in ${base_module[*]}; do
         echo -e "whether to $ pip install ${i}? (y/[n])? \c"
         read yon

@@ -71,6 +71,41 @@
 # --- install_safe-rm - Install safe-rm.
 # ==============  Outline end ==============
 
+declare -A manual_ohmytool=(
+    ["new_vps_help"]="Reminde you what to install when you get a new server."
+    ["install_base"]="Install some base tools."
+    ["install_vpn"]="Install vpn with clash (Only support Linux)."
+    ["install_buildvpn"]="Install buildvpn on oversea server."
+    ["install_xui"]="Install x-ui to build vpn on oversea server."
+    ["install_docker"]="Install Docker (Only support Ubuntu)."
+    ["install_colorls"]="Install colorls and ruby (not suggestion!)."
+    ["install_trzsz"]="The trzsz ( trz / tsz ) is a simple file transfer tools."
+    ["install_tssh"]="A ssh client that supports trzsz."
+    ["install_spacevim"]="Install new version vim and spacevim."
+    ["install_server-administration"]="Install server-administration."
+    ["install_nginxproxy"]="Install nginx proxy."
+    ["install_homeweb"]="Install HomeWeb for Junbin Gao."
+    ["install_newtab"]="Install NewTab for Junbin Gao."
+    ["install_deepl"]="Install DeepL translate."
+    ["install_cloudreve"]="Install cloudreve."
+    ["install_overleaf"]="Install OverLeaf."
+    ["install_serverstatus"]="Monitor you server status."
+    ["install_frp"]="Intranet Penetration Tool."
+    ["install_chatgpt"]="Install chat web with chatgpt API."
+    ["install_webmonitor"]="Install web monitor."
+    ["install_vncdocker"]="Install vnc docker."
+    ["install_qbittorrent"]="Install qbittorrent."
+    ["install_jellyfin"]="Install jellyfin."
+    ["install_image"]="Install lsky-pro image."
+    ["install_samtools"]="TODO."
+    ["install_PBShelper"]="Install PBS helper."
+    ["install_htop_wo_sudo"]="Install htop without sudo."
+    ["install_autojump"]="Install autojump."
+    ["install_fzf"]="Install fzf."
+    ["install_copypaste"]="Install copypaste."
+    ["install_safe-rm"]="Install safe-rm."
+)
+
 ohmytool(){
     echo -e 'This is a ToolKit for server manager by
 one-click installation and environment set.'

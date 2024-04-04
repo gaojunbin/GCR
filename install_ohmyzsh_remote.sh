@@ -1,14 +1,19 @@
-git clone https://github.com/gaojunbin/GCR.git ~/GCR
-cd ~/GCR
+# git clone https://github.com/gaojunbin/GCR.git ~/GCR
+# cd ~/GCR
+
+source .ohmyprint
+
+# Welcome message
+print_table_text "Welcome to install JUNBIN GCR!" "false" "yellow" "red" $(tput cols)
+
 
 # is root?
-echo -e "Are you in the root group? ([y]/n)? \c"
+print_text "green" "Are you in the root group? ([y]/n)? " "false"
 read root_yon
 root_yon=${root_yon:-y}
 
 # uninstall old version
-echo -e "Uninstall old version? ([y]/n)? \c"
-
+print_text "green" "Uninstall old version? ([y]/n)? " "false"
 read yon
 you=${yon:-y}
 
@@ -18,18 +23,20 @@ if [ "${yon}" = "y" ];then
     rm -rf ~/.ohmyzsh
     rm -rf ~/.p9k.zsh
     rm -rf ~/.oh-my-zsh
+    rm -rf ~/.ohmyprint
 fi
+unset yon
 
 # mv to $HOME
 cp .ohmyshell ~/
 cp .ohmytool ~/
 cp .ohmyzsh ~/
 cp .p9k.zsh ~/
+cp .ohmyprint ~/
 cp -r oh-my-zsh ~/.oh-my-zsh
 
 # install zsh
-echo -e "Install zsh? ([y]/n)? \c"
-
+print_text "green" "Install zsh? ([y]/n)? " "false"
 read yon
 yon=${yon:-y}
 
@@ -48,10 +55,10 @@ if [ "${yon}" = "y" ];then
         cd ~/GCR
     fi
 fi
+unset yon
 
 # add to .zshrc file
-echo -e "Rewrite .zshrc? ([y]/n)? \c"
-
+print_text "green" "Rewrite .zshrc? ([y]/n)? " "false"
 read yon
 yon=${yon:-y}
 
@@ -68,9 +75,11 @@ else
     echo 'source ~/.ohmyshell' >> ~/.zshrc
 fi
 
-# set zsh as default
-echo -e "Set zsh as default? ([y]/n)? \c"
+unset yon
 
+
+# set zsh as default
+print_text "green" "Set zsh as default? ([y]/n)? " "false"
 read yon
 yon=${yon:-y}
 
@@ -83,8 +92,10 @@ if [ "${yon}" = "y" ];then
         echo 'exec $HOME/zsh/bin/zsh -l' >> ~/.bash_profile
     fi
 fi
+unset yon
 
-echo -e "Installing for ohmyzsh complete! Now you can restart shell."
+# Sucess message
+print_table_text "Successful! Please restart the shell!!" "yes" "yellow" "red" $(tput cols)
 
 cd
 rm -rf ~/GCR

@@ -1,0 +1,126 @@
+# Function to print a colored line
+print_line() {
+    local border_color="$1"
+    local width="$2"
+    local line=""
+    for ((i = 0; i < width; i++)); do
+        line+="═"
+    done
+    
+    case "$border_color" in
+        "black") border_color_code=30 ;;
+        "red") border_color_code=31 ;;
+        "green") border_color_code=32 ;;
+        "yellow") border_color_code=33 ;;
+        "blue") border_color_code=34 ;;
+        "magenta") border_color_code=35 ;;
+        "cyan") border_color_code=36 ;;
+        "white") border_color_code=37 ;;
+        *) border_color_code=37 ;; # Default to white if color not recognized
+    esac
+    printf "\e[${border_color_code}m%s\e[0m\n" "${line}"
+}
+
+# Function to print text with blink effect
+print_text() {
+    local text_color="$1"
+    local text="$2"
+    local blink="$3"
+    local width="$4"
+    with=${width:-${#text}}
+
+    local padding=""
+    local blink_color=""
+
+    case "$text_color" in
+        "black") text_color_code=30 ;;
+        "red") text_color_code=31 ;;
+        "green") text_color_code=32 ;;
+        "yellow") text_color_code=33 ;;
+        "blue") text_color_code=34 ;;
+        "magenta") text_color_code=35 ;;
+        "cyan") text_color_code=36 ;;
+        "white") text_color_code=37 ;;
+        *) text_color_code=37 ;; # Default to white if color not recognized
+    esac
+
+    # Create padding
+    for ((i = 0; i < (width - ${#text}) / 2; i++)); do
+        padding+=" "
+    done
+
+    # Set blink color if blinking
+    if [ "$blink" = "true" ]; then
+        blink_color="5;"
+    fi
+
+    # Print text with color and optional blink
+    printf "\e[%s%sm%s%s\e[0m\e[%sm\e[0m" "${blink_color}" "${text_color_code}" "${padding}" "${text}" "${padding}"
+    
+}
+
+print_table_text() {
+    local text="$1"
+    local blink="$2"
+    local text_color="$3"
+    local border_color="$4"
+    local lenth="$5"
+    local width=${lenth:-${#text}}
+    
+    local text_width=${#text}
+    local border=""
+    local padding=""
+    local blink_color=""
+    
+    # Set text color
+    local text_color_code=""
+    case "$text_color" in
+        "black") text_color_code=30 ;;
+        "red") text_color_code=31 ;;
+        "green") text_color_code=32 ;;
+        "yellow") text_color_code=33 ;;
+        "blue") text_color_code=34 ;;
+        "magenta") text_color_code=35 ;;
+        "cyan") text_color_code=36 ;;
+        "white") text_color_code=37 ;;
+        *) text_color_code=37 ;; # Default to white if color not recognized
+    esac
+    
+    # Set border color
+    local border_color_code=""
+    case "$border_color" in
+        "black") border_color_code=30 ;;
+        "red") border_color_code=31 ;;
+        "green") border_color_code=32 ;;
+        "yellow") border_color_code=33 ;;
+        "blue") border_color_code=34 ;;
+        "magenta") border_color_code=35 ;;
+        "cyan") border_color_code=36 ;;
+        "white") border_color_code=37 ;;
+        *) border_color_code=37 ;; # Default to white if color not recognized
+    esac
+    
+    # Create border
+    for ((i = 0; i < width; i++)); do
+        border+="═"
+    done
+    
+    # Create padding
+    for ((i = 0; i < (width-2 - ${#text}) / 2; i++)); do
+        padding+=" "
+    done
+    
+    # Set blink color if blinking
+    if [ "$blink" = "true" ]; then
+        blink_color="5;"
+    fi
+    
+    # Print border
+    printf "\e[%sm%s\e[0m\n" "${border_color_code}" "${border}"
+    
+    # Print text with color and optional blink
+    printf "\e[%sm|\e[%s%sm%s%s\e[0m\e[%sm%s|\e[0m\n" "${border_color_code}" "${blink_color}" "${text_color_code}" "${padding}" "${text}" "${border_color_code}" "${padding}"
+    
+    # Print border
+    printf "\e[%sm%s\e[0m\n" "${border_color_code}" "${border}"
+}
