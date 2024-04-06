@@ -84,66 +84,118 @@ else
     echo 'Your current rm is dangerous! Please run [install_safe-rm] first and restart your shell.'
 fi
 
+show_GCR_info(){
+    star_line=""
+    for ((i = 0; i < $(tput cols); i++)); do
+            star_line+="*"
+    done
+    print_text "green" $star_line "true"
+    printf "\n"
+    printf "\n"
+    print_text "yellow" "Welcome to GCR Toolkit!" "false" $(tput cols)
+    printf "\n"
+    printf "\n"
+    print_text "green" $star_line "true"
+    printf "\n"
+    printf "\n"
+    print_line "cyan" $(tput cols)
+    print_text "cyan" "Basic Info:" "false"
+    printf "\n"
+    printf "\t"
+    print_text "blue" "Author: " "false"
+    print_text "white" "Junbin Gao" "false"
+    printf "\n"
+    printf "\t"
+    print_text "blue" "Github: " "false"
+    print_text "white" "https://github.com/gaojunbin/GCR" "false"
+    printf "\n"
+    printf "\t"
+    print_text "blue" "Intro : " "false"
+    print_text "white" "GCR is a shell plugin that makes it easier and more elegant to use the command line on a unix operating system without having to memorize cumbersome, retarded commands." "false"
+    printf "\n"
+    print_line "cyan" $(tput cols)
+    print_text "cyan" "Manual:" "false"
+    printf "\n"
+    printf "\t"
+    print_text "blue" "ohmyshell: " "false"
+    print_text "white" "Some basic command in shell. Type " "false"
+    print_text "green" "$ ohmyshell " "false"
+    print_text "white" "see all the available functions. " "false"
+    printf "\n"
+    for k in "${(@k)manual_ohmyshell}"; do
+        printf "\t\t"
+        print_text "green" "$k: " "false"
+        print_text "white" "${manual_ohmyshell[$k]}" "false"
+        printf "\n"
+    done
 
+    printf "\n"
+    printf "\t"
+    print_text "blue" "ohmytool: " "false"
+    print_text "white" "One-click installation and environment setup toolkit. Type " "false"
+    print_text "green" "$ ohmytool " "false"
+    print_text "white" "see all the available functions. " "false"
+    printf "\n"
+    for k in "${(@k)manual_ohmytool}"; do
+        printf "\t\t"
+        print_text "green" "$k: " "false"
+        print_text "white" "${manual_ohmytool[$k]}" "false"
+        printf "\n"
+    done
+    print_line "cyan" $(tput cols)
+}
 # welcome message
-star_line=""
-for ((i = 0; i < $(tput cols); i++)); do
-        star_line+="*"
-done
-print_text "green" $star_line "true"
-printf "\n"
-printf "\n"
-print_text "yellow" "Welcome to GCR Toolkit!" "false" $(tput cols)
-printf "\n"
-printf "\n"
-print_text "green" $star_line "true"
-printf "\n"
-printf "\n"
-print_line "cyan" $(tput cols)
-print_text "cyan" "Basic Info:" "false"
-printf "\n"
-printf "\t"
-print_text "blue" "Author: " "false"
-print_text "white" "Junbin Gao" "false"
-printf "\n"
-printf "\t"
-print_text "blue" "Github: " "false"
-print_text "white" "https://github.com/gaojunbin/GCR" "false"
-printf "\n"
-printf "\t"
-print_text "blue" "Intro : " "false"
-print_text "white" "GCR is a shell plugin that makes it easier and more elegant to use the command line on a unix operating system without having to memorize cumbersome, retarded commands." "false"
-printf "\n"
-print_line "cyan" $(tput cols)
-print_text "cyan" "Manual:" "false"
-printf "\n"
-printf "\t"
-print_text "blue" "ohmyshell: " "false"
-print_text "white" "Some basic command in shell. Type " "false"
-print_text "green" "$ ohmyshell " "false"
-print_text "white" "see all the available functions. " "false"
-printf "\n"
-for k in "${(@k)manual_ohmyshell}"; do
-    printf "\t\t"
-    print_text "green" "$k: " "false"
-    print_text "white" "${manual_ohmyshell[$k]}" "false"
-    printf "\n"
-done
+if [ "${SHOW_GCR_INFO:-}" = "true" ]; then
+    show_GCR_info
+fi
 
-printf "\n"
-printf "\t"
-print_text "blue" "ohmytool: " "false"
-print_text "white" "One-click installation and environment setup toolkit. Type " "false"
-print_text "green" "$ ohmytool " "false"
-print_text "white" "see all the available functions. " "false"
-printf "\n"
-for k in "${(@k)manual_ohmytool}"; do
-    printf "\t\t"
-    print_text "green" "$k: " "false"
-    print_text "white" "${manual_ohmytool[$k]}" "false"
-    printf "\n"
-done
-print_line "cyan" $(tput cols)
+# if check update is not false, check update
+if [ "${CHECK_GCR_UPDATE:-}" != "false" ]; then
+    # if the OS is MacOS, check update
+    if [ "$(uname -s)" = Darwin ];then
+        remote_ohmyshell_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell | md5)
+        remote_ohmytool_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool | md5)
+        remote_ohmyzsh_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh | md5)
+        remote_p9k_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh | md5)
+        remote_vimrc_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc | md5)
+        remote_ohmyprint_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint | md5)
+
+        local_ohmyshell_MD5=$(md5 -q ~/.ohmyshell)
+        local_ohmytool_MD5=$(md5 -q ~/.ohmytool)
+        local_ohmyzsh_MD5=$(md5 -q ~/.ohmyzsh)
+        local_p9k_MD5=$(md5 -q ~/.p9k.zsh)
+        local_vimrc_MD5=$(md5 -q ~/.vimrc)
+        local_ohmyprint_MD5=$(md5 -q ~/.ohmyprint)
+
+    elif [ "$(uname -s)" = Linux ];then
+        remote_ohmyshell_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell | md5sum | awk '{print $1}')
+        remote_ohmytool_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool | md5sum | awk '{print $1}')
+        remote_ohmyzsh_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh | md5sum | awk '{print $1}')
+        remote_p9k_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh | md5sum | awk '{print $1}')
+        remote_vimrc_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc | md5sum | awk '{print $1}')
+        remote_ohmyprint_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint | md5sum | awk '{print $1}')
+
+        local_ohmyshell_MD5=$(md5sum ~/.ohmyshell | awk '{print $1}')
+        local_ohmytool_MD5=$(md5sum ~/.ohmytool | awk '{print $1}')
+        local_ohmyzsh_MD5=$(md5sum ~/.ohmyzsh | awk '{print $1}')
+        local_p9k_MD5=$(md5sum ~/.p9k.zsh | awk '{print $1}')
+        local_vimrc_MD5=$(md5sum ~/.vimrc | awk '{print $1}')
+        local_ohmyprint_MD5=$(md5sum ~/.ohmyprint | awk '{print $1}')
+    fi
+
+    if [ "${remote_ohmyshell_MD5}" != "${local_ohmyshell_MD5}" ] || \
+       [ "${remote_ohmytool_MD5}" != "${local_ohmytool_MD5}" ] || \
+       [ "${remote_ohmyzsh_MD5}" != "${local_ohmyzsh_MD5}" ] || \
+       [ "${remote_p9k_MD5}" != "${local_p9k_MD5}" ] || \
+       [ "${remote_vimrc_MD5}" != "${local_vimrc_MD5}" ] || \
+       [ "${remote_ohmyprint_MD5}" != "${local_ohmyprint_MD5}" ]; then
+
+        print_text "red" "GCR Toolkit has a newer version now! Type " "true"
+        print_text "green" "$ myupdate " "true"
+        print_text "red" "to update. " "true"
+        printf "\n"
+    fi
+fi
 
 # support update GCR Toolkit from GitHub Repo
 myupdate(){
@@ -155,7 +207,12 @@ myupdate(){
     curl -o ~/.vimrc https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc
     curl -o ~/.ohmyprint https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint
     print_table_text "Successful update!" "false" "yellow" "red" $(tput cols)
-    source ${shell_file}
+    if [ "${SHOW_GCR_INFO:-}" = "true" ]; then
+        source ${shell_file}
+    else
+        show_GCR_info
+        source ${shell_file}
+    fi
 }
 
 ohmyshell(){
@@ -321,17 +378,21 @@ sz(){
         if [ "$(uname -s)" = Linux ];then
             if [[ "${fod_name}" = "" ]] || [[ "${fod_name}" = "*" ]];then
                 print_text "green" "$ du -h --max-depth=${max_depth} *" "false"
+                printf "\n"
                 du -h --max-depth=${max_depth} *
             else
                 print_text "green" "$ du -h --max-depth=${max_depth} ${fod_name}" "false"
+                printf "\n"
                 du -h --max-depth=${max_depth} ${fod_name}
             fi
         elif [ "$(uname -s)" = Darwin ];then
             if [[ "${fod_name}" = "" ]] || [[ "${fod_name}" = "*" ]];then
                 print_text "green" "$ du -h -d ${max_depth} *" "false"
+                printf "\n"
                 du -h -d ${max_depth} *
             else
                 print_text "green" "$ du -h -d ${max_depth} ${fod_name}" "false"
+                printf "\n"
                 du -h -d ${max_depth} ${fod_name}
             fi
         else
