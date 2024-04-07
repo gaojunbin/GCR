@@ -1,5 +1,5 @@
-# git clone https://github.com/gaojunbin/GCR.git ~/GCR
-# cd ~/GCR
+git clone https://github.com/gaojunbin/GCR.git ~/GCR
+cd ~/GCR
 
 source .ohmyprint
 
