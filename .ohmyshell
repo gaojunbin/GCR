@@ -364,6 +364,7 @@ sz(){
     read func_num
     if [ "${func_num}" = 1 ];then
         print_text "green" "$ df -h" "false"
+        printf "\n"
         df -h
     elif [ "${func_num}" = 2 ];then
         print_text "green" "Input the folder or file to view (default: *, not support ~): " "false"
