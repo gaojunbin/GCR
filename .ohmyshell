@@ -79,7 +79,8 @@ fi
 # support safe-rm
 if [ -f ~/.safe-rm ];then
     alias rm='~/.safe-rm'
-    alias del='rm -rf'
+    alias del='~/.safe-rm -rf'
+    alias delf='/bin/rm -rf'
 else
     echo 'Your current rm is dangerous! Please run [install_safe-rm] first and restart your shell.'
 fi
