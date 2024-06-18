@@ -943,7 +943,19 @@ alias tb='tensorboard --logdir=./'
 # download files or folder
 alias download='tsz -r'
 # upload folder
-alias upload='trz -r'
+upload(){
+    echo -e '[1] File / Files'
+    echo -e '[2] Folder / Folders'
+    echo -e 'Your choose: \c'
+    read func_num
+    if [ "${func_num}" = 1 ];then
+        trz
+    elif [ "${func_num}" = 2 ];then
+        trz -r
+    else
+        echo -e 'Invalid Input!'
+    fi
+}
 # open ssh with tssh --dragfile
 alias tsshd='tssh --dragfile'
 # VPN commands (only for Linux)
