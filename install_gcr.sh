@@ -88,7 +88,7 @@ echo 'source ~/.ohmyshell' >> ~/.zshrc
 echo '# [ Added By GCR ]' >> ~/.zshrc
 
 # specfic for nscc
-if [ "${install_gcr_os}" = 5 ]]; then
+if [ "${install_gcr_os}" = 5 ]; then
     cp .zsh4nscc ~/
     echo 'source ~/.zsh4nscc' >> ~/.zshrc
 fi
