@@ -82,7 +82,7 @@ if [ -f ~/.safe-rm ];then
     alias del='~/.safe-rm -rf'
     alias delf='/bin/rm -rf'
 else
-    echo '[ GCR Warning ]Your current rm is dangerous! Please run [install_safe_rm] first and restart your shell.'
+    echo '[ GCR Warning ] Your current `rm` is dangerous! Please run [install_safe_rm] first and restart your shell.'
 fi
 
 show_update_info(){

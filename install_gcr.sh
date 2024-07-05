@@ -1,3 +1,4 @@
+#!/bin/bash
 git clone https://github.com/gaojunbin/GCR.git $HOME/GCR
 cd $HOME/GCR
 
@@ -27,6 +28,8 @@ print_text "white" "Plese select your OS: " "false"
 read install_gcr_os
 install_gcr_os=${install_gcr_os:-1}
 
+print_text "cyan" "Start copying configuration files..." "false"
+printf "\n"
 # mv to $HOME
 cp .ohmyshell ~/
 cp .ohmytool ~/
@@ -35,6 +38,8 @@ cp .p9k.zsh ~/
 cp .ohmyprint ~/
 cp -r oh-my-zsh ~/.oh-my-zsh
 
+print_text "cyan" "Start Installing zsh..." "false"
+printf "\n"
 # Install zsh and set zsh as default shell
 if [ "${install_gcr_os}" = 1 ];then
     # Ubuntu w/ sudo
@@ -56,6 +61,8 @@ if [ "${install_gcr_os}" = 2 ] || [ "${install_gcr_os}" = 4 ] || [ "${install_gc
         cd $HOME/GCR
 fi
 
+print_text "cyan" "Start generating zshrc file..." "false"
+printf "\n"
 # add to .zshrc file
 if [ -e "$HOME/.zshrc" ]; then
     print_text "green" "~/.zshrc already exists:" "false"

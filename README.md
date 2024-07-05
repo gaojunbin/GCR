@@ -3,7 +3,7 @@
 ## Install
 
 ```
-curl -s https://raw.githubusercontent.com/gaojunbin/GCR/master/install_ohmyzsh.sh -o ~/install_ohmyzsh.sh && bash ~/install_ohmyzsh.sh && rm ~/install_ohmyzsh.sh
+curl -s https://raw.githubusercontent.com/gaojunbin/GCR/master/install_gcr.sh -o ~/install_gcr.sh && bash ~/install_gcr.sh && rm ~/install_gcr.sh
 ```
 
 ## Introduction

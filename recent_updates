@@ -3,3 +3,13 @@ V1.0.0 release!
 1. Install GCR on multiple different operating systems with just one command! (It even supports one-click installation on NUS HPC and NSCC Singapore!) 🎉🎉
 
 2. Users can see detailed update content for each update.
+
+3. Support command $ delf : When you use safe-rm, if you are sure that you need to completely delete the file/folder without putting it in the Recycle Bin, use this command.
+
+Comming soon:
+
+1. Use dynamic soft link mapping to make hpc's file access on computing nodes and login nodes more unified.
+
+2. More detailed user manuals to help novices get the most out of Junbin GCR.
+
+3. More beautiful UI. 
