@@ -59,6 +59,7 @@ if [ "${install_gcr_os}" = 2 ] || [ "${install_gcr_os}" = 4 ] || [ "${install_gc
         echo 'exec $HOME/zsh/bin/zsh -l' >> ~/.bash_profile
         echo '# [Added By GCR]' >> ~/.bash_profile
         cd $HOME/GCR
+    fi
 fi
 
 print_text "cyan" "Start generating zshrc file..." "false"
