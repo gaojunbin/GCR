@@ -50,7 +50,7 @@ fi
 if [ "${install_gcr_os}" = 2 ] || [ "${install_gcr_os}" = 4 ] || [ "${install_gcr_os}" = 5 ]; then
     # Ubuntu/hpc/nscc w/o sudo
     if [ ! -e "$HOME/zsh/bin/zsh" ]; then
-        tar -xf zsh/zsh-5.9.tar.xz -C $HOME/zsh
+        mkdir -p $HOME/zsh && tar -xf zsh/zsh-5.9.tar.xz -C $HOME
         cd $HOME/zsh && ./configure --prefix=$HOME/zsh
         make && make install
         echo '# [Added By GCR]' >> ~/.bash_profile
@@ -67,9 +67,12 @@ printf "\n"
 # add to .zshrc file
 if [ -e "$HOME/.zshrc" ]; then
     print_text "green" "~/.zshrc already exists:" "false"
+    printf "\n"
     print_text "green" "========================" "false"
+    printf "\n"
     cat ~/.zshrc
     print_text "green" "========================" "false"
+    printf "\n"
     print_text "green" "Rewrite .zshrc? ([y]/n)? " "false"
     read yon
     yon=${yon:-y}
