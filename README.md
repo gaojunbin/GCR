@@ -2,15 +2,9 @@
 
 ## Install
 
-1. Linux
-
-   ```
-   curl -s https://raw.githubusercontent.com/gaojunbin/GCR/master/install_ohmyzsh_remote.sh -o ~/install_ohmyzsh_remote.sh && bash ~/install_ohmyzsh_remote.sh && rm ~/install_ohmyzsh_remote.sh
-   ```
-
-2. MacOS
-
-   Follow the steps in the file `install_ohmyzsh_mac.sh`.
+```
+curl -s https://raw.githubusercontent.com/gaojunbin/GCR/master/install_ohmyzsh.sh -o ~/install_ohmyzsh.sh && bash ~/install_ohmyzsh.sh && rm ~/install_ohmyzsh.sh
+```
 
 ## Introduction
 

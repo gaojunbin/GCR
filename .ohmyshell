@@ -82,8 +82,28 @@ if [ -f ~/.safe-rm ];then
     alias del='~/.safe-rm -rf'
     alias delf='/bin/rm -rf'
 else
-    echo 'Your current rm is dangerous! Please run [install_safe-rm] first and restart your shell.'
+    echo '[ GCR Warning ]Your current rm is dangerous! Please run [install_safe_rm] first and restart your shell.'
 fi
+
+show_update_info(){
+    star_line=""
+    for ((i = 0; i < $(tput cols); i++)); do
+            star_line+="*"
+    done
+    print_text "green" $star_line "true"
+    printf "\n"
+    printf "\n"
+    print_text "yellow" "🔥 Recent Updates 🔥" "false" $(tput cols)
+    printf "\n"
+    printf "\n"
+    print_text "green" $star_line "true"
+    printf "\n"
+    printf "\n"
+    print_line "cyan" $(tput cols)
+    curl https://raw.githubusercontent.com/gaojunbin/GCR/master/recent_updates
+    printf "\n"
+    print_line "cyan" $(tput cols)
+}
 
 show_GCR_info(){
     star_line=""
@@ -191,6 +211,7 @@ if [ "${CHECK_GCR_UPDATE:-}" != "false" ]; then
        [ "${remote_vimrc_MD5}" != "${local_vimrc_MD5}" ] || \
        [ "${remote_ohmyprint_MD5}" != "${local_ohmyprint_MD5}" ]; then
 
+        show_update_info
         print_text "red" "GCR Toolkit has a newer version now! Type " "true"
         print_text "green" "$ myupdate " "true"
         print_text "red" "to update. " "true"
@@ -207,13 +228,9 @@ myupdate(){
     curl -o ~/.p9k.zsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh
     curl -o ~/.vimrc https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc
     curl -o ~/.ohmyprint https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint
-    print_table_text "Successful update!" "false" "yellow" "red" $(tput cols)
-    if [ "${SHOW_GCR_INFO:-}" = "true" ]; then
-        source ${shell_file}
-    else
-        show_GCR_info
-        source ${shell_file}
-    fi
+    print_table_text "Success!" "false" "yellow" "red" $(tput cols)
+    show_update_info
+    source ${shell_file}
 }
 
 ohmyshell(){
