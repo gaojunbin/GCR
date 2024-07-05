@@ -77,6 +77,7 @@ if [ -e "$HOME/.zshrc" ]; then
         rm -f ~/.zshrc
     fi
     unset yon
+fi
 
 echo '# [ Added By GCR ]' >> ~/.zshrc
 echo SHOW_GCR_INFO="false" >> ~/.zshrc
