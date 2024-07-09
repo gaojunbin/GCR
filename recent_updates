@@ -4,7 +4,9 @@ V1.0.0 release!
 
 2. Users can see detailed update content for each update.
 
-3. Support command $ delf : When you use safe-rm, if you are sure that you need to completely delete the file/folder without putting it in the Recycle Bin, use this command.
+3. Support command `$ delf` : When you use safe-rm, if you are sure that you need to completely delete the file/folder without putting it in the Recycle Bin, use this command.
+
+4. Optimized `$ download` to make it more intuitive. Now you can use this command at will without any restrictions.
 
 Comming soon:
 

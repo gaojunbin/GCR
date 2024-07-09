@@ -21,19 +21,19 @@
 # --- Others
 # ========Outline end============
 
-declare -A manual_ohmyshell=(
-    ["myupdate"]="support update GCR Toolkit from GitHub Repo."
-    ["mytool"]="Some basic tools for common using."
-    ["mypip"]="pip tools."
-    ["myenv"]="Anaconda tools."
-    ["mygpu"]="useful functions for GPU and cuda."
-    ["mypermission"]="some functions for permission, passward, etc."
-    ["mygit"]="Git tools"
-)
 
 # shell type [~/.bashrc or ~/.zshrc]
 # support tabby shell working directory reporting
 if [[ "$SHELL" == *"zsh" ]];then
+    declare -A manual_ohmyshell=(
+        ["myupdate"]="support update GCR Toolkit from GitHub Repo."
+        ["mytool"]="Some basic tools for common using."
+        ["mypip"]="pip tools."
+        ["myenv"]="Anaconda tools."
+        ["mygpu"]="useful functions for GPU and cuda."
+        ["mypermission"]="some functions for permission, passward, etc."
+        ["mygit"]="Git tools"
+    )
     shell_file=~/.zshrc
     precmd () { echo -n "\x1b]1337;CurrentDir=$(pwd)\x07" }
 elif [[ "$SHELL" == *"bash" ]];then
@@ -135,34 +135,40 @@ show_GCR_info(){
     print_text "white" "GCR is a shell plugin that makes it easier and more elegant to use the command line on a unix operating system without having to memorize cumbersome, retarded commands." "false"
     printf "\n"
     print_line "cyan" $(tput cols)
-    print_text "cyan" "Manual:" "false"
-    printf "\n"
-    printf "\t"
-    print_text "blue" "ohmyshell: " "false"
-    print_text "white" "Some basic command in shell. Type " "false"
-    print_text "green" "$ ohmyshell " "false"
-    print_text "white" "see all the available functions. " "false"
-    printf "\n"
-    for k in "${(@k)manual_ohmyshell}"; do
-        printf "\t\t"
-        print_text "green" "$k: " "false"
-        print_text "white" "${manual_ohmyshell[$k]}" "false"
-        printf "\n"
-    done
+    if [[ "$SHELL" == *"zsh" ]];then
+        for k in "${(@k)manual_ohmyshell}"; do
+            print_text "cyan" "Manual:" "false"
+            printf "\n"
+            printf "\t"
+            print_text "blue" "ohmyshell: " "false"
+            print_text "white" "Some basic command in shell. Type " "false"
+            print_text "green" "$ ohmyshell " "false"
+            print_text "white" "see all the available functions. " "false"
+            printf "\n"
+            printf "\t\t"
+            print_text "green" "$k: " "false"
+            print_text "white" "${manual_ohmyshell[$k]}" "false"
+            printf "\n"
 
-    printf "\n"
-    printf "\t"
-    print_text "blue" "ohmytool: " "false"
-    print_text "white" "One-click installation and environment setup toolkit. Type " "false"
-    print_text "green" "$ ohmytool " "false"
-    print_text "white" "see all the available functions. " "false"
-    printf "\n"
-    for k in "${(@k)manual_ohmytool}"; do
-        printf "\t\t"
-        print_text "green" "$k: " "false"
-        print_text "white" "${manual_ohmytool[$k]}" "false"
-        printf "\n"
-    done
+            printf "\n"
+            printf "\t"
+            print_text "blue" "ohmytool: " "false"
+            print_text "white" "One-click installation and environment setup toolkit. Type " "false"
+            print_text "green" "$ ohmytool " "false"
+            print_text "white" "see all the available functions. " "false"
+            printf "\n"
+            for k in "${(@k)manual_ohmytool}"; do
+                printf "\t\t"
+                print_text "green" "$k: " "false"
+                print_text "white" "${manual_ohmytool[$k]}" "false"
+                printf "\n"
+            done
+                done
+            else
+                printf "\t\t"
+                print_text "green" "ERROR! Only support zsh!" "false"
+                printf "\n"
+    fi
     print_line "cyan" $(tput cols)
 }
 # welcome message
@@ -290,18 +296,37 @@ listen(){
     read func_num
     if [[ "${func_num}" = 1 ]] || [[ "${func_num}" = "" ]];then
         echo '[1] -L :Local Forwarding - Local port listen the remote port.'
-        echo -e 'The Host: \c'
-        read Host
-        echo -e 'The Remote Port: \c'
-        read RPort
-        echo -e 'The Local Port (default: = Remote Port): \c'
-        read LPort
-        if [ "${LPort}" = "" ];then
-            LPort=${RPort}
+
+        if [[ "$SHELL" == *"zsh" ]];then
+            hosts=$(grep -E '^\s*Host\s' ~/.ssh/config | awk '{print $2}')
+            hosts_array=("${(f)hosts}")
+        elif [[ "$SHELL" == *"bash" ]];then
+            hosts=$(grep -E '^\s*Host\s' ~/.ssh/config | awk '{print $2}')
+            IFS=$'\n' hosts_array=($hosts)
+        else
+            echo 'Invalid shell type: ' $SHELL
         fi
-        echo -e "$ ssh -L localhost:${LPort}:localhost:${RPort} ${Host} -N"
-        echo -e "Running at: \033[4mhttp://localhost:${LPort}\033[0m"
-        ssh -L localhost:${LPort}:localhost:${RPort} ${Host} -N
+
+        PS3='The Host:'
+        select host in "${hosts_array[@]}"; do
+            if [ -n "$host" ]; then
+                echo -e 'The Remote Port: \c'
+                read RPort
+                echo -e 'The Local Port (default: = Remote Port): \c'
+                read LPort
+                if [ "${LPort}" = "" ];then
+                    LPort=${RPort}
+                fi
+                echo -e "$ ssh -L localhost:${LPort}:localhost:${RPort} ${Host} -N"
+                echo -e "Running at: \033[4mhttp://localhost:${LPort}\033[0m"
+                ssh -L localhost:${LPort}:localhost:${RPort} ${Host} -N
+                break
+            else
+                echo "Invalid selection, please select again."
+            fi
+        done
+        unset PS3
+
     elif [ "${func_num}" = 2 ];then
         echo '[2] -R :Remote Forwarding - Remote port listen the local port.'
         echo -e 'The Host: \c'
@@ -652,20 +677,85 @@ mypip(){
 # 4. denv - Delete an installed environment
 
 # conda activate
-env(){
-    if [ "${1}" = "" ]; then
-        conda env list
-        print_text "green" "Input the environment name to activate: " "false"
-        read Env_name
-        if [ "${Env_name}" = "" ]; then
-            print_text "gree" "$ conda deactivate" "false"
-            conda deactivate
+env() {
+    if [ -z "$1" ]; then
+        # 获取终端宽度
+        terminal_width=$(tput cols)
+
+        # 获取conda环境列表
+        conda_env_list=$(conda env list | tail -n +3)
+
+        # 定义颜色和格式
+        bold=$(tput bold)
+        normal=$(tput sgr0)
+        blue=$(tput setaf 4)
+        green=$(tput setaf 2)
+
+        # 计算合适的列宽
+        env_name_width=$((terminal_width * 25 / 70))
+        location_width=$((terminal_width * 35 / 70))
+
+        # 打印表头
+        printf "${bold}${blue}%-*s${green}%-*s${normal}%-10s\n" "$env_name_width" "Environment Name" "$location_width" "Location" "Active"
+        printf '%*s\n' "$terminal_width" | tr ' ' '='
+
+        # 打印conda环境列表，格式化对齐并添加颜色和激活状态
+        echo "$conda_env_list" | awk -v bold="$bold" -v normal="$normal" -v blue="$blue" -v green="$green" \
+        -v env_name_width="$env_name_width" -v location_width="$location_width" '
+        {
+            if ($1 == "*") {
+                env_name = $2
+                location = $3
+                active = "✅"
+            } else if ($2 == "*") {
+                env_name = $1
+                location = $3
+                active = "✅"
+            } else {
+                env_name = $1
+                location = $2
+                active = "❎"
+            }
+            printf("%-*s%-*s%-10s\n", env_name_width, env_name, location_width, location, active)
+        }' | column -t -s ' ' | while IFS= read -r line; do
+            env_name=$(echo "$line" | awk '{print $1}')
+            location=$(echo "$line" | awk '{print $2}')
+            active=$(echo "$line" | awk '{print $3}')
+            printf "${blue}%-*s${green}%-*s${normal}%-10s\n" "$env_name_width" "$env_name" "$location_width" "$location" "$active"
+        done
+
+        # 恢复终端颜色
+        tput sgr0
+
+        printf '\n'
+        # 提取环境名称列表
+        condaenvs=$(echo "$conda_env_list" | grep "^\w" | awk '{print $1}')
+
+        # 根据shell类型生成环境数组
+        if [[ "$SHELL" == *"zsh" ]]; then
+            envs_array=("${(f)condaenvs}")
+        elif [[ "$SHELL" == *"bash" ]]; then
+            IFS=$'\n' read -r -d '' -a envs_array <<< "$condaenvs"
         else
-            conda activate ${Env_name};
+            echo 'Invalid shell type: ' $SHELL
+            return 1
         fi
-	else
-		conda activate ${1}
-	fi
+
+        PS3='The environment to activate: '
+        select env in "${envs_array[@]}" "deactivate"; do
+            if [ "$env" = "deactivate" ]; then
+                conda deactivate
+                break
+            elif [ -n "$env" ]; then
+                echo "activate environment: $env"
+                conda activate "$env"
+                break
+            fi
+        done
+        unset PS3
+    else
+        conda activate "$1"
+    fi
 }
 
 # list conda envs
@@ -958,7 +1048,22 @@ alias code='open -a "Visual Studio Code"'
 # open tensorboard with tb
 alias tb='tensorboard --logdir=./'
 # download files or folder
-alias download='tsz -r'
+download() {
+  if [ $# -eq 1 ]; then
+    tsz "$1"
+  else
+    echo "Please select a file or folder to download:"
+    select file in *; do
+      if [ -n "$file" ]; then
+        tsz -r "$file"
+        break
+      else
+        echo "Invalid selection, please make a new selection."
+      fi
+    done
+  fi
+}
+
 # upload folder
 upload(){
     echo -e '[1] File / Files'
@@ -975,6 +1080,7 @@ upload(){
 }
 # open ssh with tssh --dragfile
 alias tsshd='tssh --dragfile'
+alias tssh='tssh --dragfile'
 # VPN commands (only for Linux)
 startvpn(){
     echo 'Start VPN in terminal!'
