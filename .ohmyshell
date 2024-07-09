@@ -1052,7 +1052,7 @@ download() {
   if [ $# -eq 1 ]; then
     tsz "$1"
   else
-    echo "Please select a file or folder to download:"
+    PS3='Please select a file or folder to download: '
     select file in *; do
       if [ -n "$file" ]; then
         tsz -r "$file"
@@ -1061,6 +1061,7 @@ download() {
         echo "Invalid selection, please make a new selection."
       fi
     done
+    unset PS3
   fi
 }
 
