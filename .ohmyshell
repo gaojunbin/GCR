@@ -78,9 +78,54 @@ fi
 
 # support safe-rm
 if [ -f ~/.safe-rm ];then
+    # check update safe-rm
+    if [ "$(uname -s)" = Darwin ];then
+        local remote_saferm_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/safe-rm/safe-rm | md5)
+        local local_saferm_MD5=$(md5 -q ~/.safe-rm)
+    elif [ "$(uname -s)" = Linux ];then
+        local remote_saferm_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/safe-rm/safe-rm | md5sum | awk '{print $1}')
+        local local_saferm_MD5=$(md5sum ~/.safe-rm | awk '{print $1}')
+    fi
+    if [ "${remote_saferm_MD5}" != "${local_saferm_MD5}" ]; then
+        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/safe-rm/safe-rm -o $HOME/.safe-rm
+        chmod +x $HOME/.safe-rm
+        print_text "green" "safe-rm has a newer version now. Already updated! 🎉" "true"
+        printf "\n"
+    fi
+
+    trash_dir=${SAFE_RM_TRASH:="$HOME/.Trash"}
     alias rm='~/.safe-rm'
     alias del='~/.safe-rm -rf'
     alias delf='/bin/rm -rf'
+
+    empty_trash() {
+        echo "Do you want to:"
+        echo "1) Clear all files in the Trash"
+        echo "2) Clear files not used for over 30 days in the Trash"
+        echo -n "Enter your choice (1 or 2): "
+        read choice
+
+        case $choice in
+            1)
+                print_text "green" "Clearing all files in the Trash..." "true"
+                printf "\n"
+                /bin/rm -rf "$trash_dir"/*
+                print_text "green" "All files in the Trash have been cleared." "false"
+                printf "\n"
+                ;;
+            2)
+                print_text "green" "Clearing files not used for over 30 days in the Trash..." "true"
+                printf "\n"
+                find "$trash_dir" -type f -mtime +30 -exec /bin/rm -f {} \;
+                find "$trash_dir" -type d -empty -mtime +30 -exec rmdir {} \;
+                print_text "green" "Files not used for over 30 days in the Trash have been cleared." "false"
+                printf "\n"
+                ;;
+            *)
+                echo "Invalid choice. Please enter 1 or 2."
+                ;;
+        esac
+    }
 else
     echo '[ GCR Warning ] Your current `rm` is dangerous! Please run [install_safe_rm] first and restart your shell.'
 fi
@@ -209,19 +254,23 @@ if [ "${CHECK_GCR_UPDATE:-}" != "false" ]; then
         local_vimrc_MD5=$(md5sum ~/.vimrc | awk '{print $1}')
         local_ohmyprint_MD5=$(md5sum ~/.ohmyprint | awk '{print $1}')
     fi
-
+        
     if [ "${remote_ohmyshell_MD5}" != "${local_ohmyshell_MD5}" ] || \
        [ "${remote_ohmytool_MD5}" != "${local_ohmytool_MD5}" ] || \
        [ "${remote_ohmyzsh_MD5}" != "${local_ohmyzsh_MD5}" ] || \
        [ "${remote_p9k_MD5}" != "${local_p9k_MD5}" ] || \
        [ "${remote_vimrc_MD5}" != "${local_vimrc_MD5}" ] || \
        [ "${remote_ohmyprint_MD5}" != "${local_ohmyprint_MD5}" ]; then
-
-        show_update_info
-        print_text "red" "GCR Toolkit has a newer version now! Type " "true"
-        print_text "green" "$ myupdate " "true"
-        print_text "red" "to update. " "true"
-        printf "\n"
+        
+        if [ "${AUTO_GCR_UPDATE:-}" != "false" ]; then
+            myupdate
+        else
+            show_update_info
+            print_text "red" "GCR Toolkit has a newer version now! Type " "true"
+            print_text "green" "$ myupdate " "true"
+            print_text "red" "to update. " "true"
+            printf "\n"
+        fi
     fi
 fi
 

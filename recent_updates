@@ -1,17 +1,11 @@
-V1.0.0 release!
+V1.0.1 发布啦!
 
-1. Install GCR on multiple different operating systems with just one command! (It even supports one-click installation on NUS HPC and NSCC Singapore!) 🎉🎉
+1. 新版本GCR自动更新默认打开，无需手动运行myupdate (可以通过手动设置CHECK_GCR_UPDATE和AUTO_GCR_UPDATE环境变量关闭自动更新)
 
-2. Users can see detailed update content for each update.
+2. 对于safe-rm用户,将开启自动更新safe-rm, 删除超过10G大小的文件讲将会询问用户是否放入回收站，提升大文件删除体验。
 
-3. Support command `$ delf` : When you use safe-rm, if you are sure that you need to completely delete the file/folder without putting it in the Recycle Bin, use this command.
+3. 对于safe-rm用户，新增$ empty_trash，方便随时清理回收站，支持清空回收站或清理30天以上的文件。
 
-4. Optimized `$ download` to make it more intuitive. Now you can use this command at will without any restrictions.
+4. 优化download, tssh （新版将废弃tsshd）
 
-Comming soon:
-
-1. Use dynamic soft link mapping to make hpc's file access on computing nodes and login nodes more unified.
-
-2. More detailed user manuals to help novices get the most out of Junbin GCR.
-
-3. More beautiful UI. 
+5. 修复一些bug
