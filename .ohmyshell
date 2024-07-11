@@ -1099,7 +1099,7 @@ alias tb='tensorboard --logdir=./'
 # download files or folder
 download() {
   if [ $# -eq 1 ]; then
-    tsz "$1"
+    tsz -r "$1"
   else
     PS3='Please select a file or folder to download: '
     select file in *; do
