@@ -221,6 +221,20 @@ if [ "${SHOW_GCR_INFO:-}" = "true" ]; then
     show_GCR_info
 fi
 
+# support update GCR Toolkit from GitHub Repo
+myupdate(){
+    print_table_text "Updating GCR ..." "true" "yellow" "red" $(tput cols)
+    curl -o ~/.ohmyshell https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell
+    curl -o ~/.ohmytool https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool 
+    curl -o ~/.ohmyzsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh
+    curl -o ~/.p9k.zsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh
+    curl -o ~/.vimrc https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc
+    curl -o ~/.ohmyprint https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint
+    print_table_text "Success!" "false" "yellow" "red" $(tput cols)
+    show_update_info
+    source ${shell_file}
+}
+
 # if check update is not false, check update
 if [ "${CHECK_GCR_UPDATE:-}" != "false" ]; then
     # if the OS is MacOS, check update
@@ -273,20 +287,6 @@ if [ "${CHECK_GCR_UPDATE:-}" != "false" ]; then
         fi
     fi
 fi
-
-# support update GCR Toolkit from GitHub Repo
-myupdate(){
-    print_table_text "Updating GCR ..." "true" "yellow" "red" $(tput cols)
-    curl -o ~/.ohmyshell https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell
-    curl -o ~/.ohmytool https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool 
-    curl -o ~/.ohmyzsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh
-    curl -o ~/.p9k.zsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh
-    curl -o ~/.vimrc https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc
-    curl -o ~/.ohmyprint https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint
-    print_table_text "Success!" "false" "yellow" "red" $(tput cols)
-    show_update_info
-    source ${shell_file}
-}
 
 ohmyshell(){
     print_table_text "List all func in .ohmyshell" "false" "green" "cyan" $(tput cols)
