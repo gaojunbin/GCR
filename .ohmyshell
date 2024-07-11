@@ -1183,4 +1183,15 @@ uview(){
     fi
 }
 
+# add to docker group
+dockeradd(){
+    print_text "green" "This is a funtion to add user to docker group." "false"
+    printf "\n"
+    print_text "green" "Input the user to add (default: $(whoami)):" "false"
+    read user
+    user=${user:-$(whoami)}
+    sudo gpasswd -a $user docker     #将登陆用户加入到docker用户组中
+    newgrp docker     #更新用户组
+}
+
 # <<< Others end <<<
