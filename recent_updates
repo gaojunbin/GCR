@@ -1,9 +1,9 @@
 V1.0.2 发布啦! 🎉🎉🎉
 
-1. 新增code命令, 可以在终端直接使用vs code或sublime text编辑文件, 支持本地和远程。远程支持需要运行 install_discard_vim 安装。(需要同时更新本地GCR和远程GCR)
+1. 新增code命令, 可以在终端直接使用vs code或sublime text编辑文本文件, 支持本地和远程。远程支持需要运行 install_discard_vim 安装。(需要同时更新本地GCR至最新版) [后续或许会逐步取代原生vim, vi]
 
-2. 对于safe-rm用户, 新增$ empty_trash, 方便随时清理回收站, 支持清空回收站或清理30天以上的文件。
+2. 新增l命令, 支持终端文件浏览工具joshuto, 使用前需运行install_joshuto安装(支持多平台)。[后续或许会逐步取代原生ls, ll等命令]
 
-3. 优化download (支持同时下载多个文件以及通配符，如 download a.txt b.txt, download *.txt等), tssh (tssh默认支持文件拖拽上传, 新版将废弃tsshd) 
+3. 优化download (支持同时下载多个文件以及通配符，如 download a.txt b.txt, download *.txt等), tssh (tssh默认支持文件拖拽上传) [后或许会废弃tsshd]
 
 4. 修复一些bug

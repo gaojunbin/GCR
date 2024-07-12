@@ -21,6 +21,7 @@
 # --- Others
 # ========Outline end============
 
+export PATH=$HOME:$PATH
 
 # shell type [~/.bashrc or ~/.zshrc]
 # support tabby shell working directory reporting
@@ -1100,6 +1101,16 @@ else
     alias la='ls -A'
     alias l='ls -CF'
 fi
+
+# support joshuto
+if command -v joshuto >/dev/null 2>&1; then
+    alias l='joshuto'
+fi
+
+if [[ -f $HOME/.joshuto/target/release/joshuto ]]; then
+    alias l="$HOME/.joshuto/target/release/joshuto"
+fi
+
 # clear terminal
 alias cl='clear'
 # view code with format
