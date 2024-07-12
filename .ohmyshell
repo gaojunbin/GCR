@@ -1139,13 +1139,9 @@ upload(){
     fi
 }
 # open ssh with tssh --dragfile
-if [ -f ~/.rmate ];then
-    alias tssh='tssh --dragfile -R 52698:localhost:52698'
-    alias tsshd='tssh --dragfile -R 52698:localhost:52698'
-else
-    alias tssh='tssh --dragfile'
-    alias tsshd='tssh --dragfile'
-fi
+
+alias tssh='tssh --dragfile -R 52698:localhost:52698'
+alias tsshd='tssh --dragfile -R 52698:localhost:52698'
 
 # VPN commands (only for Linux)
 startvpn(){
