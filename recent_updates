@@ -6,6 +6,6 @@ V1.0.1 发布啦! 🎉🎉🎉
 
 3. 对于safe-rm用户，新增$ empty_trash，方便随时清理回收站，支持清空回收站或清理30天以上的文件。
 
-4. 优化download, tssh （新版将废弃tsshd）
+4. 优化download (支持同时下载多个文件以及通配符，如 download a.txt b.txt, download *.txt等), tssh （新版将废弃tsshd）
 
 5. 修复一些bug

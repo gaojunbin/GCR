@@ -671,12 +671,13 @@ pipi(){
     if [ "${1}" = "" ]; then
         echo -e 'whether to $ pip install req*.txt? ([y]/n)? \c'
         read yon
+        yon=${yon:-y}
         if [ "${yon}" = "y" ];then
             pip install -r req*.txt
         fi
     else
-        echo -e "$ pip install ${1}"
-        pip install ${1}
+        echo -e "$ pip install $@"
+        pip install "$@"
     fi
 }
 
@@ -688,7 +689,7 @@ pipu(){
         read pkg
         pip uninstall ${pkg} 
     else
-       pip uninstall ${1}
+       pip uninstall "$@"
     fi
 }
 
@@ -1098,8 +1099,8 @@ alias code='open -a "Visual Studio Code"'
 alias tb='tensorboard --logdir=./'
 # download files or folder
 download() {
-  if [ $# -eq 1 ]; then
-    tsz -r "$1"
+  if [ $# -ge 1 ]; then
+    tsz -r "$@"
   else
     PS3='Please select a file or folder to download: '
     select file in *; do
