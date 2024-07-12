@@ -130,6 +130,17 @@ else
     echo '[ GCR Warning ] Your current `rm` is dangerous! Please run [install_safe_rm] first and restart your shell.'
 fi
 
+if [ -n "$SSH_CONNECTION" ]; then
+    # remote server
+    # support discard-vim
+    if [ -f ~/.rmate ];then
+        alias code='~/.rmate'
+    fi
+else
+    # open with vs code (local)
+    alias code='open -a "Visual Studio Code"'
+fi
+
 show_update_info(){
     star_line=""
     for ((i = 0; i < $(tput cols); i++)); do
@@ -1093,8 +1104,6 @@ fi
 alias cl='clear'
 # view code with format
 alias pcat='pygmentize -g'
-# open with vs code (only on MacOS)
-alias code='open -a "Visual Studio Code"'
 # open tensorboard with tb
 alias tb='tensorboard --logdir=./'
 # download files or folder
@@ -1130,8 +1139,14 @@ upload(){
     fi
 }
 # open ssh with tssh --dragfile
-alias tsshd='tssh --dragfile'
-alias tssh='tssh --dragfile'
+if [ -f ~/.rmate ];then
+    alias tssh='tssh --dragfile -R 52698:localhost:52698'
+    alias tsshd='tssh --dragfile -R 52698:localhost:52698'
+else
+    alias tssh='tssh --dragfile'
+    alias tsshd='tssh --dragfile'
+fi
+
 # VPN commands (only for Linux)
 startvpn(){
     echo 'Start VPN in terminal!'

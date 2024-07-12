@@ -68,7 +68,10 @@
 # |
 # --- install_copypaste - Install copypaste.
 # |
-# --- install_safe-rm - Install safe-rm.
+# --- install_safe_rm - Install safe-rm.
+# |
+# --- install_discard_vim - Install discard-vim to enable use vscode or sublime to edit file.
+# |
 # ==============  Outline end ==============
 
 if [[ "$SHELL" == *"zsh" ]];then
@@ -104,7 +107,8 @@ if [[ "$SHELL" == *"zsh" ]];then
         ["install_autojump"]="Install autojump."
         ["install_fzf"]="Install fzf."
         ["install_copypaste"]="Install copypaste."
-        ["install_safe-rm"]="Install safe-rm."
+        ["install_safe_rm"]="Install safe-rm."
+        ["install_discard_vim"]="Install discard-vim to enable use vscode or sublime to edit file."
     )
 fi
 
@@ -143,7 +147,8 @@ one-click installation and environment set.'
     echo -e '[*] install_autojump - Install autojump.'
     echo -e '[*] install_fzf      - Install fzf.'
     echo -e '[*] install_copypaste - Install copypaste.'
-    echo -e '[*] install_safe-rm  - Install safe-rm.'
+    echo -e '[*] install_safe_rm  - Install safe-rm.'
+    echo -e '[*] install_discard_vim - Install discard-vim to enable use vscode or sublime to edit file.'
 }
 
 # Reminde you what to install when you get a new server.
@@ -172,7 +177,8 @@ new_vps_help(){
     echo '20. If you need deploy qbittorrent, [ install_qbittorrent ].'
     echo '21. If you need deploy jellyfin, [ install_jellyfin ].'
     echo '22. If you need deploy lsky-pro image, [ install_image ].'
-    echo '23. If you need deploy safe-rm, [ install_safe-rm ].'
+    echo '23. If you need deploy safe-rm, [ install_safe_rm ].'
+    echo '24. If you need deploy dicard-vim, [ install_discard_vim ].'
     echo 'After you installed all the server you needed, please config the nginx proxy.'
 }
 
@@ -1066,8 +1072,35 @@ EOF
 
 # install safe-rm
 install_safe_rm(){
-    echo -e 'Install safe-rm.'
+    print_text "green" 'Install safe-rm.' "false"
     curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/safe-rm/safe-rm -o $HOME/.safe-rm
     chmod +x $HOME/.safe-rm
-    echo "install safe-rm successfully."
+    print_text "green" "Install safe-rm successfully. Please restart your terminal." "true"
+}
+
+# install discard-vim
+install_discard_vim(){
+    print_text "green" "Install discard-vim." "false"
+    printf "\n"
+    curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/discard-vim/rmate -o $HOME/.rmate
+    chmod +x $HOME/.rmate
+    print_text "green" "Install discard-vim successfully. Please restart your terminal." "true"
+    printf "\n"
+    print_text "green" "You also need to install the plug-in on your local computer as follows:" "false"
+    printf "\n"
+    print_text "yellow" "1. For Sublime Text Users:" "false"
+    printf "\n"
+    echo "   - Install the package 'rsub' via Package Control."
+    echo "Press Cmd + Shift + P for Mac, select `Package Control: Install Package`, and, finally, select rsub."
+    print_text "yellow" "2. For VSCode Users:" "false"
+    printf "\n"
+    echo "   - Install the extension 'Remote VSCode' via the Extensions Marketplace."
+    echo "Press Cmd + Shift + P for Mac and Open User Sttings, and add the following configuration:"
+    print_text "yellow" "   //-------- Remote VSCode configuration --------
+    "remote.port": 52698
+    "remote.onstartup": true
+    "remote.host": "127.0.0.1"
+    "remote.dontShowPortAlreadyInUseError": false
+    //-------- Remote VSCode configuration --------" "false"
+    printf "\n"
 }
