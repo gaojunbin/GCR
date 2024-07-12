@@ -1103,8 +1103,11 @@ else
 fi
 
 # support joshuto
-if command -v joshuto >/dev/null 2>&1 || [[ -f $HOME/.joshuto/target/release/joshuto ]]; then
+if command -v joshuto >/dev/null 2>&1; then
     alias l='joshuto'
+fi
+if [[ -f $HOME/.joshuto/target/release/joshuto ]]; then
+    alias l='$HOME/.joshuto/target/release/joshuto'
 fi
 
 # clear terminal
