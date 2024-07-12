@@ -1103,12 +1103,8 @@ else
 fi
 
 # support joshuto
-if command -v joshuto >/dev/null 2>&1; then
+if command -v joshuto >/dev/null 2>&1 || [[ -f $HOME/.joshuto/target/release/joshuto ]]; then
     alias l='joshuto'
-fi
-
-if [[ -f $HOME/.joshuto/target/release/joshuto ]]; then
-    alias l="$HOME/.joshuto/target/release/joshuto"
 fi
 
 # clear terminal
@@ -1215,6 +1211,23 @@ dockeradd(){
     user=${user:-$(whoami)}
     sudo gpasswd -a $user docker     #将登陆用户加入到docker用户组中
     newgrp docker     #更新用户组
+}
+
+myupdateplug(){
+    if command -v joshuto >/dev/null 2>&1 || [[ -f $HOME/.joshuto/target/release/joshuto ]]; then
+        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/icons.toml -o $HOME/.config/joshuto/icons.toml
+        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/joshuto.toml -o $HOME/.config/joshuto/joshuto.toml
+        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/keymap.toml -o $HOME/.config/joshuto/keymap.toml
+        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/mimetype.toml -o $HOME/.config/joshuto/mimetype.toml
+        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/preview_file.sh -o $HOME/.config/joshuto/preview_file.sh
+        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/theme.toml -o $HOME/.config/joshuto/theme.toml
+        chmod +x $HOME/.config/joshuto/preview_file.sh
+    fi
+    
+    if [ -d ~/.PBShelper ];then
+        /bin/rm -rf ~/.PBShelper
+        git clone https://github.com/gaojunbin/PBShelper.git ~/.PBShelper
+    fi
 }
 
 # <<< Others end <<<
