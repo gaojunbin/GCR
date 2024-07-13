@@ -187,6 +187,8 @@ new_vps_help(){
     echo 'After you installed all the server you needed, please config the nginx proxy.'
 }
 
+# =================================== Install plugin=============================================
+
 # Install some base tools.
 install_base(){
     echo 'Install some base tools.'
@@ -457,6 +459,7 @@ install_tssh(){
     else
         echo 'Invalid input!'
     fi
+    curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/tssh_conf/.tssh.conf -o ~/.tssh.conf
 }
 
 # Install vim and SpaceVim
@@ -1161,3 +1164,31 @@ install_joshuto(){
 
     print_text "green" "Install joshuto successfully. Please restart your terminal." "true"
 }
+
+# =================================== Update plugin=============================================
+
+update_joshuto(){
+    if command -v joshuto >/dev/null 2>&1 || [[ -f $HOME/.joshuto/target/release/joshuto ]]; then
+        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/icons.toml -o $HOME/.config/joshuto/icons.toml
+        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/joshuto.toml -o $HOME/.config/joshuto/joshuto.toml
+        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/keymap.toml -o $HOME/.config/joshuto/keymap.toml
+        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/mimetype.toml -o $HOME/.config/joshuto/mimetype.toml
+        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/preview_file.sh -o $HOME/.config/joshuto/preview_file.sh
+        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/theme.toml -o $HOME/.config/joshuto/theme.toml
+        chmod +x $HOME/.config/joshuto/preview_file.sh
+    fi
+}
+
+update_PBShelper(){
+    if [ -d ~/.PBShelper ];then
+        /bin/rm -rf ~/.PBShelper
+        git clone https://github.com/gaojunbin/PBShelper.git ~/.PBShelper
+    fi
+}
+
+update_tssh(){
+    if [ -f ~/.tssh.conf ];then
+        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/tssh_conf/.tssh.conf -o ~/.tssh.conf
+    fi
+}
+

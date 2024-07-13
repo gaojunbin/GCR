@@ -1217,20 +1217,9 @@ dockeradd(){
 }
 
 myupdateplug(){
-    if command -v joshuto >/dev/null 2>&1 || [[ -f $HOME/.joshuto/target/release/joshuto ]]; then
-        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/icons.toml -o $HOME/.config/joshuto/icons.toml
-        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/joshuto.toml -o $HOME/.config/joshuto/joshuto.toml
-        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/keymap.toml -o $HOME/.config/joshuto/keymap.toml
-        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/mimetype.toml -o $HOME/.config/joshuto/mimetype.toml
-        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/preview_file.sh -o $HOME/.config/joshuto/preview_file.sh
-        curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/theme.toml -o $HOME/.config/joshuto/theme.toml
-        chmod +x $HOME/.config/joshuto/preview_file.sh
-    fi
-    
-    if [ -d ~/.PBShelper ];then
-        /bin/rm -rf ~/.PBShelper
-        git clone https://github.com/gaojunbin/PBShelper.git ~/.PBShelper
-    fi
+    update_joshuto
+    update_PBShelper
+    update_tssh
 }
 
 # <<< Others end <<<
