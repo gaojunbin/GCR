@@ -1192,3 +1192,22 @@ update_tssh(){
     fi
 }
 
+update_safe_rm(){
+    if [ -f ~/.safe-rm ];then
+        # check update safe-rm
+        if [ "$(uname -s)" = Darwin ];then
+            local remote_saferm_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/safe-rm/safe-rm | md5)
+            local local_saferm_MD5=$(md5 -q ~/.safe-rm)
+        elif [ "$(uname -s)" = Linux ];then
+            local remote_saferm_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/safe-rm/safe-rm | md5sum | awk '{print $1}')
+            local local_saferm_MD5=$(md5sum ~/.safe-rm | awk '{print $1}')
+        fi
+
+        if [ "${remote_saferm_MD5}" != "${local_saferm_MD5}" ]; then
+            curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/safe-rm/safe-rm -o $HOME/.safe-rm
+            chmod +x $HOME/.safe-rm
+            print_text "green" "safe-rm has a newer version now. Already updated! 🎉" "true"
+            printf "\n"
+        fi
+    fi
+}
