@@ -1092,24 +1092,46 @@ install_discard_vim(){
     printf "\n"
     curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/discard-vim/rmate -o $HOME/.rmate
     chmod +x $HOME/.rmate
+    if [ -z "$RmatePort" ]; then
+        print_text "green" "Input the RmatePort (default: 52698): " "false"
+        read RmatePort
+        RmatePort=${RmatePort:-52698}
+        # if RmatePort is not used
+        while lsof -i:$RmatePort; do
+            print_text "red" "$RmatePort is used. Please input another port: " "false"
+            read RmatePort
+            RmatePort=${RmatePort:-52698}
+        done
+        echo "# [GCR Add] -------- Rmate configuration --------" >> ${shell_file}
+        echo "export RmatePort=$RmatePort" >> ${shell_file}
+    fi
+
     print_text "green" "Install discard-vim successfully. Please restart your terminal." "true"
     printf "\n"
-    print_text "green" "You also need to install the plug-in on your local computer as follows:" "false"
+    print_text "green" "You also need:" "false"
     printf "\n"
-    print_text "yellow" "1. For Sublime Text Users:" "false"
+    print_text "cyan" "1. Add the following configuration to your SSH configuration file:" "false"
     printf "\n"
-    echo "   - Install the package 'rsub' via Package Control."
-    echo "Press Cmd + Shift + P for Mac, select Package Control: Install Package, and, finally, select rsub."
-    print_text "yellow" "2. For VSCode Users:" "false"
+    print_text "yellow" "# -------- Rmate configuration --------
+Host *
+    RemoteForward ${RmatePort} 127.0.0.1:52698" "false"
     printf "\n"
-    echo "   - Install the extension Remote VSCode via the Extensions Marketplace."
-    echo "Press Cmd + Shift + P for Mac and Open User Sttings, and add the following configuration:"
-    print_text "yellow" "   //-------- Remote VSCode configuration --------
-    "remote.port": 52698
-    "remote.onstartup": true
-    "remote.host": "127.0.0.1"
-    "remote.dontShowPortAlreadyInUseError": false
-    //-------- Remote VSCode configuration --------" "false"
+    print_text "cyan" "2. Install the plug-in on your local computer as follows:" "false"
+    printf "\n"
+    print_text "cyan" "1) For Sublime Text Users:" "false"
+    printf "\n"
+    echo "- Install the package 'rsub' via Package Control."
+    echo "  Press Cmd + Shift + P for Mac, select Package Control: Install Package, and, finally, select rsub."
+    print_text "cyan" "2) For VSCode Users:" "false"
+    printf "\n"
+    echo "- Install the extension Remote VSCode via the Extensions Marketplace."
+    echo "  Press Cmd + Shift + P for Mac and Open User Sttings, and add the following configuration:"
+    print_text "yellow" "//-------- Remote VSCode configuration --------
+"remote.port": 52698
+"remote.onstartup": true
+"remote.host": "127.0.0.1"
+"remote.dontShowPortAlreadyInUseError": false
+//-------- Remote VSCode configuration --------" "false"
     printf "\n"
 }
 
@@ -1181,8 +1203,8 @@ update_joshuto(){
 
 update_PBShelper(){
     if [ -d ~/.PBShelper ];then
-        /bin/rm -rf ~/.PBShelper
-        git clone https://github.com/gaojunbin/PBShelper.git ~/.PBShelper
+        cd ~/.PBShelper
+        git pull https://github.com/gaojunbin/PBShelper.git
     fi
 }
 

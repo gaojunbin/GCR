@@ -122,19 +122,11 @@ if [ -n "$SSH_CONNECTION" ]; then
     # remote server
     # support discard-vim
     if [ -f ~/.rmate ];then
-        alias code='~/.rmate'
-        # dev mode
-        if [ -n "$JUNBIN_GCR_MODE" ]; then
-            alias vim='~/.rmate'
-        fi
+        alias code='~/.rmate -p $RmatePort'
     fi
 else
     # open with vs code (local)
     alias code='open -a "Visual Studio Code"'
-    # dev mode
-    if [ -n "$JUNBIN_GCR_MODE" ]; then
-        alias vim='open -a "Visual Studio Code"'
-    fi
 fi
 
 show_update_info(){
@@ -416,36 +408,22 @@ listen(){
     read func_num
     if [[ "${func_num}" = 1 ]] || [[ "${func_num}" = "" ]];then
         echo '[1] -L :Local Forwarding - Local port listen the remote port.'
-
-        if [[ "$SHELL" == *"zsh" ]];then
-            hosts=$(grep -E '^\s*Host\s' ~/.ssh/config | awk '{print $2}')
-            hosts_array=("${(f)hosts}")
-        elif [[ "$SHELL" == *"bash" ]];then
-            hosts=$(grep -E '^\s*Host\s' ~/.ssh/config | awk '{print $2}')
-            IFS=$'\n' hosts_array=($hosts)
-        else
-            echo 'Invalid shell type: ' $SHELL
+        print_text "green" "Known hosts: " "false"
+        print_text "yellow" "$(awk '/^\s*Host\s/ { printf "%s | ", $2 } END { printf "\n" }' ~/.ssh/config)" "false"
+        printf "\n"
+        echo -e 'The Host: \c'
+        read Host
+        echo -e 'The Remote Port: \c'
+        read RPort
+        echo -e 'The Local Port (default: = Remote Port): \c'
+        read LPort
+        if [ "${LPort}" = "" ];then
+            LPort=${RPort}
         fi
-
-        PS3='The Host:'
-        select host in "${hosts_array[@]}"; do
-            if [ -n "$host" ]; then
-                echo -e 'The Remote Port: \c'
-                read RPort
-                echo -e 'The Local Port (default: = Remote Port): \c'
-                read LPort
-                if [ "${LPort}" = "" ];then
-                    LPort=${RPort}
-                fi
-                echo -e "$ ssh -L localhost:${LPort}:localhost:${RPort} ${Host} -N"
-                echo -e "Running at: \033[4mhttp://localhost:${LPort}\033[0m"
-                ssh -L localhost:${LPort}:localhost:${RPort} ${Host} -N
-                break
-            else
-                echo "Invalid selection, please select again."
-            fi
-        done
-        unset PS3
+        printf "\n"
+        echo '$ ssh -L localhost:'"$LPort"':localhost:'"$RPort"' '"$Host"' -N'
+        echo -e "Running at: \033[4mhttp://localhost:${LPort}\033[0m"
+        ssh -L localhost:${LPort}:localhost:${RPort} ${Host} -N
 
     elif [ "${func_num}" = 2 ];then
         echo '[2] -R :Remote Forwarding - Remote port listen the local port.'
@@ -458,7 +436,8 @@ listen(){
         if [ "${RPort}" = "" ];then
             RPort=${LPort}
         fi
-        echo -e "$ ssh -R localhost:${RPort}:localhost:${LPort} ${Host} -N"
+        printf "\n"
+        echo -e "$ ssh -R localhost:$RPort"':localhost:'"$LPort $Host -N"
         ssh -R localhost:${RPort}:localhost:${LPort} ${Host} -N
     elif [ "${func_num}" = 3 ];then
         echo '[3] -D :Dynamic Forwarding - Use remote to forward local port. (socks5)'
@@ -466,13 +445,13 @@ listen(){
         read Host
         echo -e 'The LPort Port: \c'
         read LPort
-        echo -e "$ ssh -D {LPort} ${Host} -N"
+        printf "\n"
+        echo -e "$ ssh -D $LPort $Host -N"
         ssh -D ${LPort} ${Host} -N
     else
         echo -e 'Invalid Input!'
     fi
     unset func_num
-    
 }
 
 # add environment variable to PATH
@@ -1209,8 +1188,8 @@ upload(){
 }
 # open ssh with tssh --dragfile
 
-alias tssh='tssh --dragfile -R 52698:localhost:52698'
-alias tsshd='tssh --dragfile -R 52698:localhost:52698'
+alias tssh='tssh --dragfile'
+alias tsshd='tssh --dragfile'
 
 # VPN commands (only for Linux)
 startvpn(){
