@@ -409,7 +409,7 @@ listen(){
     if [[ "${func_num}" = 1 ]] || [[ "${func_num}" = "" ]];then
         echo '[1] -L :Local Forwarding - Local port listen the remote port.'
         print_text "green" "Known hosts: " "false"
-        print_text "yellow" "$(awk '/^\s*Host\s/ { printf "%s | ", $2 } END { printf "\n" }' ~/.ssh/config)" "false"
+        print_text "yellow" "$(awk '/^\s*Host/ { printf "%s | ", $2 }' ~/.ssh/config)" "false"
         printf "\n"
         echo -e 'The Host: \c'
         read Host
