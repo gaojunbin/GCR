@@ -1083,6 +1083,11 @@ install_safe_rm(){
     print_text "green" 'Install safe-rm.' "false"
     curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/safe-rm/safe-rm -o $HOME/.safe-rm
     chmod +x $HOME/.safe-rm
+    print_text "green" "The location of safe-rm (default: $HOME/.Trash): " "false"
+    read safe_rm_path
+    safe_rm_path=${safe_rm_path:-$HOME/.Trash}
+    echo "# [GCR Add] -------- safe-rm configuration --------" >> ${shell_file}
+    echo "export SAFE_RM_TRASH=$safe_rm_path" >> ${shell_file}
     print_text "green" "Install safe-rm successfully. Please restart your terminal." "true"
 }
 
