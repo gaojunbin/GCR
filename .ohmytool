@@ -1210,6 +1210,7 @@ update_PBShelper(){
     if [ -d ~/.PBShelper ];then
         cd ~/.PBShelper
         git pull https://github.com/gaojunbin/PBShelper.git
+        cd
     fi
 }
 
