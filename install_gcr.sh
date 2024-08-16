@@ -47,8 +47,9 @@ if [ "${install_gcr_os}" = 1 ];then
     sudo chsh -s $(which zsh) $(whoami)
 fi
 
-if [ "${install_gcr_os}" = 2 ] || [ "${install_gcr_os}" = 4 ] || [ "${install_gcr_os}" = 5 ]; then
-    # Ubuntu/hpc/nscc w/o sudo
+
+if [ "${install_gcr_os}" = 2 ] || [ "${install_gcr_os}" = 4 ]; then
+    # Ubuntu/hpc w/o sudo
     if [ ! -e "$HOME/zsh/bin/zsh" ]; then
         mkdir -p $HOME/zsh && tar -xf zsh/zsh-5.9.tar.xz -C $HOME
         cd $HOME/zsh && ./configure --prefix=$HOME/zsh
@@ -56,7 +57,21 @@ if [ "${install_gcr_os}" = 2 ] || [ "${install_gcr_os}" = 4 ] || [ "${install_gc
         echo '# [Added By GCR]' >> ~/.bash_profile
         echo 'export PATH=$HOME/zsh/bin:$PATH' >> ~/.bash_profile
         echo 'export SHELL=$HOME/zsh/bin/zsh' >> ~/.bash_profile
-        echo 'exec $HOME/zsh/bin/zsh -l' >> ~/.bash_profile
+        echo '[ -f $HOME/zsh/bin/zsh ] && exec $HOME/zsh/bin/zsh -l' >> ~/.bash_profile
+        echo '# [Added By GCR]' >> ~/.bash_profile
+        cd $HOME/GCR
+    fi
+elif [ "${install_gcr_os}" = 5 ]; then
+    # nscc
+    if [ ! -e "$HOME/zsh/bin/zsh" ]; then
+        mkdir -p $HOME/zsh && tar -xf zsh/zsh-5.9.tar.xz -C $HOME
+        cd $HOME/zsh && ./configure --prefix=$HOME/zsh
+        make && make install
+        echo '# [Added By GCR]' >> ~/.bash_profile
+        echo 'export FPATH=$HOME/zsh/share/zsh/5.9/functions:$HOME/zsh/share/zsh/site-functions:/usr/local/share/zsh/site-functions:$HOME/.cache/oh-my-zsh/completions:$HOME/.oh-my-zsh/completions:$HOME/.oh-my-zsh/functions:$HOME/.oh-my-zsh/plugins/git:$HOME/.oh-my-zsh/plugins/extract:$HOME/.oh-my-zsh/plugins/autojump:$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting:$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions:$HOME/.oh-my-zsh/custom/plugins/zsh-myincr:$HOME/.oh-my-zsh/plugins/aliases:$HOME/.oh-my-zsh/plugins/docker:$HOME/.oh-my-zsh/plugins/docker-compos:$HOME/.oh-my-zsh/plugins/gitignore:$HOME/.oh-my-zsh/plugins/sud:$FPATH' >> ~/.bash_profile
+        echo 'export PATH=$HOME/zsh/bin:$PATH' >> ~/.bash_profile
+        echo 'export SHELL=$HOME/zsh/bin/zsh' >> ~/.bash_profile
+        echo '[ -f $HOME/zsh/bin/zsh ] && exec $HOME/zsh/bin/zsh -l' >> ~/.bash_profile
         echo '# [Added By GCR]' >> ~/.bash_profile
         cd $HOME/GCR
     fi
