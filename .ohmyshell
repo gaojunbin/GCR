@@ -126,7 +126,7 @@ if [ -n "$SSH_CONNECTION" ]; then
     fi
 else
     # open with vs code (local)
-    alias code='open -a "Visual Studio Code"'
+    alias code='open -a "Sublime Text"'
 fi
 
 show_update_info(){
