@@ -20,7 +20,7 @@ print_text "green" "[3] MacOS" "false"
 printf "\n"
 print_text "yellow" "(Specific system)" "false"
 printf "\n"
-print_text "green" "[4] NUS HPC" "false"
+print_text "green" "[4] NUS HPC / Medicine HPC" "false"
 printf "\n"
 print_text "green" "[5] NSCC" "false"
 printf "\n"
@@ -54,11 +54,18 @@ if [ "${install_gcr_os}" = 2 ] || [ "${install_gcr_os}" = 4 ]; then
         mkdir -p $HOME/zsh && tar -xf zsh/zsh-5.9.tar.xz -C $HOME
         cd $HOME/zsh && ./configure --prefix=$HOME/zsh
         make && make install
-        echo '# [Added By GCR]' >> ~/.bash_profile
-        echo 'export PATH=$HOME/zsh/bin:$PATH' >> ~/.bash_profile
-        echo 'export SHELL=$HOME/zsh/bin/zsh' >> ~/.bash_profile
-        echo '[ -f $HOME/zsh/bin/zsh ] && exec $HOME/zsh/bin/zsh -l' >> ~/.bash_profile
-        echo '# [Added By GCR]' >> ~/.bash_profile
+        if ! grep -q 'export PATH=\$HOME/zsh/bin:\$PATH' ~/.bash_profile; then
+            echo '# [Added By GCR]' >> ~/.bash_profile
+            echo 'export PATH=$HOME/zsh/bin:$PATH' >> ~/.bash_profile
+        fi
+        if ! grep -q 'export SHELL=\$HOME/zsh/bin/zsh' ~/.bash_profile; then
+            echo '# [Added By GCR]' >> ~/.bash_profile
+            echo 'export SHELL=$HOME/zsh/bin/zsh' >> ~/.bash_profile
+        fi
+        if ! grep -q '\[ -f \$HOME/zsh/bin/zsh \] && exec \$HOME/zsh/bin/zsh -l' ~/.bash_profile; then
+            echo '# [Added By GCR]' >> ~/.bash_profile
+            echo '[ -f $HOME/zsh/bin/zsh ] && exec $HOME/zsh/bin/zsh -l' >> ~/.bash_profile
+        fi
         cd $HOME/GCR
     fi
 elif [ "${install_gcr_os}" = 5 ]; then

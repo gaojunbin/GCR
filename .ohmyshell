@@ -311,6 +311,10 @@ find_gcr_update(){
     fi
 }
 
+# show document info
+print_text "red" "View the full GCR manual: https://gcr.junbingao.com" "false"
+printf "\n"
+
 # if CHECK_GCR_UPDATE is not false, check update every login
 if [ "${CHECK_GCR_UPDATE:-}" != "false" ]; then
     find_gcr_update
