@@ -1,4 +1,10 @@
-# GCR
+![](doc/cover.png)
+
+## Introduction
+
+[![](https://badgen.net/badge/icon/Website?icon=chrome&label)](https://gcr.junbingao.com) https://gcr.junbingao.com
+
+GCR, make your shell more powerful. Please visit the program homepage for more information.
 
 ## Install
 
@@ -6,52 +12,11 @@
 curl -s https://raw.githubusercontent.com/gaojunbin/GCR/master/install_gcr.sh -o ~/install_gcr.sh && bash ~/install_gcr.sh && rm ~/install_gcr.sh
 ```
 
-## Introduction
+### Document
 
-### .ohmyshell
+[中](doc/manual.md)      [EN](doc/manual-en.md)
 
-some common shell.
+### License
 
-```
-# --- myupdate - support update GCR Toolkit from GitHub Repo.
-# |
-# --- mytool - Some basic tools for common using.
-# |
-# --- mypip - pip tools.
-# |
-# --- myenv - Anaconda tools.
-# |
-# --- mygpu - useful functions for GPU and cuda.
-# |
-# --- mypermission - some functions for permission, passward, etc.
-# |
-# --- mygit - Git tools.
-# |
-# --- Others
-```
+This project is released under the Apache 2.0 license.
 
-### .ohmyzsh
-
-Make your terminal brand new.
-
-![](https://raw.githubusercontent.com/gaojunbin/images/master/zsh_demo.mp4)
-
-### .ohmytool
-
-This is a ToolKit for server manager by one-click installation and environment set.
-
-```
-# --- install_vpn - Install vpn with clash (Only support Linux).
-# |
-# --- install_docker - Install Docker (Only support Ubuntu).
-# |
-# --- install_overleaf - Install OverLeaf.
-# |
-# --- install_colorls - Install colorls and ruby (not suggestion!).
-# |
-# --- install_spacevim - Install new version vim and spacevim.
-# |
-# --- install_server-administration - Install server-administration.
-# |
-# --- install_samtools - TODO.
-```
