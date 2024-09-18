@@ -393,9 +393,13 @@ ohmyshell(){
 
 # open jupyter notebook
 jp(){
-    print_table_text "Jupyter notebook starting..." "false" "green" "cyan" $(tput cols)    
-    print_text "green" "Input port: " "false"
-    read port
+    print_table_text "Jupyter notebook starting..." "false" "green" "cyan" $(tput cols)
+    if [ -z "$JupyterPort" ]; then
+        print_text "green" "Input port: " "false"
+        read port
+    else
+        port=$JupyterPort
+    fi
     jupyter lab --port ${port} --no-browser
 }
 
