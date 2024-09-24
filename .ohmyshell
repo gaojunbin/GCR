@@ -126,7 +126,7 @@ if [ -n "$SSH_CONNECTION" ]; then
     fi
 else
     # open with vs code (local)
-    alias code='open -a "Sublime Text"'
+    alias code='open -a "Visual Studio Code"'
 fi
 
 show_update_info(){
@@ -1161,7 +1161,13 @@ alias cl='clear'
 # view code with format
 alias pcat='pygmentize -g'
 # open tensorboard with tb
-alias tb='tensorboard --logdir=./'
+tb() {
+  if [ -n "$TensorboardPort" ]; then
+    tensorboard --logdir=./ --port="$TensorboardPort"
+  else
+    tensorboard --logdir=./
+  fi
+}
 # download files or folder
 download() {
   if [ $# -ge 1 ]; then
