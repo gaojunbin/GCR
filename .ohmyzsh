@@ -23,9 +23,9 @@ export ZSH=$HOME/.oh-my-zsh
 
 # Set name of the theme to load
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes for more details
-# Recommended theme: agnoster, powerlevel9k/powerlevel10k
+# Recommended theme: agnoster, powerlevel10k/powerlevel10k
 ZSH_THEME="powerlevel10k/powerlevel10k"
-# More detals can ref https://github.com/Powerlevel9k/powerlevel9k/wiki/Show-Off-Your-Config
+# More detals can ref https://github.com/Powerlevel9k/powerlevel9k/wiki/Show-Off-Your-Config and https://github.com/romkatv/powerlevel10k
 # Uncomment the following line if use powerlevel10k theme and use a specific theme
 # source ~/.p9k.zsh
 

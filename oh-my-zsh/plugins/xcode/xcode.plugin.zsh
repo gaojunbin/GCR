@@ -7,7 +7,7 @@ alias xcsel='sudo xcode-select --switch'
 # source: https://gist.github.com/subdigital/5420709
 function xc {
   local xcode_files
-  xcode_files=(${1:-.}/{*.{xcworkspace,xcodeproj},Package.swift}(N))
+  xcode_files=(${1:-.}/{*.{xcworkspace,xcodeproj,swiftpm},Package.swift}(N))
 
   if [[ ${#xcode_files} -eq 0 ]]; then
     echo "No Xcode files found in ${1:-the current directory}." >&2
@@ -17,6 +17,13 @@ function xc {
   local active_path
   active_path=${"$(xcode-select -p)"%%/Contents/Developer*}
   echo "Found ${xcode_files[1]}. Opening with ${active_path}"
+
+  # If Xcode is already opened in another Desk, we need this double call
+  # with -g to open the project window in the current Desk and focus it.
+  # See https://github.com/ohmyzsh/ohmyzsh/issues/10384
+  if command pgrep -q "^Xcode"; then
+    open -g -a "$active_path" "${xcode_files[1]}"
+  fi
   open -a "$active_path" "${xcode_files[1]}"
 }
 
@@ -31,7 +38,7 @@ function xx {
   open -a "Xcode.app" "$@"
 }
 
-# "XCode-SELect by Version" - select Xcode by just version number
+# "Xcode-Select by Version" - select Xcode by just version number
 # Uses naming convention:
 #  - different versions of Xcode are named Xcode-<version>.app or stored
 #     in a folder named Xcode-<version>

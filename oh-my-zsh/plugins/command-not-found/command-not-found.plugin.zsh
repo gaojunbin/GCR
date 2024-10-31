@@ -3,9 +3,10 @@
 for file (
   # Arch Linux. Must have pkgfile installed: https://wiki.archlinux.org/index.php/Pkgfile#Command_not_found
   /usr/share/doc/pkgfile/command-not-found.zsh
-  # macOS (M1 and classic Homebrew): https://github.com/Homebrew/homebrew-command-not-found
+  # Homebrew: https://github.com/Homebrew/homebrew-command-not-found
   /opt/homebrew/Library/Taps/homebrew/homebrew-command-not-found/handler.sh
   /usr/local/Homebrew/Library/Taps/homebrew/homebrew-command-not-found/handler.sh
+  /home/linuxbrew/.linuxbrew/Homebrew/Library/Taps/homebrew/homebrew-command-not-found/handler.sh
 ); do
   if [[ -r "$file" ]]; then
     source "$file"
@@ -57,6 +58,13 @@ fi
 # Termux: https://github.com/termux/command-not-found
 if [[ -x /data/data/com.termux/files/usr/libexec/termux/command-not-found ]]; then
   command_not_found_handler() {
-    /data/data/com.termux/files/usr/libexec/termux/command-not-found -- "$1"
+    /data/data/com.termux/files/usr/libexec/termux/command-not-found "$1"
+  }
+fi
+
+# SUSE and derivates: https://www.unix.com/man-page/suse/1/command-not-found/
+if [[ -x /usr/bin/command-not-found ]]; then
+  command_not_found_handler() {
+    /usr/bin/command-not-found "$1"
   }
 fi

@@ -108,15 +108,15 @@ fi
 echo '# [ Added By GCR ]' >> ~/.zshrc
 echo SHOW_GCR_INFO="false" >> ~/.zshrc
 echo CHECK_GCR_UPDATE="true" >> ~/.zshrc
-echo 'source ~/.ohmyzsh' >> ~/.zshrc
-echo 'source ~/.p9k.zsh' >> ~/.zshrc
 echo 'source ~/.ohmyshell' >> ~/.zshrc
 echo '# [ Added By GCR ]' >> ~/.zshrc
 
 # specfic for nscc
 if [ "${install_gcr_os}" = 5 ]; then
-    cp .zsh4nscc ~/
-    echo 'source ~/.zsh4nscc' >> ~/.zshrc
+    echo 'module ()
+{
+    eval `/opt/cray/pe/modules/3.2.11.6/bin/modulecmd bash $*`
+}' >> ~/.zshrc
 fi
 
 # Sucess message

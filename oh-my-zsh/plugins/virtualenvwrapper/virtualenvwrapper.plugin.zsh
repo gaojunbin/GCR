@@ -52,11 +52,17 @@ if [[ ! $DISABLE_VENV_CD -eq 1 ]]; then
       else
         ENV_NAME=""
       fi
-      
+
       if [[ -n $CD_VIRTUAL_ENV && "$ENV_NAME" != "$CD_VIRTUAL_ENV" ]]; then
         # We've just left the repo, deactivate the environment
         # Note: this only happens if the virtualenv was activated automatically
-        deactivate && unset CD_VIRTUAL_ENV
+        if [[ -n "$VIRTUAL_ENV" ]]; then
+          # Only deactivate if VIRTUAL_ENV was set
+          # User may have deactivated manually or via another mechanism
+          deactivate
+        fi
+        # clean up regardless
+        unset CD_VIRTUAL_ENV
       fi
       if [[ "$ENV_NAME" != "" ]]; then
         # Activate the environment only if it is not already active
@@ -82,4 +88,5 @@ if [[ ! $DISABLE_VENV_CD -eq 1 ]]; then
   # http://zsh.sourceforge.net/Doc/Release/Functions.html
   autoload -U add-zsh-hook
   add-zsh-hook chpwd workon_cwd
+  [[ $PWD != ~ ]] && workon_cwd
 fi

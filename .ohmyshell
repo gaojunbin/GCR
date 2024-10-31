@@ -21,7 +21,12 @@
 # --- Others
 # ========Outline end============
 
-export PATH=$HOME:$PATH
+# lazy load
+if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
+source ~/.ohmyprint
 
 # shell type [~/.bashrc or ~/.zshrc]
 # support tabby shell working directory reporting
@@ -44,90 +49,10 @@ else
     echo 'Invalid shell type: ' $SHELL
 fi
 
-# autoinstall
-if [ ! -f ~/.ohmyshell ];then
-    curl -o ~/.ohmyshell https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell
-fi
-if [ ! -f ~/.ohmyzsh ];then
-    curl -o ~/.ohmyzsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh
-fi
-if [ ! -f ~/.p9k.zsh ];then
-    curl -o ~/.p9k.zsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh
-fi
-if [ ! -f ~/.ohmyprint ];then
-    curl -o ~/.ohmyprint https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint
-fi
-if [ ! -f ~/.ohmytool ];then
-    curl -o ~/.ohmytool https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool
-fi
-if [ ! -f ~/.vimrc ];then
-    curl -o ~/.vimrc https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc
-fi
-
-source ~/.ohmytool
-source ~/.ohmyprint
-
-# support server-administration
-if [ -d ~/.server-administration ];then
-    source ~/.server-administration/init.sh
-fi
-
-# support PBShelper
-if [ -d ~/.PBShelper ];then
-    source ~/.PBShelper/init.sh
-fi
-
-# support safe-rm
-if [ -f ~/.safe-rm ];then
-
-    trash_dir=${SAFE_RM_TRASH:="$HOME/.Trash"}
-    alias rm='~/.safe-rm'
-    alias del='~/.safe-rm -rf'
-    alias delf='/bin/rm -rf'
-
-    empty_trash() {
-        echo "Do you want to:"
-        echo "1) Clear all files in the Trash"
-        echo "2) Clear files not used for over 30 days in the Trash"
-        echo -n "Enter your choice (1 or 2): "
-        read choice
-
-        case $choice in
-            1)
-                print_text "green" "Clearing all files in the Trash..." "true"
-                printf "\n"
-                /bin/rm -rf "$trash_dir"/*
-                print_text "green" "All files in the Trash have been cleared." "false"
-                printf "\n"
-                ;;
-            2)
-                print_text "green" "Clearing files not used for over 30 days in the Trash..." "true"
-                printf "\n"
-                find "$trash_dir" -type f -mtime +30 -exec /bin/rm -f {} \;
-                find "$trash_dir" -type d -empty -mtime +30 -exec rmdir {} \;
-                print_text "green" "Files not used for over 30 days in the Trash have been cleared." "false"
-                printf "\n"
-                ;;
-            *)
-                echo "Invalid choice. Please enter 1 or 2."
-                ;;
-        esac
-    }
-else
-    echo '[ GCR Warning ] Your current `rm` is dangerous! Please run [install_safe_rm] first and restart your shell.'
-fi
-
-# rewite vim and code
-if [ -n "$SSH_CONNECTION" ]; then
-    # remote server
-    # support discard-vim
-    if [ -f ~/.rmate ];then
-        alias code='~/.rmate -p $RmatePort'
-    fi
-else
-    # open with vs code (local)
-    alias code='open -a "Visual Studio Code"'
-fi
+# 1. check update
+# GCR update time lock
+GCR_update_file=$HOME/.gcr.update.lock
+GCR_plugin_update_file=$HOME/.gcr.plugin.update.lock
 
 show_update_info(){
     star_line=""
@@ -148,6 +73,136 @@ show_update_info(){
     printf "\n"
     print_line "cyan" $(tput cols)
 }
+
+gcr_need_update(){
+    if [ "$(uname -s)" = Darwin ];then
+        remote_ohmyshell_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell | md5)
+        remote_ohmytool_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool | md5)
+        remote_ohmyzsh_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh | md5)
+        remote_p9k_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh | md5)
+        remote_vimrc_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc | md5)
+        remote_ohmyprint_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint | md5)
+
+        local_ohmyshell_MD5=$(md5 -q ~/.ohmyshell)
+        local_ohmytool_MD5=$(md5 -q ~/.ohmytool)
+        local_ohmyzsh_MD5=$(md5 -q ~/.ohmyzsh)
+        local_p9k_MD5=$(md5 -q ~/.p9k.zsh)
+        local_vimrc_MD5=$(md5 -q ~/.vimrc)
+        local_ohmyprint_MD5=$(md5 -q ~/.ohmyprint)
+
+    elif [ "$(uname -s)" = Linux ];then
+        remote_ohmyshell_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell | md5sum | awk '{print $1}')
+        remote_ohmytool_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool | md5sum | awk '{print $1}')
+        remote_ohmyzsh_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh | md5sum | awk '{print $1}')
+        remote_p9k_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh | md5sum | awk '{print $1}')
+        remote_vimrc_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc | md5sum | awk '{print $1}')
+        remote_ohmyprint_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint | md5sum | awk '{print $1}')
+
+        local_ohmyshell_MD5=$(md5sum ~/.ohmyshell | awk '{print $1}')
+        local_ohmytool_MD5=$(md5sum ~/.ohmytool | awk '{print $1}')
+        local_ohmyzsh_MD5=$(md5sum ~/.ohmyzsh | awk '{print $1}')
+        local_p9k_MD5=$(md5sum ~/.p9k.zsh | awk '{print $1}')
+        local_vimrc_MD5=$(md5sum ~/.vimrc | awk '{print $1}')
+        local_ohmyprint_MD5=$(md5sum ~/.ohmyprint | awk '{print $1}')
+    fi
+        
+    if [ "${remote_ohmyshell_MD5}" != "${local_ohmyshell_MD5}" ] || \
+       [ "${remote_ohmytool_MD5}" != "${local_ohmytool_MD5}" ] || \
+       [ "${remote_ohmyzsh_MD5}" != "${local_ohmyzsh_MD5}" ] || \
+       [ "${remote_p9k_MD5}" != "${local_p9k_MD5}" ] || \
+       [ "${remote_vimrc_MD5}" != "${local_vimrc_MD5}" ] || \
+       [ "${remote_ohmyprint_MD5}" != "${local_ohmyprint_MD5}" ]; then
+        
+        return 0
+    else
+        return 1
+    fi
+}
+
+# support update GCR Toolkit from GitHub Repo
+myupdate(){
+    print_table_text "Updating GCR ..." "true" "yellow" "red" $(tput cols)
+    curl -o ~/.ohmyshell https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell
+    curl -o ~/.ohmytool https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool 
+    curl -o ~/.ohmyzsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh
+    curl -o ~/.p9k.zsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh
+    curl -o ~/.vimrc https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc
+    curl -o ~/.ohmyprint https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint
+    date +%s > $GCR_update_file
+    print_table_text "Success!" "false" "yellow" "red" $(tput cols)
+    show_update_info
+    source ${shell_file}
+}
+
+myupdateplug(){
+    update_joshuto
+    update_PBShelper
+    update_tssh
+    update_safe_rm
+    date +%s > $GCR_plugin_update_file
+    source ${shell_file}
+}
+
+find_gcr_update(){
+    if gcr_need_update; then
+        # if AUTO_GCR_UPDATE is not false, auto update
+        if [ "${AUTO_GCR_UPDATE:-}" != "false" ]; then
+            myupdate
+        else
+            show_update_info
+            print_text "red" "GCR Toolkit has a newer version now! Type " "true"
+            print_text "green" "$ myupdate " "true"
+            print_text "red" "to update. " "true"
+            printf "\n"
+            date +%s > $GCR_update_file
+        fi
+    fi
+}
+
+# if CHECK_GCR_UPDATE is not false, check update every login
+if [ "${CHECK_GCR_UPDATE:-}" != "false" ]; then
+    find_gcr_update
+fi
+
+# ==================Auto Check Update per day (GCR & GCR plugin)==================
+if [ -f "$GCR_update_file" ]; then
+    last_timestamp=$(cat $GCR_update_file)
+    current_timestamp=$(date +%s)
+
+    if [[ "$last_timestamp" =~ ^[0-9]+$ ]]; then
+        diff=$((current_timestamp - last_timestamp))
+        # 1 days (86400s)
+        if [ $diff -ge 86400 ]; then
+            find_gcr_update
+        fi
+    else
+        find_gcr_update
+    fi
+else
+    find_gcr_update
+fi
+
+if [ -f "$GCR_plugin_update_file" ]; then
+    last_timestamp=$(cat $GCR_plugin_update_file)
+    current_timestamp=$(date +%s)
+
+    if [[ "$last_timestamp" =~ ^[0-9]+$ ]]; then
+        diff=$((current_timestamp - last_timestamp))
+        # 1 days (86400s)
+        if [ $diff -ge 86400 ]; then
+            myupdateplug
+        fi
+    else
+        myupdateplug
+    fi
+else
+    myupdateplug
+fi
+
+# 2.show GCR info
+# show document info
+print_text "red" "View the full GCR manual: https://gcr.junbingao.com" "false"
+printf "\n"
 
 show_GCR_info(){
     star_line=""
@@ -220,139 +275,74 @@ if [ "${SHOW_GCR_INFO:-}" = "true" ]; then
     show_GCR_info
 fi
 
-# GCR update time lock
-GCR_update_file=$HOME/.gcr.update.lock
-GCR_plugin_update_file=$HOME/.gcr.plugin.update.lock
+# 3.main content
 
-gcr_need_update(){
-    if [ "$(uname -s)" = Darwin ];then
-        remote_ohmyshell_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell | md5)
-        remote_ohmytool_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool | md5)
-        remote_ohmyzsh_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh | md5)
-        remote_p9k_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh | md5)
-        remote_vimrc_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc | md5)
-        remote_ohmyprint_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint | md5)
+export PATH=$HOME:$PATH
 
-        local_ohmyshell_MD5=$(md5 -q ~/.ohmyshell)
-        local_ohmytool_MD5=$(md5 -q ~/.ohmytool)
-        local_ohmyzsh_MD5=$(md5 -q ~/.ohmyzsh)
-        local_p9k_MD5=$(md5 -q ~/.p9k.zsh)
-        local_vimrc_MD5=$(md5 -q ~/.vimrc)
-        local_ohmyprint_MD5=$(md5 -q ~/.ohmyprint)
+source ~/.ohmyzsh
+source ~/.p9k.zsh
+source ~/.ohmytool
 
-    elif [ "$(uname -s)" = Linux ];then
-        remote_ohmyshell_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell | md5sum | awk '{print $1}')
-        remote_ohmytool_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool | md5sum | awk '{print $1}')
-        remote_ohmyzsh_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh | md5sum | awk '{print $1}')
-        remote_p9k_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh | md5sum | awk '{print $1}')
-        remote_vimrc_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc | md5sum | awk '{print $1}')
-        remote_ohmyprint_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint | md5sum | awk '{print $1}')
-
-        local_ohmyshell_MD5=$(md5sum ~/.ohmyshell | awk '{print $1}')
-        local_ohmytool_MD5=$(md5sum ~/.ohmytool | awk '{print $1}')
-        local_ohmyzsh_MD5=$(md5sum ~/.ohmyzsh | awk '{print $1}')
-        local_p9k_MD5=$(md5sum ~/.p9k.zsh | awk '{print $1}')
-        local_vimrc_MD5=$(md5sum ~/.vimrc | awk '{print $1}')
-        local_ohmyprint_MD5=$(md5sum ~/.ohmyprint | awk '{print $1}')
-    fi
-        
-    if [ "${remote_ohmyshell_MD5}" != "${local_ohmyshell_MD5}" ] || \
-       [ "${remote_ohmytool_MD5}" != "${local_ohmytool_MD5}" ] || \
-       [ "${remote_ohmyzsh_MD5}" != "${local_ohmyzsh_MD5}" ] || \
-       [ "${remote_p9k_MD5}" != "${local_p9k_MD5}" ] || \
-       [ "${remote_vimrc_MD5}" != "${local_vimrc_MD5}" ] || \
-       [ "${remote_ohmyprint_MD5}" != "${local_ohmyprint_MD5}" ]; then
-        
-        return 0
-    else
-        return 1
-    fi
-}
-
-# support update GCR Toolkit from GitHub Repo
-myupdate(){
-    print_table_text "Updating GCR ..." "true" "yellow" "red" $(tput cols)
-    curl -o ~/.ohmyshell https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell
-    curl -o ~/.ohmytool https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool 
-    curl -o ~/.ohmyzsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh
-    curl -o ~/.p9k.zsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh
-    curl -o ~/.vimrc https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc
-    curl -o ~/.ohmyprint https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint
-    date +%s > $GCR_update_file
-    print_table_text "Success!" "false" "yellow" "red" $(tput cols)
-    show_update_info
-    source ${shell_file}
-}
-
-myupdateplug(){
-    update_joshuto
-    update_PBShelper
-    update_tssh
-    update_safe_rm
-    date +%s > $GCR_plugin_update_file
-    source ${shell_file}
-}
-
-# ==================Check Update (GCR)==================
-
-find_gcr_update(){
-    if gcr_need_update; then
-        # if AUTO_GCR_UPDATE is not false, auto update
-        if [ "${AUTO_GCR_UPDATE:-}" != "false" ]; then
-            myupdate
-        else
-            show_update_info
-            print_text "red" "GCR Toolkit has a newer version now! Type " "true"
-            print_text "green" "$ myupdate " "true"
-            print_text "red" "to update. " "true"
-            printf "\n"
-            date +%s > $GCR_update_file
-        fi
-    fi
-}
-
-# show document info
-print_text "red" "View the full GCR manual: https://gcr.junbingao.com" "false"
-printf "\n"
-
-# if CHECK_GCR_UPDATE is not false, check update every login
-if [ "${CHECK_GCR_UPDATE:-}" != "false" ]; then
-    find_gcr_update
+# support server-administration
+if [ -d ~/.server-administration ];then
+    source ~/.server-administration/init.sh
 fi
 
-# ==================Auto Check Update per day (GCR & GCR plugin)==================
-if [ -f "$GCR_update_file" ]; then
-    last_timestamp=$(cat $GCR_update_file)
-    current_timestamp=$(date +%s)
-
-    if [[ "$last_timestamp" =~ ^[0-9]+$ ]]; then
-        diff=$((current_timestamp - last_timestamp))
-        # 1 days (86400s)
-        if [ $diff -ge 86400 ]; then
-            find_gcr_update
-        fi
-    else
-        find_gcr_update
-    fi
-else
-    find_gcr_update
+# support PBShelper
+if [ -d ~/.PBShelper ];then
+    source ~/.PBShelper/init.sh
 fi
 
-if [ -f "$GCR_plugin_update_file" ]; then
-    last_timestamp=$(cat $GCR_plugin_update_file)
-    current_timestamp=$(date +%s)
+# support safe-rm
+if [ -f ~/.safe-rm ];then
 
-    if [[ "$last_timestamp" =~ ^[0-9]+$ ]]; then
-        diff=$((current_timestamp - last_timestamp))
-        # 1 days (86400s)
-        if [ $diff -ge 86400 ]; then
-            myupdateplug
-        fi
-    else
-        myupdateplug
+    trash_dir=${SAFE_RM_TRASH:="$HOME/.Trash"}
+    alias rm='~/.safe-rm'
+    alias del='~/.safe-rm -rf'
+    alias delf='/bin/rm -rf'
+
+    empty_trash() {
+        echo "Do you want to:"
+        echo "1) Clear all files in the Trash"
+        echo "2) Clear files not used for over 30 days in the Trash"
+        echo -n "Enter your choice (1 or 2): "
+        read choice
+
+        case $choice in
+            1)
+                print_text "green" "Clearing all files in the Trash..." "true"
+                printf "\n"
+                /bin/rm -rf "$trash_dir"/*
+                print_text "green" "All files in the Trash have been cleared." "false"
+                printf "\n"
+                ;;
+            2)
+                print_text "green" "Clearing files not used for over 30 days in the Trash..." "true"
+                printf "\n"
+                find "$trash_dir" -type f -mtime +30 -exec /bin/rm -f {} \;
+                find "$trash_dir" -type d -empty -mtime +30 -exec rmdir {} \;
+                print_text "green" "Files not used for over 30 days in the Trash have been cleared." "false"
+                printf "\n"
+                ;;
+            *)
+                echo "Invalid choice. Please enter 1 or 2."
+                ;;
+        esac
+    }
+else
+    echo '[ GCR Warning ] Your current `rm` is dangerous! Please run [install_safe_rm] first and restart your shell.'
+fi
+
+# rewite vim and code
+if [ -n "$SSH_CONNECTION" ]; then
+    # remote server
+    # support discard-vim
+    if [ -f ~/.rmate ];then
+        alias code='~/.rmate -p $RmatePort'
     fi
 else
-    myupdateplug
+    # open with vs code (local)
+    alias code='open -a "Visual Studio Code"'
 fi
 
 ohmyshell(){

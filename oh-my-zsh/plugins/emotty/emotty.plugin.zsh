@@ -4,11 +4,16 @@
 #        AUTHOR: Alexis Hildebrandt (afh[at]surryhill.net)
 #       VERSION: 1.0.0
 #       DEPENDS: emoji plugin
-#       
+#
 # There are different sets of emoji characters available, to choose a different
 # set export emotty_set to the name of the set you would like to use, e.g.:
 # % export emotty_set=nature
 # ------------------------------------------------------------------------------
+
+# Handle $0 according to the standard:
+# https://zdharma-continuum.github.io/Zsh-100-Commits-Club/Zsh-Plugin-Standard.html
+0="${${ZERO:-${0:#$ZSH_ARGZERO}}:-${(%):-%N}}"
+0="${${(M)0:#/*}:-$PWD/$0}"
 
 typeset -gAH _emotty_sets
 local _emotty_plugin_dir="${0:h}"
