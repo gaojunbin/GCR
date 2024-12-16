@@ -135,12 +135,12 @@ myupdate(){
 }
 
 myupdateplug(){
-    update_joshuto
-    update_PBShelper
-    update_tssh
-    update_safe_rm
-    date +%s > $GCR_plugin_update_file
-    source ${shell_file}
+    # update_joshuto
+    # update_PBShelper
+    # update_tssh
+    # update_safe_rm
+    # date +%s > $GCR_plugin_update_file
+    # source ${shell_file}
 }
 
 find_gcr_update(){
