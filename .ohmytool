@@ -16,6 +16,8 @@
 # |
 # --- install_xui - Install x-ui to build vpn on oversea server.
 # |
+# --- install_xrayr - Install xrayr to build vpn on oversea server.
+# |
 # --- install_docker - Install Docker (Only support Ubuntu).
 # |
 # --- install_colorls - Install colorls and ruby (not suggestion!).
@@ -124,6 +126,7 @@ one-click installation and environment set.'
     echo -e '[*] install_vpn      - Install vpn with clash (Only support Linux)'
     echo -e '[*] install_buildvpn - Install buildvpn on oversea server'
     echo -e '[*] install_xui      - Install x-ui to build vpn on oversea server'
+    echo -e '[*] install_xrayr    - Install xrayr to build vpn on oversea server'
     echo -e '[*] install_docker   - Install Docker (Only support Ubuntu)'
     echo -e '[*] install_colorls  - Install colorls and ruby (not suggestion!)'
     echo -e '[*] install_trzsz    - The trzsz ( trz / tsz ) is a simple file transfer tools.'
@@ -277,6 +280,12 @@ install_xui(){
     echo 'Recommend to install_nginxproxy first.'
     echo 'More infomation can be seen on https://github.com/FranzKafkaYu/x-ui'
     bash <(curl -Ls https://raw.githubusercontent.com/FranzKafkaYu/x-ui/master/install.sh)
+}
+
+# Install xrayr on oversea server
+install_xrayr(){
+    echo 'Install xrayr to build vpn on oversea server.'
+    wget -N https://raw.githubusercontent.com/XrayR-project/XrayR-release/master/install.sh && bash install.sh
 }
 
 # Install Docker (Only support Ubuntu)
