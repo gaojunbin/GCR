@@ -46,7 +46,7 @@ elif [[ "$SHELL" == *"bash" ]];then
     shell_file=~/.bashrc
     export PS1="$PS1\[\e]1337;CurrentDir="'$(pwd)\a\]'
 else
-    echo 'Invalid shell type: ' $SHELL
+    print_error "Invalid shell type: $SHELL"
 fi
 
 # 1. check update
@@ -55,23 +55,23 @@ GCR_update_file=$HOME/.gcr.update.lock
 GCR_plugin_update_file=$HOME/.gcr.plugin.update.lock
 
 show_update_info(){
-    star_line=""
-    for ((i = 0; i < $(tput cols); i++)); do
-            star_line+="*"
-    done
-    print_text "green" $star_line "true"
     printf "\n"
+    printf "  "
+    print_text "yellow" "●" "false"
+    printf " "
+    print_text "white" "Recent Updates" "false"
     printf "\n"
-    print_text "yellow" "🔥 Recent Updates 🔥" "false" $(tput cols)
+
+    # Get updates with minimal formatting
+    local updates=$(curl -s https://raw.githubusercontent.com/gaojunbin/GCR/master/recent_updates 2>/dev/null)
+    if [ -n "$updates" ]; then
+        echo "$updates" | while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                printf "     %s\n" "$line"
+            fi
+        done
+    fi
     printf "\n"
-    printf "\n"
-    print_text "green" $star_line "true"
-    printf "\n"
-    printf "\n"
-    print_line "cyan" $(tput cols)
-    curl https://raw.githubusercontent.com/gaojunbin/GCR/master/recent_updates
-    printf "\n"
-    print_line "cyan" $(tput cols)
 }
 
 gcr_need_update(){
@@ -145,15 +145,18 @@ myupdateplug(){
 
 find_gcr_update(){
     if gcr_need_update; then
-        # if AUTO_GCR_UPDATE is not false, auto update
-        if [ "${AUTO_GCR_UPDATE:-}" != "false" ]; then
+        # only auto update when AUTO_GCR_UPDATE is explicitly set to true
+        if [ "${AUTO_GCR_UPDATE}" = "true" ]; then
             myupdate
         else
             show_update_info
-            print_text "red" "GCR Toolkit has a newer version now! Type " "true"
-            print_text "green" "$ myupdate " "true"
-            print_text "red" "to update. " "true"
-            printf "\n"
+            printf "  "
+            print_text "cyan" "→" "false"
+            printf " "
+            print_text "white" "Run " "false"
+            print_text "green" "myupdate" "false"
+            print_text "white" " to upgrade" "false"
+            printf "\n\n"
             date +%s > $GCR_update_file
         fi
     fi
@@ -201,8 +204,12 @@ fi
 
 # 2.show GCR info
 # show document info
-print_text "red" "View the full GCR manual: https://gcr.junbingao.com" "false"
-printf "\n"
+printf "  "
+print_text "cyan" "→" "false"
+printf " "
+print_text "white" "Documentation: " "false"
+print_text "cyan" "https://gcr.junbingao.com" "false"
+printf "\n\n"
 
 show_GCR_info(){
     star_line=""
@@ -264,9 +271,7 @@ show_GCR_info(){
             done
                 done
             else
-                printf "\t\t"
-                print_text "green" "ERROR! Only support zsh!" "false"
-                printf "\n"
+                print_error "Only zsh shell is supported for this feature!"
     fi
     print_line "cyan" $(tput cols)
 }
@@ -310,27 +315,36 @@ if [ -f ~/.safe-rm ];then
 
         case $choice in
             1)
-                print_text "green" "Clearing all files in the Trash..." "true"
-                printf "\n"
+                print_info "Clearing all files in the Trash..."
                 /bin/rm -rf "$trash_dir"/*
-                print_text "green" "All files in the Trash have been cleared." "false"
-                printf "\n"
+                print_success "All files in the Trash have been cleared."
                 ;;
             2)
-                print_text "green" "Clearing files not used for over 30 days in the Trash..." "true"
-                printf "\n"
+                print_info "Clearing files not used for over 30 days in the Trash..."
                 find "$trash_dir" -type f -mtime +30 -exec /bin/rm -f {} \;
                 find "$trash_dir" -type d -empty -mtime +30 -exec rmdir {} \;
-                print_text "green" "Files not used for over 30 days in the Trash have been cleared." "false"
-                printf "\n"
+                print_success "Files not used for over 30 days in the Trash have been cleared."
                 ;;
             *)
-                echo "Invalid choice. Please enter 1 or 2."
+                print_error "Invalid choice. Please enter 1 or 2."
                 ;;
         esac
     }
 else
-    echo '[ GCR Warning ] Your current `rm` is dangerous! Please run [install_safe_rm] first and restart your shell.'
+    printf "\n"
+    print_line "red" $(tput cols)
+    printf "  "
+    print_text "yellow" "WARNING:" "false"
+    printf " "
+    print_text "white" "Your current 'rm' command is dangerous!" "false"
+    printf "\n"
+    printf "  "
+    print_text "white" "Run " "false"
+    print_text "green" "install_safe_rm" "false"
+    print_text "white" " and restart your shell to enable safe deletion." "false"
+    printf "\n"
+    print_line "red" $(tput cols)
+    printf "\n"
 fi
 
 # rewite vim and code
@@ -346,29 +360,46 @@ else
 fi
 
 ohmyshell(){
-    print_table_text "List all func in .ohmyshell" "false" "green" "cyan" $(tput cols)
-    print_text "green" "$ myupdate: " "false"
-    print_text "white" "support update GCR Toolkit from GitHub Repo." "false"
+    print_table_text "GCR Command Reference" "false" "cyan" "green" $(tput cols)
     printf "\n"
-    print_text "green" "$ mytool: " "false"
-    print_text "white" "Some basic tools for common using." "false"
+
+    printf "  "
+    print_text "green" "myupdate    " "false"
+    print_text "white" "Update GCR Toolkit from GitHub" "false"
     printf "\n"
-    print_text "green" "$ mypip: " "false"
-    print_text "white" "pip tools." "false"
+
+    printf "  "
+    print_text "green" "mytool      " "false"
+    print_text "white" "Common tools for daily tasks" "false"
     printf "\n"
-    print_text "green" "$ myenv: " "false"
-    print_text "white" "Anaconda tools." "false"
+
+    printf "  "
+    print_text "green" "mypip       " "false"
+    print_text "white" "Python pip management tools" "false"
     printf "\n"
-    print_text "green" "$ mygpu: " "false"
-    print_text "white" "useful functions for GPU and cuda." "false"
+
+    printf "  "
+    print_text "green" "myenv       " "false"
+    print_text "white" "Anaconda environment management" "false"
     printf "\n"
-    print_text "green" "$ mypermission: " "false"
-    print_text "white" "some functions for permission, passward, etc." "false"
+
+    printf "  "
+    print_text "green" "mygpu       " "false"
+    print_text "white" "GPU and CUDA utilities" "false"
     printf "\n"
-    print_text "green" "$ mygit: " "false"
-    print_text "white" "Git tools." "false"
+
+    printf "  "
+    print_text "green" "mypermission" "false"
+    print_text "white" " Permission and password management" "false"
     printf "\n"
-    print_line "cyan" $(tput cols)
+
+    printf "  "
+    print_text "green" "mygit       " "false"
+    print_text "white" "Git workflow shortcuts" "false"
+    printf "\n"
+
+    printf "\n"
+    print_line "green" $(tput cols)
 }
 
 # >>> mytool >>>
@@ -447,7 +478,7 @@ listen(){
         echo -e "$ ssh -D $LPort $Host -N"
         ssh -D ${LPort} ${Host} -N
     else
-        echo -e 'Invalid Input!'
+        print_error "Invalid input! Please enter a valid option number."
     fi
     unset func_num
 }
@@ -560,12 +591,11 @@ sz(){
             print_text "green" "$ ls -l ${fod_name} | grep -c ^l" "false"
             ls -l ${fod_name} | grep -c ^l
         else
-            print_text "red" "Invalid Input!" "false"
-            echo 'Invalid Input!'
+            print_error "Invalid file type! Please enter A, D, F, or L."
         fi
 
     else
-        echo 'Invalid Input!'
+        print_error "Invalid input! Please enter a valid option number."
     fi
 }
 
@@ -619,16 +649,19 @@ vpstest(){
 
 # Integrate all tool commands
 mytool(){
-    echo -e 'Choose the Function [Number] for tools you want:'
-    echo -e '[1] jp - open jupyter lab'
-    echo -e '[2] listen - ssh -NL listen remote host'
-    echo -e '[3] pathadd - add environment variable to PATH'
-    echo -e '[4] condainit - set conda initial and add startup shell to bashrc/zshrc'
-    echo -e '[5] sz - view folder and file size'
-    echo -e '[6] listen_vpn - listen remote server vpn (Only support Local)'
-    echo -e '[7] download_googledrive - download file from google drive'
-    echo -e '[8] vpstest - test the vps.'
-    echo -e 'input you choose: \c'
+    print_table_text "mytool - Tool Selection Menu" "false" "cyan" "green" $(tput cols)
+    printf "\n"
+    echo -e '  [1] jp            - Open Jupyter Lab'
+    echo -e '  [2] listen        - SSH port forwarding'
+    echo -e '  [3] pathadd       - Add to PATH'
+    echo -e '  [4] condainit     - Initialize Conda'
+    echo -e '  [5] sz            - View disk usage'
+    echo -e '  [6] listen_vpn    - Listen VPN (Local only)'
+    echo -e '  [7] download_gd   - Download from Google Drive'
+    echo -e '  [8] vpstest       - Test VPS performance'
+    printf "\n"
+    print_line "green" $(tput cols)
+    echo -e '\nInput your choice: \c'
     read func_num
     if [ "${func_num}" = 1 ];then
         jp
@@ -647,7 +680,7 @@ mytool(){
     elif [ "${func_num}" = 8 ];then
         vpstest
     else
-        echo -e 'Invalid Input!'
+        print_error "Invalid input! Please enter a number between 1-8."
     fi
 }
 # <<< myool end <<<
@@ -743,13 +776,16 @@ pipu(){
 
 # Integrate all tool commands
 mypip(){
-    echo -e 'Choose the Function [Number] for tools you want:'
-    echo -e '[1] pipset - modify pip source'
-    echo -e '[2] pipbase - pip install some base module'
-    echo -e '[3] pipl - pip list or pip show'
-    echo -e '[4] pipi - pip install'
-    echo -e '[5] pipu - pip uninstall'
-    echo -e 'input you choose: \c'
+    print_table_text "mypip - Python Package Management" "false" "cyan" "green" $(tput cols)
+    printf "\n"
+    echo -e '  [1] pipset   - Configure pip source'
+    echo -e '  [2] pipbase  - Install base packages'
+    echo -e '  [3] pipl     - List/show packages'
+    echo -e '  [4] pipi     - Install packages'
+    echo -e '  [5] pipu     - Uninstall packages'
+    printf "\n"
+    print_line "green" $(tput cols)
+    echo -e '\nInput your choice: \c'
     read func_num
     if [ "${func_num}" = 1 ];then
         pipset
@@ -762,7 +798,7 @@ mypip(){
     elif [ "${func_num}" = 5 ];then
         pipu
     else
-        echo -e 'Invalid Input!'
+        print_error "Invalid input! Please enter a number between 1-5."
     fi
 }
 # <<< mypip end <<<
@@ -777,57 +813,71 @@ mypip(){
 # conda activate
 env() {
     if [ -z "$1" ]; then
-        # 获取终端宽度
-        terminal_width=$(tput cols)
+        print_section "Conda Environments" "cyan"
 
         # 获取conda环境列表
         conda_env_list=$(conda env list | tail -n +3)
 
-        # 定义颜色和格式
-        bold=$(tput bold)
-        normal=$(tput sgr0)
-        blue=$(tput setaf 4)
-        green=$(tput setaf 2)
+        # 如果没有环境
+        if [ -z "$conda_env_list" ]; then
+            print_warning "No conda environments found"
+            return 1
+        fi
+
+        # 获取终端宽度
+        terminal_width=$(tput cols)
 
         # 计算合适的列宽
-        env_name_width=$((terminal_width * 25 / 70))
-        location_width=$((terminal_width * 35 / 70))
+        env_name_width=$((terminal_width * 30 / 100))
+        location_width=$((terminal_width * 60 / 100))
 
         # 打印表头
-        printf "${bold}${blue}%-*s${green}%-*s${normal}%-10s\n" "$env_name_width" "Environment Name" "$location_width" "Location" "Active"
-        printf '%*s\n' "$terminal_width" | tr ' ' '='
+        printf "  "
+        print_text "cyan" "$(printf "%-*s" "$env_name_width" "Environment")" "false"
+        print_text "green" "$(printf "%-*s" "$location_width" "Location")" "false"
+        print_text "yellow" "Status" "false"
+        printf "\n"
 
-        # 打印conda环境列表，格式化对齐并添加颜色和激活状态
-        echo "$conda_env_list" | awk -v bold="$bold" -v normal="$normal" -v blue="$blue" -v green="$green" \
-        -v env_name_width="$env_name_width" -v location_width="$location_width" '
-        {
-            if ($1 == "*") {
-                env_name = $2
-                location = $3
-                active = "✅"
-            } else if ($2 == "*") {
-                env_name = $1
-                location = $3
-                active = "✅"
-            } else {
-                env_name = $1
-                location = $2
-                active = "❎"
-            }
-            printf("%-*s%-*s%-10s\n", env_name_width, env_name, location_width, location, active)
-        }' | column -t -s ' ' | while IFS= read -r line; do
-            env_name=$(echo "$line" | awk '{print $1}')
-            location=$(echo "$line" | awk '{print $2}')
-            active=$(echo "$line" | awk '{print $3}')
-            printf "${blue}%-*s${green}%-*s${normal}%-10s\n" "$env_name_width" "$env_name" "$location_width" "$location" "$active"
+        printf "  "
+        for ((i = 0; i < terminal_width - 4; i++)); do
+            printf "─"
+        done
+        printf "\n"
+
+        # 打印conda环境列表
+        echo "$conda_env_list" | while IFS= read -r line; do
+            # 跳过空行和注释
+            [[ -z "$line" || "$line" == \#* ]] && continue
+
+            if [[ "$line" == *"*"* ]]; then
+                # 当前激活的环境 - 格式: name  *  path
+                env_name=$(echo "$line" | awk '{print $1}')
+                location=$(echo "$line" | awk '{for(i=3;i<=NF;i++) printf "%s ", $i; print ""}' | sed 's/ *$//')
+
+                printf "  "
+                print_text "cyan" "$(printf "%-*s" "$env_name_width" "$env_name")" "false"
+                print_text "white" "$(printf "%-*s" "$location_width" "$location")" "false"
+                print_text "green" "● Active" "false"
+                printf "\n"
+            else
+                # 非激活环境 - 格式: name  path
+                env_name=$(echo "$line" | awk '{print $1}')
+                location=$(echo "$line" | awk '{for(i=2;i<=NF;i++) printf "%s ", $i; print ""}' | sed 's/ *$//')
+
+                printf "  "
+                print_text "white" "$(printf "%-*s" "$env_name_width" "$env_name")" "false"
+                print_text "white" "$(printf "%-*s" "$location_width" "$location")" "false"
+                print_text "white" "○" "false"
+                printf "\n"
+            fi
         done
 
-        # 恢复终端颜色
-        tput sgr0
+        printf "\n"
+        print_line "cyan" $(tput cols)
+        printf "\n"
 
-        printf '\n'
-        # 提取环境名称列表
-        condaenvs=$(echo "$conda_env_list" | grep "^\w" | awk '{print $1}')
+        # 提取环境名称列表（排除空行和注释）
+        condaenvs=$(echo "$conda_env_list" | grep -v '^#' | grep -v '^$' | awk '{print $1}')
 
         # 根据shell类型生成环境数组
         if [[ "$SHELL" == *"zsh" ]]; then
@@ -835,22 +885,59 @@ env() {
         elif [[ "$SHELL" == *"bash" ]]; then
             IFS=$'\n' read -r -d '' -a envs_array <<< "$condaenvs"
         else
-            echo 'Invalid shell type: ' $SHELL
+            print_error "Invalid shell type: $SHELL"
             return 1
         fi
 
-        PS3='The environment to activate: '
-        select env in "${envs_array[@]}" "deactivate"; do
-            if [ "$env" = "deactivate" ]; then
-                conda deactivate
-                break
-            elif [ -n "$env" ]; then
-                echo "activate environment: $env"
-                conda activate "$env"
-                break
-            fi
+        # 创建选择菜单
+        print_text "cyan" "Select environment to activate:" "false"
+        printf "\n\n"
+
+        local count=1
+        for env_item in "${envs_array[@]}"; do
+            printf "  "
+            print_text "yellow" "[$count]" "false"
+            printf " "
+            print_text "white" "$env_item" "false"
+            printf "\n"
+            ((count++))
         done
-        unset PS3
+
+        printf "  "
+        print_text "yellow" "[$count]" "false"
+        printf " "
+        print_text "red" "deactivate" "false"
+        printf "\n\n"
+
+        print_prompt "Your choice" ""
+        read choice
+
+        # 验证输入是否为数字
+        if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
+            print_error "Please enter a valid number"
+            return 1
+        fi
+
+        if [ "$choice" = "$count" ]; then
+            print_info "Deactivating conda environment..."
+            conda deactivate
+            print_success "Environment deactivated"
+        elif [ "$choice" -ge 1 ] && [ "$choice" -lt "$count" ]; then
+            # 根据shell类型获取正确的数组元素
+            if [[ "$SHELL" == *"zsh" ]]; then
+                # zsh数组从1开始
+                selected_env="${envs_array[$choice]}"
+            else
+                # bash数组从0开始
+                selected_env="${envs_array[$((choice - 1))]}"
+            fi
+
+            print_info "Activating environment: $selected_env"
+            conda activate "$selected_env"
+            print_success "Environment activated: $selected_env"
+        else
+            print_error "Invalid choice. Please enter a number between 1 and $count"
+        fi
     else
         conda activate "$1"
     fi
@@ -902,12 +989,15 @@ denv(){
 
 # Integrate all conda commands
 myenv(){
-    echo -e 'Choose the Function [Number] for conda you want:'
-    echo -e '[1] env - Activate an environment'
-    echo -e '[2] lenv - List installed environments'
-    echo -e '[3] cenv - Create new environments'
-    echo -e '[4] denv - Delete an installed environment'
-    echo -e 'input you choose: \c'
+    print_table_text "myenv - Conda Environment Management" "false" "cyan" "green" $(tput cols)
+    printf "\n"
+    echo -e '  [1] env    - Activate environment'
+    echo -e '  [2] lenv   - List environments'
+    echo -e '  [3] cenv   - Create environment'
+    echo -e '  [4] denv   - Delete environment'
+    printf "\n"
+    print_line "green" $(tput cols)
+    echo -e '\nInput your choice: \c'
     read func_num
     if [ "${func_num}" = 1 ];then
         env
@@ -918,7 +1008,7 @@ myenv(){
     elif [ "${func_num}" = 4 ];then
         denv
     else
-        echo -e 'Invalid Input!'
+        print_error "Invalid input! Please enter a number between 1-4."
     fi
 }
 # <<< myenv end <<<
@@ -950,12 +1040,15 @@ pid(){
 
 # Integrate all GPU commands
 mygpu(){
-    echo -e 'Choose the Function [Number] for GPU you want:'
-    echo -e '[1] gpu - gpustat realtime'
-    echo -e '[2] nvidia - nvidia-smi realtime'
-    echo -e '[3] pid - view pids for all gpus'
-    echo -e '[4] gpus - CUDA_VISIBLE_DEVICES'
-    echo -e 'input you choose: \c'
+    print_table_text "mygpu - GPU Management Tools" "false" "cyan" "green" $(tput cols)
+    printf "\n"
+    echo -e '  [1] gpu      - GPU status (gpustat)'
+    echo -e '  [2] nvidia   - GPU status (nvidia-smi)'
+    echo -e '  [3] pid      - View GPU process IDs'
+    echo -e '  [4] gpus     - Show CUDA devices'
+    printf "\n"
+    print_line "green" $(tput cols)
+    echo -e '\nInput your choice: \c'
     read func_num
     if [ "${func_num}" = 1 ];then
         gpu
@@ -966,7 +1059,7 @@ mygpu(){
     elif [ "${func_num}" = 4 ];then
         echo 'CUDA_VISIBLE_DEVICES'
     else
-        echo -e 'Invalid Input!'
+        print_error "Invalid input! Please enter a number between 1-4."
     fi
 }
 # <<< GPU end <<<
@@ -1031,11 +1124,14 @@ mychown(){
 
 # Integrate all Permission commands
 mypermission(){
-    echo -e 'Choose the Function [Number] for Permission you want:'
-    echo -e '[1] mychmod - modify directory permissions levels'
-    echo -e '[2] mychown - modify directory owners'
-    echo -e '[3] passwd - change passward'
-    echo -e 'input you choose: \c'
+    print_table_text "mypermission - Permission Management" "false" "cyan" "green" $(tput cols)
+    printf "\n"
+    echo -e '  [1] mychmod  - Modify directory permissions'
+    echo -e '  [2] mychown  - Modify directory owners'
+    echo -e '  [3] passwd   - Change password'
+    printf "\n"
+    print_line "green" $(tput cols)
+    echo -e '\nInput your choice: \c'
     read func_num
     if [ "${func_num}" = 1 ];then
         mychmod
@@ -1044,7 +1140,7 @@ mypermission(){
     elif [ "${func_num}" = 3 ];then
         passwd
     else
-        echo -e 'Invalid Input!'
+        print_error "Invalid input! Please enter a number between 1-3."
     fi
 }
 # <<< mypermission end <<<
@@ -1078,19 +1174,22 @@ alias gitst='git status'
 
 # Integrate all Git commands
 mygit(){
-    echo -e 'Choose the Function [Number] for Git you want:'
-    echo -e '[1] gita - git add'
-    echo -e '[2] gitaa - git add .'
-    echo -e '[3] gitc - git commit'
-    echo -e '[4] gitl - git log'
-    echo -e '[5] gitr - git reset'
-    echo -e '[6] gc - git clone'
-    echo -e '[7] gitch - git checkout'
-    echo -e '[8] gitps - git push origin master'
-    echo -e '[9] gitbpl - git pull'
-    echo -e '[10] gitst - git status'
-    echo -e '[11] gitb - git branch'
-    echo -e 'input you choose: \c'
+    print_table_text "mygit - Git Workflow Shortcuts" "false" "cyan" "green" $(tput cols)
+    printf "\n"
+    echo -e '  [1]  gita   - git add'
+    echo -e '  [2]  gitaa  - git add .'
+    echo -e '  [3]  gitc   - git commit'
+    echo -e '  [4]  gitl   - git log'
+    echo -e '  [5]  gitr   - git reset'
+    echo -e '  [6]  gc     - git clone'
+    echo -e '  [7]  gitch  - git checkout'
+    echo -e '  [8]  gitps  - git push origin master'
+    echo -e '  [9]  gitpl  - git pull'
+    echo -e '  [10] gitst  - git status'
+    echo -e '  [11] gitb   - git branch'
+    printf "\n"
+    print_line "green" $(tput cols)
+    echo -e '\nInput your choice: \c'
     read func_num
     if [ "${func_num}" = 1 ];then
         gita
@@ -1115,7 +1214,7 @@ mygit(){
     elif [ "${func_num}" = 11 ];then
         gitb
     else
-        echo -e 'Invalid Input!'
+        print_error "Invalid input! Please enter a number between 1-11."
     fi
 }
 # <<< mygit end <<<
@@ -1178,16 +1277,20 @@ download() {
 
 # upload folder
 upload(){
-    echo -e '[1] File / Files'
-    echo -e '[2] Folder / Folders'
-    echo -e 'Your choose: \c'
+    print_table_text "Upload Files/Folders" "false" "cyan" "green" $(tput cols)
+    printf "\n"
+    echo -e '  [1] File(s)'
+    echo -e '  [2] Folder(s)'
+    printf "\n"
+    print_line "green" $(tput cols)
+    echo -e '\nYour choice: \c'
     read func_num
     if [ "${func_num}" = 1 ];then
         trz
     elif [ "${func_num}" = 2 ];then
         trz -r
     else
-        echo -e 'Invalid Input!'
+        print_error "Invalid input! Please enter 1 or 2."
     fi
 }
 # open ssh with tssh --dragfile

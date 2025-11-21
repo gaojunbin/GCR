@@ -124,3 +124,152 @@ print_table_text() {
     # Print border
     printf "\e[%sm%s\e[0m\n" "${border_color_code}" "${border}"
 }
+
+# Function to print error message
+print_error() {
+    local message="$1"
+    printf "\n"
+    printf "  "
+    print_text "red" "ERROR:" "false"
+    printf " "
+    print_text "white" "$message" "false"
+    printf "\n"
+}
+
+# Function to print warning message
+print_warning() {
+    local message="$1"
+    printf "\n"
+    printf "  "
+    print_text "yellow" "WARNING:" "false"
+    printf " "
+    print_text "white" "$message" "false"
+    printf "\n"
+}
+
+# Function to print success message
+print_success() {
+    local message="$1"
+    printf "\n"
+    printf "  "
+    print_text "green" "SUCCESS:" "false"
+    printf " "
+    print_text "white" "$message" "false"
+    printf "\n"
+}
+
+# Function to print info message
+print_info() {
+    local message="$1"
+    printf "\n"
+    printf "  "
+    print_text "cyan" "INFO:" "false"
+    printf " "
+    print_text "white" "$message" "false"
+    printf "\n"
+}
+
+# Function to print input prompt (modern CLI style)
+print_prompt() {
+    local prompt_text="$1"
+    local default_value="$2"
+
+    printf "\n"
+    printf "  "
+    print_text "cyan" "→" "false"
+    printf " "
+    print_text "white" "$prompt_text" "false"
+
+    if [ -n "$default_value" ]; then
+        printf " "
+        print_text "yellow" "(default: $default_value)" "false"
+    fi
+
+    printf "\n"
+    printf "  "
+    print_text "cyan" "›" "false"
+    printf " "
+}
+
+# Function to print a section header
+print_section() {
+    local title="$1"
+    local color="${2:-cyan}"
+
+    printf "\n"
+    print_line "$color" $(tput cols)
+    printf "  "
+    print_text "$color" "$title" "false"
+    printf "\n"
+    print_line "$color" $(tput cols)
+    printf "\n"
+}
+
+# Function to print menu options (modern style)
+print_menu_option() {
+    local number="$1"
+    local title="$2"
+    local description="$3"
+
+    printf "  "
+    print_text "yellow" "[$number]" "false"
+    printf " "
+    print_text "green" "$title" "false"
+
+    if [ -n "$description" ]; then
+        printf "\n      "
+        print_text "white" "$description" "false"
+    fi
+    printf "\n"
+}
+
+# Function to print step indicator
+print_step() {
+    local step_num="$1"
+    local step_text="$2"
+    local step_status="${3:-pending}"  # pending, running, done
+
+    printf "  "
+
+    case "$step_status" in
+        "pending")
+            print_text "white" "[ ]" "false"
+            ;;
+        "running")
+            print_text "yellow" "[▶]" "false"
+            ;;
+        "done")
+            print_text "green" "[✓]" "false"
+            ;;
+    esac
+
+    printf " "
+    print_text "white" "Step $step_num:" "false"
+    printf " "
+    print_text "cyan" "$step_text" "false"
+    printf "\n"
+}
+
+# Function to print confirmation prompt
+print_confirm() {
+    local message="$1"
+    local default="${2:-y}"
+
+    printf "\n"
+    printf "  "
+    print_text "yellow" "?" "false"
+    printf " "
+    print_text "white" "$message" "false"
+    printf " "
+
+    if [ "$default" = "y" ]; then
+        print_text "cyan" "([y]/n)" "false"
+    else
+        print_text "cyan" "(y/[n])" "false"
+    fi
+
+    printf "\n"
+    printf "  "
+    print_text "cyan" "›" "false"
+    printf " "
+}

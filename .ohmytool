@@ -78,6 +78,50 @@
 # |
 # ==============  Outline end ==============
 
+# ================================ UI Helper Functions =====================================
+# Note: UI functions (print_text, print_section, print_menu_option, print_success, etc.)
+# are provided by .ohmyprint which is sourced in .ohmyshell
+
+# ================================ Business Helper Functions ================================
+
+# Download file with status
+# Usage: download_file "url" "output_path" "description"
+download_file() {
+    local url="$1"
+    local output="$2"
+    local description="${3:-Downloading file}"
+
+    print_step "$description"
+    if curl -s "$url" -o "$output"; then
+        print_success "$description completed"
+        return 0
+    else
+        print_error "$description failed"
+        return 1
+    fi
+}
+
+# Start docker compose service
+# Usage: start_docker_compose "service_name" "port"
+start_docker_compose() {
+    local service_name="$1"
+    local port="${2:-}"
+
+    print_step "Starting ${service_name}"
+    if docker-compose up -d; then
+        print_success "${service_name} started successfully!"
+        if [ -n "$port" ]; then
+            print_info "Access via: http://localhost:${port}"
+        fi
+        return 0
+    else
+        print_error "Failed to start ${service_name}"
+        return 1
+    fi
+}
+
+# ================================ Manual and Main Functions ================================
+
 if [[ "$SHELL" == *"zsh" ]];then
     declare -A manual_ohmytool=(
         ["new_vps_help"]="Reminde you what to install when you get a new server."
@@ -118,104 +162,168 @@ if [[ "$SHELL" == *"zsh" ]];then
 fi
 
 ohmytool(){
-    echo -e 'This is a ToolKit for server manager by
-one-click installation and environment set.'
-    echo -e 'List all tookit in .ohmytool'
-    echo -e '[*] new_vps_help     - Reminde you what to install when you get a new server.'
-    echo -e '[*] install_base     - Install some base tools.'
-    echo -e '[*] install_vpn      - Install vpn with clash (Only support Linux)'
-    echo -e '[*] install_buildvpn - Install buildvpn on oversea server'
-    echo -e '[*] install_xui      - Install x-ui to build vpn on oversea server'
-    echo -e '[*] install_xrayr    - Install xrayr to build vpn on oversea server'
-    echo -e '[*] install_docker   - Install Docker (Only support Ubuntu)'
-    echo -e '[*] install_colorls  - Install colorls and ruby (not suggestion!)'
-    echo -e '[*] install_trzsz    - The trzsz ( trz / tsz ) is a simple file transfer tools.'
-    echo -e '[*] install_tssh     - A ssh client that supports trzsz.'
-    echo -e '[*] install_spacevim - Install new version vim and spacevim'
-    echo -e '[*] install_server-administration - Install server-administration'
-    echo -e '[*] install_nginxproxy - Install nginx proxy'
-    echo -e '[*] install_homeweb  - Install HomeWeb for Junbin Gao.'
-    echo -e '[*] install_newtab   - Install NewTab for Junbin Gao.'
-    echo -e '[*] install_deepl    - Install DeepL translate'
-    echo -e '[*] install_cloudreve - Install cloudreve'
-    echo -e '[*] install_overleaf - Install OverLeaf'
-    echo -e '[*] install_serverstatus - Monitor you server status.'
-    echo -e '[*] install_frp      - Intranet Penetration Tool.'
-    echo -e '[*] install_chatgpt  - Install chat web with chatgpt API.'
-    echo -e '[*] install_webmonitor - Install web monitor.'
-    echo -e '[*] install_vncdocker - Install vnc docker.'
-    echo -e '[*] install_qbittorrent - Install qbittorrent.'
-    echo -e '[*] install_jellyfin - Install jellyfin.'
-    echo -e '[*] install_image    - Install lsky-pro image.'
-    echo -e '[*] install_samtools - TODO'
-    echo -e '[*] install_PBShelper - Install PBS helper.'
-    echo -e '[*] install_htop_wo_sudo - Install htop without sudo.'
-    echo -e '[*] install_autojump - Install autojump.'
-    echo -e '[*] install_fzf      - Install fzf.'
-    echo -e '[*] install_copypaste - Install copypaste.'
-    echo -e '[*] install_safe_rm  - Install safe-rm.'
-    echo -e '[*] install_discard_vim - Install discard-vim to enable use vscode or sublime to edit file.'
-    echo -e '[*] install_joshuto  - Install joshuto for better file browsing.'
+    print_section "ohmytool - Server Management Toolkit" "green"
+
+    print_text "white" "One-click installation and environment setup for server management." "false"
+    printf "\n\n"
+
+    # Basic Tools
+    print_text "cyan" "Basic Tools & Setup:" "false"
+    printf "\n"
+    print_menu_option "*" "new_vps_help" "Quick start guide for new servers"
+    print_menu_option "*" "install_base" "Essential command-line tools"
+
+    printf "\n"
+    print_text "cyan" "Network & Proxy:" "false"
+    printf "\n"
+    print_menu_option "*" "install_vpn" "Clash VPN (Linux only)"
+    print_menu_option "*" "install_buildvpn" "VPN for overseas servers"
+    print_menu_option "*" "install_xui" "X-UI VPN panel"
+    print_menu_option "*" "install_xrayr" "XrayR VPN solution"
+
+    printf "\n"
+    print_text "cyan" "Infrastructure:" "false"
+    printf "\n"
+    print_menu_option "*" "install_docker" "Docker & docker-compose (Ubuntu)"
+    print_menu_option "*" "install_nginxproxy" "Nginx proxy manager"
+    print_menu_option "*" "install_frp" "Intranet penetration tool"
+
+    printf "\n"
+    print_text "cyan" "File Management:" "false"
+    printf "\n"
+    print_menu_option "*" "install_trzsz" "Simple file transfer (trz/tsz)"
+    print_menu_option "*" "install_tssh" "SSH client with trzsz support"
+    print_menu_option "*" "install_joshuto" "Modern file browser"
+    print_menu_option "*" "install_safe_rm" "Safe deletion with trash"
+
+    printf "\n"
+    print_text "cyan" "Development Tools:" "false"
+    printf "\n"
+    print_menu_option "*" "install_spacevim" "Enhanced Vim editor"
+    print_menu_option "*" "install_discard_vim" "Remote editing with VS Code/Sublime"
+    print_menu_option "*" "install_autojump" "Smart directory navigation"
+    print_menu_option "*" "install_fzf" "Fuzzy finder"
+    print_menu_option "*" "install_htop_wo_sudo" "Process monitor without sudo"
+
+    printf "\n"
+    print_text "cyan" "Web Applications:" "false"
+    printf "\n"
+    print_menu_option "*" "install_homeweb" "Personal homepage"
+    print_menu_option "*" "install_newtab" "Browser new tab page"
+    print_menu_option "*" "install_deepl" "DeepL translation service"
+    print_menu_option "*" "install_chatgpt" "ChatGPT web interface"
+
+    printf "\n"
+    print_text "cyan" "Storage & Media:" "false"
+    printf "\n"
+    print_menu_option "*" "install_cloudreve" "Private cloud storage"
+    print_menu_option "*" "install_qbittorrent" "BitTorrent client"
+    print_menu_option "*" "install_jellyfin" "Media streaming server"
+    print_menu_option "*" "install_image" "Image hosting (lsky-pro)"
+
+    printf "\n"
+    print_text "cyan" "Productivity:" "false"
+    printf "\n"
+    print_menu_option "*" "install_overleaf" "LaTeX collaboration platform"
+    print_menu_option "*" "install_copypaste" "Text sharing service"
+    print_menu_option "*" "install_webmonitor" "Website monitoring"
+
+    printf "\n"
+    print_text "cyan" "System & Monitoring:" "false"
+    printf "\n"
+    print_menu_option "*" "install_serverstatus" "Server status monitoring"
+    print_menu_option "*" "install_vncdocker" "VNC remote desktop"
+    print_menu_option "*" "install_colorls" "Colorful ls (requires Ruby)"
+
+    printf "\n"
+    print_text "cyan" "Research Tools:" "false"
+    printf "\n"
+    print_menu_option "*" "install_PBShelper" "PBS job management helper"
+    print_menu_option "*" "install_server-administration" "Server admin toolkit"
+
+    printf "\n"
+    print_line "green" $(tput cols)
+    printf "\n"
+    print_text "yellow" "Type the function name to run installation" "false"
+    printf "\n"
 }
 
 # Reminde you what to install when you get a new server.
 new_vps_help(){
-    echo 'Reminde you what to install when you get a new server.'
-    echo '0. Please run [ install_base ] first to install some base tools.'
-    echo '1. If the network of your server is in China, please [ install_vpn ] first to over the wall.'
-    echo '2. If you are now logging with ssh password, please [ install_server-administration ] and run [myadduser] to generate key.'
-    echo '3. Please install docker and docker-compose because most app are built by docker. please [ install_docker ].'
-    echo '4. Please install nginx proxy manager to help you manage all your web server. [ install_nginxproxy ].'
-    echo '5. If you need deploy deepl translate, [ install_deepl ].'
-    echo '6. If you need deploy junbin homeweb, [ install_homeweb ].'
-    echo '7. If you need deploy NewTab, [ install_newtab ].'
-    echo '8. If you need deploy latex editor overleaf, [ install_overleaf ].'
-    echo '9. If you need deploy your own cloud drive, [ install_cloudreve ].'
-    echo '10. If you need deploy server monitor, [ install_serverstatus ].'
-    echo '11. If you need deploy intranet penetration tool, [ install_frp ].'
-    echo '12. If you need deploy chat web with chatgpt API, [ install_chatgpt ].'
-    echo '13. If you need deploy samtools, [ install_samtools ].'
-    echo '14. If you need deploy server-administration, [ install_server-administration ].'
-    echo '15. If you need deploy trzsz, [ install_trzsz ].'
-    echo '16. If you need deploy colorls, [ install_colorls ].'
-    echo '17. If you need deploy tssh, [ install_tssh ].'
-    echo '18. If you need deploy spacevim, [ install_spacevim ].'
-    echo '19. If you need deploy x-ui, [ install_xui ].'
-    echo '20. If you need deploy qbittorrent, [ install_qbittorrent ].'
-    echo '21. If you need deploy jellyfin, [ install_jellyfin ].'
-    echo '22. If you need deploy lsky-pro image, [ install_image ].'
-    echo '23. If you need deploy safe-rm, [ install_safe_rm ].'
-    echo '24. If you need deploy dicard-vim, [ install_discard_vim ].'
-    echo '25. If you need deploy joshuto, [ install_joshuto ].'
-    echo 'After you installed all the server you needed, please config the nginx proxy.'
+    print_section "New VPS Setup Guide"
+
+    print_text "white" "Welcome! Here's a recommended installation sequence for your new server:"
+    printf "\n"
+
+    print_step "Step 0: Install base tools"
+    print_info "Run: install_base"
+    printf "\n"
+
+    print_step "Step 1: Configure network (if in China)"
+    print_info "Run: install_vpn"
+    printf "\n"
+
+    print_step "Step 2: Set up SSH security"
+    print_info "Run: install_server-administration, then use myadduser"
+    printf "\n"
+
+    print_step "Step 3: Install Docker environment"
+    print_info "Run: install_docker"
+    printf "\n"
+
+    print_step "Step 4: Install Nginx proxy manager"
+    print_info "Run: install_nginxproxy"
+    printf "\n"
+
+    print_separator
+
+    print_text "cyan" "\nOptional Services:"
+    print_item "5" "DeepL translator: install_deepl"
+    print_item "6" "Personal homepage: install_homeweb"
+    print_item "7" "New tab page: install_newtab"
+    print_item "8" "LaTeX editor: install_overleaf"
+    print_item "9" "Cloud storage: install_cloudreve"
+    print_item "10" "Server monitor: install_serverstatus"
+    print_item "11" "Intranet penetration: install_frp"
+    print_item "12" "ChatGPT interface: install_chatgpt"
+    print_item "13" "File transfer: install_trzsz"
+    print_item "14" "SSH client: install_tssh"
+    print_item "15" "VPN panel: install_xui"
+    print_item "16" "BitTorrent: install_qbittorrent"
+    print_item "17" "Media server: install_jellyfin"
+    print_item "18" "Image hosting: install_image"
+    print_item "19" "Safe deletion: install_safe_rm"
+    print_item "20" "Remote editing: install_discard_vim"
+    print_item "21" "File browser: install_joshuto"
+
+    printf "\n"
+    print_warning "Remember to configure nginx proxy after installation!"
+    printf "\n"
 }
 
 # =================================== Install plugin=============================================
 
 # Install some base tools.
 install_base(){
-    echo 'Install some base tools.'
-    echo "[*] whether to install autojump? ([y]/n)? \c"
-    read yon
-    yon=${yon:-y}
-    if [ "${yon}" = "y" ];then
+    print_section "Installing Base Tools"
+
+    print_text "white" "Essential command-line tools to enhance your terminal experience."
+    printf "\n"
+
+    if ask_yes_no "Install autojump (smart directory navigation)?" "y"; then
         install_autojump
     fi
-    unset yon
-    echo "[*] whether to install fzf? ([y]/n)? \c"
-    read yon
-    yon=${yon:-y}
-    if [ "${yon}" = "y" ];then
+
+    if ask_yes_no "Install fzf (fuzzy finder)?" "y"; then
         install_fzf
     fi
-    unset yon
-    echo "[*] whether to install trzsz? ([y]/n)? \c"
-    read yon
-    yon=${yon:-y}
-    if [ "${yon}" = "y" ];then
+
+    if ask_yes_no "Install trzsz (file transfer tool)?" "y"; then
         install_trzsz
     fi
-    unset yon
+
+    printf "\n"
+    print_success "Base tools installation completed!"
 }
 
 # Install vpn with clash (Only support Linux)
@@ -230,29 +338,46 @@ install_base(){
 
 # Install vpn with clash (with docker)
 install_vpn(){
-    echo 'Install vpn with clash (with docker)'
-    echo 'The docker image is from https://hub.docker.com/r/junbingao/clash'
-    echo 'Where to save data: (default: /root): \c'
+    print_section "Install VPN (Clash with Docker)" "green"
+
+    print_text "white" "Docker image: https://hub.docker.com/r/junbingao/clash" "false"
+    printf "\n\n"
+
+    print_prompt "Where to save data" "/root"
     read vpn_path
     if [ "${vpn_path}" = "" ];then
         cd /root
     else
         cd ${vpn_path}
     fi
+
+    print_info "Creating directory structure..."
     mkdir clash
     cd clash
     curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/clash/docker-compose.yml -o docker-compose.yml
     mkdir clash
     cd clash
-    echo 'Subscribed Links (you can set it later): \c'
+
+    print_prompt "Subscription link (optional, can configure later)" ""
     read link
     if [ -n "$link" ]; then
+        print_info "Downloading configuration..."
         wget -O config.yaml $link --no-check-certificate
     fi
     cd ..
+
+    print_info "Starting Clash service..."
     docker-compose up -d
-    echo 'Success! Please run [listen_vpn] in local to set vpn.'
-    echo 'Please run [startvpn] to start vpn server or [stopvpn] to stop vpn server. Defalt is always stop.'
+
+    printf "\n"
+    print_line "green" $(tput cols)
+    print_success "VPN installed successfully!"
+    printf "\n"
+    print_text "yellow" "Next steps:" "false"
+    printf "\n"
+    printf "  1. Run 'listen_vpn' on local machine to connect\n"
+    printf "  2. Use 'startvpn' to start or 'stopvpn' to stop VPN\n"
+    printf "  3. Default state: VPN is stopped\n"
 }
 
 # Install buildvpn on oversea server
@@ -367,78 +492,103 @@ install_colorls(){
 
 # The trzsz ( trz / tsz ) is a simple file transfer tools.
 install_trzsz(){
-    echo 'The trzsz ( trz / tsz ) is a simple file transfer tools.'
-    echo -e 'Choose the OS [Number] you use now:'
-    echo -e '[1] MacOS'
-    echo -e '[2] Ubuntu'
-    echo -e '[3] Debian (Beta)'
-    echo -e '[4] Windows (Beta)'
-    echo -e '[5] Other'
-    echo -e 'input you choose: \c'
+    print_section "Install trzsz - File Transfer Tool" "green"
+
+    print_text "white" "A simple and efficient file transfer tool for terminal" "false"
+    printf "\n\n"
+
+    print_text "cyan" "Select your operating system:" "false"
+    printf "\n"
+    print_menu_option "1" "MacOS" ""
+    print_menu_option "2" "Ubuntu" ""
+    print_menu_option "3" "Debian" "(Beta)"
+    print_menu_option "4" "Windows" "(Beta)"
+    print_menu_option "5" "Other" "Visit https://trzsz.github.io/cn/go"
+    printf "\n"
+
+    print_prompt "Your choice" ""
     read os_num
     if [ "${os_num}" = 1 ];then
-        echo -e 'Choose the Installation method [Number] you want (default: 1):'
-        echo -e '[1] homebrew (recommend)'
-        echo -e 'input you choose: \c'
+        print_text "cyan" "Installation method:" "false"
+        printf "\n"
+        print_menu_option "1" "Homebrew" "(Recommended)"
+        printf "\n"
+        print_prompt "Your choice" "1"
         read method_num
         method_num=${method_num:-1}
         if [ "${method_num}" = 1 ];then
-            echo "Install with homebrew..."
+            print_info "Installing with Homebrew..."
             brew update
             brew install trzsz-go
+            print_success "Installation completed!"
         else
-            echo 'Invalid input!'
+            print_error "Invalid input!"
         fi
+
     elif [ "${os_num}" = 2 ];then
-        echo -e 'Choose the Installation method [Number] you want (default: 1):'
-        echo -e '[1] apt with sudo'
-        echo -e '[2] github release (w/o sudo)'
-        echo -e 'input you choose: \c'
+        print_text "cyan" "Installation method:" "false"
+        printf "\n"
+        print_menu_option "1" "APT with sudo" ""
+        print_menu_option "2" "GitHub release" "(without sudo)"
+        printf "\n"
+        print_prompt "Your choice" "1"
         read method_num
         method_num=${method_num:-1}
         if [ "${method_num}" = 1 ];then
-            echo "Install with apt..."
+            print_info "Installing with APT..."
             sudo apt update && sudo apt install software-properties-common
             sudo add-apt-repository ppa:trzsz/ppa && sudo apt update
             sudo apt install trzsz
+            print_success "Installation completed!"
         elif [ "${method_num}" = 2 ];then
+            print_info "Downloading from GitHub..."
             wget https://github.com/trzsz/trzsz-go/releases/download/v1.1.7/trzsz_1.1.7_linux_x86_64.tar.gz --no-check-certificate
             tar -xzvf trzsz_1.1.7_linux_x86_64.tar.gz
             rm trzsz_1.1.7_linux_x86_64.tar.gz
             mv trzsz_1.1.7_linux_x86_64 $HOME/.trzsz
             echo "export PATH=$HOME/.trzsz:"'$PATH' >> ${shell_file}
+            print_success "Installation completed!"
         else
-            echo 'Invalid input!'
+            print_error "Invalid input!"
         fi
+
     elif [ "${os_num}" = 3 ];then
-        echo -e 'Choose the Installation method [Number] you want (default: 1):'
-        echo -e '[1] apt with sudo (recommend)'
-        echo -e '[2] pip'
-        echo -e 'input you choose: \c'
+        print_text "cyan" "Installation method:" "false"
+        printf "\n"
+        print_menu_option "1" "APT with sudo" "(Recommended)"
+        print_menu_option "2" "pip" ""
+        printf "\n"
+        print_prompt "Your choice" "1"
         read method_num
         method_num=${method_num:-1}
         if [ "${method_num}" = 1 ];then
-            echo "Install with apt..."
+            print_info "Installing with APT..."
             sudo apt install curl gpg
             curl -s 'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x7074ce75da7cc691c1ae1a7c7e51d1ad956055ca' | gpg --dearmor -o /usr/share/keyrings/trzsz.gpg
             echo 'deb [signed-by=/usr/share/keyrings/trzsz.gpg] https://ppa.launchpadcontent.net/trzsz/ppa/ubuntu jammy main' | sudo tee /etc/apt/sources.list.d/trzsz.list
             sudo apt update
             sudo apt install trzsz
+            print_success "Installation completed!"
         elif [ "${method_num}" = 2 ];then
-            echo "Install with pip..."
+            print_info "Installing with pip..."
             pip install trzsz
+            print_success "Installation completed!"
         else
-            echo 'Invalid input!'
+            print_error "Invalid input!"
         fi
+
     elif [ "${os_num}" = 4 ];then
-        echo "Install with scoop... (https://scoop.sh)"
+        print_info "Installing with scoop (https://scoop.sh)..."
         scoop bucket add extras
         scoop update
         scoop install trzsz
+        print_success "Installation completed!"
+
     elif [ "${os_num}" = 5 ];then
-        echo "Other OS, please visit https://trzsz.github.io/cn/go"
+        print_info "Please visit https://trzsz.github.io/cn/go for installation instructions"
+
     else
-        echo 'Invalid input!'
+        print_error "Invalid input!"
     fi
 }
 
@@ -1089,15 +1239,29 @@ EOF
 
 # install safe-rm
 install_safe_rm(){
-    print_text "green" 'Install safe-rm.' "false"
+    print_section "Install safe-rm - Safe Deletion Tool" "green"
+
+    print_text "white" "Protect your files by moving deleted items to trash instead of permanent removal" "false"
+    printf "\n\n"
+
+    print_info "Downloading safe-rm script..."
     curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/safe-rm/safe-rm -o $HOME/.safe-rm
     chmod +x $HOME/.safe-rm
-    print_text "green" "The location of safe-rm (default: $HOME/.Trash): " "false"
+
+    print_prompt "Trash directory location" "$HOME/.Trash"
     read safe_rm_path
     safe_rm_path=${safe_rm_path:-$HOME/.Trash}
+
+    print_info "Configuring environment..."
     echo "# [GCR Add] -------- safe-rm configuration --------" >> ${shell_file}
     echo "export SAFE_RM_TRASH=$safe_rm_path" >> ${shell_file}
-    print_text "green" "Install safe-rm successfully. Please restart your terminal." "true"
+
+    printf "\n"
+    print_line "green" $(tput cols)
+    print_success "safe-rm installed successfully!"
+    printf "\n"
+    print_text "yellow" "Please restart your terminal to activate safe-rm" "false"
+    printf "\n"
 }
 
 # install discard-vim
@@ -1151,36 +1315,45 @@ Host *
 
 # install joshuto
 install_joshuto(){
-    print_text "green" "Install joshuto." "false"
-    printf "\n"
+    print_section "Install joshuto - Modern File Browser" "green"
 
-    print_text "white" "Supported operating systems:" "false"
+    print_text "white" "A ranger-like terminal file manager written in Rust" "false"
+    printf "\n\n"
+
+    print_text "cyan" "Universal Systems:" "false"
     printf "\n"
-    print_text "yellow" "(Universal system)" "false"
+    print_menu_option "1" "Ubuntu" "Build from source"
+    print_menu_option "2" "MacOS" "Install via Homebrew"
+
     printf "\n"
-    print_text "green" "[1] Ubuntu" "false"
+    print_text "cyan" "Specific Systems:" "false"
     printf "\n"
-    print_text "green" "[2] MacOS" "false"
+    print_menu_option "3" "NUS HPC" "Pre-built binary"
+    print_menu_option "4" "NSCC" "Pre-built binary"
+
     printf "\n"
-    print_text "yellow" "(Specific system)" "false"
-    printf "\n"
-    print_text "green" "[3] NUS HPC" "false"
-    printf "\n"
-    print_text "green" "[4] NSCC" "false"
-    printf "\n"
-    print_text "white" "Plese select your OS: " "false"
+    print_prompt "Select your OS" "1"
     read install_os
     install_os=${install_os:-1}
 
     if [ "${install_os}" = 1 ]; then
+        print_info "Installing Rust toolchain..."
         curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
         source $HOME/.cargo/env
+
+        print_info "Cloning joshuto repository..."
         git clone https://github.com/kamiyaa/joshuto.git $HOME/.joshuto
         cd .joshuto
+
+        print_info "Building from source (this may take a while)..."
         cargo build --release
+
     elif [ "${install_os}" = 2 ]; then
+        print_info "Installing via Homebrew..."
         brew install joshuto
+
     elif [ "${install_os}" = 3 ] || [ "${install_os}" = 4 ]; then
+        print_info "Downloading pre-built binary..."
         mkdir -p $HOME/.joshuto/target/release
         cd $HOME/.joshuto/target/release
         wget https://github.com/kamiyaa/joshuto/releases/download/v0.9.8/joshuto-v0.9.8-x86_64-unknown-linux-musl.tar.gz
@@ -1189,6 +1362,7 @@ install_joshuto(){
         rm -rf joshuto-v0.9.8-x86_64-unknown-linux-musl joshuto-v0.9.8-x86_64-unknown-linux-musl.tar.gz
     fi
 
+    print_info "Downloading configuration files..."
     mkdir -p $HOME/.config/joshuto
     curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/icons.toml -o $HOME/.config/joshuto/icons.toml
     curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/joshuto.toml -o $HOME/.config/joshuto/joshuto.toml
@@ -1198,7 +1372,12 @@ install_joshuto(){
     curl -s https://raw.githubusercontent.com/gaojunbin/ConfigFile/master/joshuto/theme.toml -o $HOME/.config/joshuto/theme.toml
     chmod +x $HOME/.config/joshuto/preview_file.sh
 
-    print_text "green" "Install joshuto successfully. Please restart your terminal." "true"
+    printf "\n"
+    print_line "green" $(tput cols)
+    print_success "joshuto installed successfully!"
+    printf "\n"
+    print_text "yellow" "Please restart your terminal to use joshuto" "false"
+    printf "\n"
 }
 
 # =================================== Update plugin=============================================
