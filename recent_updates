@@ -1,2 +1,11 @@
-V1.1.0 发布啦! 🎉🎉🎉
-优化UI界面，提升用户体验!
+重要提醒‼️
+
+2025-12-08 NSCC更新后, 需要手动更新 ~/.bash_profile文件, 把原先的：
+
+[ -x "$HOME/zsh/bin/zsh" ] && exec "$HOME/zsh/bin/zsh" -l 
+
+改为：
+
+if [[ $- == *i* ]]; then
+    [ -x "$HOME/zsh/bin/zsh" ] && exec "$HOME/zsh/bin/zsh" -l
+fi
