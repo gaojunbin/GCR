@@ -6,12 +6,14 @@
 #
 # Optional environment variables:
 #   GCR_TARGET    ubuntu | ubuntu-nosudo | macos | hpc | nscc  -- picks the target, skips the menu
+#   GCR_MIRROR_URL  source tarball to install from, empty to always clone from GitHub
 #   GCR_NO_ANIM   set to 1 to skip the logo animation
 #   NO_COLOR      set to any value to disable colors
 #
 set -eu
 
 GCR_REPO_URL="${GCR_REPO_URL:-https://github.com/gaojunbin/GCR.git}"
+GCR_MIRROR_URL="${GCR_MIRROR_URL-https://gcr.junbingao.com/gcr.tar.gz}"
 GCR_SITE="https://gcr.junbingao.com"
 GCR_ZSH_VERSION="5.9"
 GCR_MARKER="# [ Added By GCR ]"
@@ -326,8 +328,11 @@ step_failed() {
     exit 1
 }
 
-# run_step <title> <shell command>
-run_step() {
+# run_step_status <title> <shell command>
+# Runs the command behind a spinner and returns its exit status, printing a
+# check line on success and nothing on failure, so a caller can try something
+# else.
+run_step_status() {
     step_title="$1"
     step_cmd="$2"
     step_log="$WORKDIR/step.log"
@@ -338,7 +343,7 @@ run_step() {
             ui_ok "$step_title"
             return 0
         fi
-        step_failed "$step_title" "$step_log"
+        return 1
     fi
 
     ( eval "$step_cmd" ) >"$step_log" 2>&1 &
@@ -367,9 +372,17 @@ run_step() {
     printf '\r%s%s' "$CLR_LINE" "$CURSOR_SHOW"
 
     if [ "$step_status" -ne 0 ]; then
-        step_failed "$step_title" "$step_log"
+        return "$step_status"
     fi
     ui_ok "$step_title"
+}
+
+# run_step <title> <shell command>
+# Same, but a failure ends the installation with the tail of the log.
+run_step() {
+    if ! run_step_status "$1" "$2"; then
+        step_failed "$1" "$WORKDIR/step.log"
+    fi
 }
 
 # ------------------------------------------------------------------ input ---
@@ -553,10 +566,12 @@ preflight() {
     SRC=$(local_source_dir)
     if [ -n "$SRC" ]; then
         ui_ok "local checkout $SRC"
+    elif command -v curl >/dev/null 2>&1; then
+        ui_ok "curl $(curl --version 2>/dev/null | head -n 1 | awk '{print $2}')"
     elif command -v git >/dev/null 2>&1; then
         ui_ok "git $(git --version 2>/dev/null | awk '{print $3}')"
     else
-        die "git is required to download GCR" "install git, then run this installer again"
+        die "curl or git is required to download GCR" "install one of them, then run this installer again"
     fi
 
     if command -v zsh >/dev/null 2>&1; then
@@ -589,7 +604,38 @@ fetch_source() {
         return 0
     fi
     SRC="$WORKDIR/GCR"
-    run_step "Downloading GCR" 'git clone --depth 1 --progress "$GCR_REPO_URL" "$SRC"'
+
+    if fetch_from_mirror; then
+        return 0
+    fi
+
+    if ! command -v git >/dev/null 2>&1; then
+        die "git is required to download GCR" "install git, or point GCR_MIRROR_URL at a reachable source tarball"
+    fi
+    run_step "Downloading GCR from GitHub" 'git clone --depth 1 --progress "$GCR_REPO_URL" "$SRC"'
+}
+
+# The site mirror is tried first: it is one short URL, it is usually closer, and
+# it works on machines that cannot reach github.com. Anything unexpected about
+# it falls back to a clone rather than installing something incomplete.
+fetch_from_mirror() {
+    if [ -z "$GCR_MIRROR_URL" ] || ! command -v curl >/dev/null 2>&1; then
+        return 1
+    fi
+
+    if ! run_step_status "Downloading GCR" \
+        'curl -fsSL "$GCR_MIRROR_URL" -o "$WORKDIR/gcr.tar.gz" && tar -xzf "$WORKDIR/gcr.tar.gz" -C "$WORKDIR"'; then
+        rm -rf "$SRC"
+        ui_note "$GCR_MIRROR_URL is unreachable, falling back to github.com"
+        return 1
+    fi
+
+    if [ ! -f "$SRC/.ohmyshell" ]; then
+        rm -rf "$SRC"
+        ui_note "the mirror looks incomplete, falling back to github.com"
+        return 1
+    fi
+    return 0
 }
 
 copy_configs() {
