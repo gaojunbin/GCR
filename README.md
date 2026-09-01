@@ -9,8 +9,11 @@ GCR, make your shell more powerful. Please visit the program homepage for more i
 ## Install
 
 ```
-curl -s https://raw.githubusercontent.com/gaojunbin/GCR/master/install_gcr.sh -o ~/install_gcr.sh && bash ~/install_gcr.sh && rm ~/install_gcr.sh
+curl -fsSL https://raw.githubusercontent.com/gaojunbin/GCR/master/install_gcr.sh | sh
 ```
+
+The installer asks which environment you are on (Ubuntu with or without sudo, macOS, NUS HPC, NSCC).
+Set `GCR_TARGET` to skip the menu, for example `GCR_TARGET=nscc`.
 
 ### Document
 
