@@ -304,13 +304,14 @@ ui_menu_draw() {
         name=${item%%|*}
         desc=${item#*|}
         if [ "$i" -eq "$selected" ]; then
-            printf '  %s%s%s %s%-14s%s %s%s%s\n' \
+            printf '  %s%s%s %s%2s%s  %s%-14s%s %s%s%s\n' \
                 "$UI_ACCENT" "$UI_G_POINT" "$UI_RESET" \
+                "$UI_ACCENT" "$i" "$UI_RESET" \
                 "$UI_BOLD" "$name" "$UI_RESET" \
                 "$UI_DIM" "$desc" "$UI_RESET"
         else
-            printf '    %s%-14s%s %s%s%s\n' \
-                "$UI_DIM" "$name" "$UI_RESET" "$UI_DIM" "$desc" "$UI_RESET"
+            printf '    %s%2s  %-14s %s%s%s\n' \
+                "$UI_DIM" "$i" "$name" "$desc" "$UI_RESET" ""
         fi
         i=$((i + 1))
     done

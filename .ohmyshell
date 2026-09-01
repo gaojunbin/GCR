@@ -64,6 +64,8 @@ show_update_info(){
     echo "$updates" | while IFS= read -r line; do
         if [ -n "$line" ]; then
             ui_note "$line"
+        else
+            ui_gap
         fi
     done
     ui_gap
@@ -209,11 +211,6 @@ if [ -f "$GCR_plugin_update_file" ]; then
 else
     myupdateplug
 fi
-
-# 2.show GCR info
-# one quiet line on every login
-printf '  %s%s GCR   %sohmyshell%s%s for commands   docs gcr.junbingao.com%s\n\n' \
-    "$UI_DIM" "$UI_G_DOT" "$UI_ACCENT" "$UI_RESET" "$UI_DIM" "$UI_RESET"
 
 show_GCR_info(){
     ui_gap
