@@ -1,275 +1,539 @@
-# Function to print a colored line
-print_line() {
-    local border_color="$1"
-    local width="$2"
-    local line=""
-    for ((i = 0; i < width; i++)); do
-        line+="═"
-    done
-    
-    case "$border_color" in
-        "black") border_color_code=30 ;;
-        "red") border_color_code=31 ;;
-        "green") border_color_code=32 ;;
-        "yellow") border_color_code=33 ;;
-        "blue") border_color_code=34 ;;
-        "magenta") border_color_code=35 ;;
-        "cyan") border_color_code=36 ;;
-        "white") border_color_code=37 ;;
-        *) border_color_code=37 ;; # Default to white if color not recognized
-    esac
-    printf "\e[${border_color_code}m%s\e[0m\n" "${line}"
+# GCR terminal UI helpers.
+#
+# Two layers live in this file:
+#   ui_*     the primitives every GCR screen is built from
+#   print_*  the older helpers, kept for compatibility and drawn with the same palette
+#
+# Sourced by .ohmyshell, so it must stay quiet at load time and work in bash and zsh.
+
+# ------------------------------------------------------------------ palette ---
+
+# True when this shell still has a controlling terminal. Checked instead of
+# [ -t 1 ] alone because p10k instant prompt redirects stdout while .ohmyshell
+# is being sourced, which would otherwise strip every color for the session.
+ui_has_tty() {
+    if [ -t 1 ]; then
+        return 0
+    fi
+    ( : < /dev/tty ) 2>/dev/null
 }
 
-# Function to print text with blink effect
+# True only when it is safe to redraw in place: cursor moves need a real stdout.
+ui_interactive() {
+    [ -t 1 ] && [ "${TERM:-}" != "dumb" ] && ( : < /dev/tty ) 2>/dev/null
+}
+
+ui_cols() {
+    local cols=$(tput cols 2>/dev/null)
+    case "$cols" in
+        ''|*[!0-9]*) cols=80 ;;
+    esac
+    printf '%s' "$cols"
+}
+
+ui_init() {
+    UI_TTY=0
+    if ui_has_tty && [ "${TERM:-}" != "dumb" ]; then
+        UI_TTY=1
+    fi
+
+    UI_COLOR=0
+    if [ "$UI_TTY" = 1 ] && [ -z "${NO_COLOR:-}" ]; then
+        UI_COLOR=1
+    fi
+
+    UI_ESC=$(printf '\033')
+    UI_CR=$(printf '\r')
+    UI_LF='
+'
+
+    if [ "$UI_COLOR" = 1 ]; then
+        case "$(tput colors 2>/dev/null || echo 8)" in
+            *[0-9][0-9][0-9]*)
+                UI_ACCENT="${UI_ESC}[38;5;32m"
+                UI_OK="${UI_ESC}[38;5;35m"
+                UI_WARN="${UI_ESC}[38;5;172m"
+                UI_ERR="${UI_ESC}[38;5;167m"
+                ;;
+            *)
+                UI_ACCENT="${UI_ESC}[34m"
+                UI_OK="${UI_ESC}[32m"
+                UI_WARN="${UI_ESC}[33m"
+                UI_ERR="${UI_ESC}[31m"
+                ;;
+        esac
+        UI_RESET="${UI_ESC}[0m"
+        UI_BOLD="${UI_ESC}[1m"
+        UI_DIM="${UI_ESC}[2m"
+        UI_UNDER="${UI_ESC}[4m"
+    else
+        UI_ACCENT=""
+        UI_OK=""
+        UI_WARN=""
+        UI_ERR=""
+        UI_RESET=""
+        UI_BOLD=""
+        UI_DIM=""
+        UI_UNDER=""
+    fi
+
+    UI_HIDE="${UI_ESC}[?25l"
+    UI_SHOW="${UI_ESC}[?25h"
+    UI_CLR="${UI_ESC}[K"
+    UI_CLR_BELOW="${UI_ESC}[J"
+
+    UI_UNICODE=0
+    case "${LC_ALL:-${LC_CTYPE:-${LANG:-}}}" in
+        *UTF-8*|*utf-8*|*UTF8*|*utf8*) UI_UNICODE=1 ;;
+    esac
+    case "${TERM_PROGRAM:-}" in
+        Apple_Terminal|iTerm.app|vscode|WezTerm|ghostty) UI_UNICODE=1 ;;
+    esac
+
+    if [ "$UI_UNICODE" = 1 ]; then
+        UI_G_OK="✓"
+        UI_G_ERR="✗"
+        UI_G_WARN="!"
+        UI_G_DOT="·"
+        UI_G_POINT="›"
+        UI_G_ARROW="→"
+        UI_G_UP="↑"
+        UI_G_RULE="─"
+        UI_G_BLOCK="█"
+    else
+        UI_G_OK="ok"
+        UI_G_ERR="x"
+        UI_G_WARN="!"
+        UI_G_DOT="-"
+        UI_G_POINT=">"
+        UI_G_ARROW="->"
+        UI_G_UP="^"
+        UI_G_RULE="-"
+        UI_G_BLOCK="#"
+    fi
+
+    UI_COLS=$(ui_cols)
+}
+
+ui_init
+
+# ------------------------------------------------------------------ output ---
+
+ui_gap() {
+    printf '\n'
+}
+
+# ui_heading <title> [subtitle]
+ui_heading() {
+    printf '\n  %s%s%s' "$UI_BOLD" "$1" "$UI_RESET"
+    if [ -n "${2:-}" ]; then
+        printf '   %s%s%s' "$UI_DIM" "$2" "$UI_RESET"
+    fi
+    printf '\n\n'
+}
+
+ui_rule() {
+    local width=${1:-$(ui_cols)}
+    local line="" i=0
+    while [ "$i" -lt "$width" ]; do
+        line="${line}${UI_G_RULE}"
+        i=$((i + 1))
+    done
+    printf '%s%s%s\n' "$UI_DIM" "$line" "$UI_RESET"
+}
+
+ui_ok() {
+    printf '  %s%s%s %s\n' "$UI_OK" "$UI_G_OK" "$UI_RESET" "$1"
+}
+
+ui_warn() {
+    printf '  %s%s%s %s\n' "$UI_WARN" "$UI_G_WARN" "$UI_RESET" "$1"
+}
+
+ui_err() {
+    printf '  %s%s%s %s\n' "$UI_ERR" "$UI_G_ERR" "$UI_RESET" "$1"
+}
+
+ui_info() {
+    printf '  %s%s%s %s\n' "$UI_ACCENT" "$UI_G_ARROW" "$UI_RESET" "$1"
+}
+
+ui_note() {
+    printf '  %s%s%s\n' "$UI_DIM" "$1" "$UI_RESET"
+}
+
+# ui_item <name> <description> [name column width]
+ui_item() {
+    local width=${3:-14}
+    printf "  %s%-${width}s%s %s%s%s\n" \
+        "$UI_ACCENT" "$1" "$UI_RESET" "$UI_DIM" "$2" "$UI_RESET"
+}
+
+# ui_field <label> <value>
+ui_field() {
+    printf '  %s%-10s%s %s\n' "$UI_DIM" "$1" "$UI_RESET" "$2"
+}
+
+# ui_command <command line>
+ui_command() {
+    printf '    %s%s%s\n' "$UI_ACCENT" "$1" "$UI_RESET"
+}
+
+# ui_step <label>, later closed by ui_step_ok or ui_step_err
+ui_step() {
+    printf '  %s%s%s %s%s%s' "$UI_DIM" "$UI_G_DOT" "$UI_RESET" "$UI_DIM" "$1" "$UI_RESET"
+}
+
+ui_step_ok() {
+    printf '\r%s' "$UI_CLR"
+    ui_ok "$1"
+}
+
+ui_step_err() {
+    printf '\r%s' "$UI_CLR"
+    ui_err "$1"
+}
+
+# ------------------------------------------------------------------- logo ---
+
+ui_logo_row() {
+    case "$1" in
+        0) UI_LOGO_BITS="01110011101110" ;;
+        1) UI_LOGO_BITS="10000100001001" ;;
+        2) UI_LOGO_BITS="10110100001110" ;;
+        3) UI_LOGO_BITS="10010100001010" ;;
+        *) UI_LOGO_BITS="01110011101001" ;;
+    esac
+}
+
+ui_logo_color() {
+    if [ "$UI_COLOR" = 0 ]; then
+        UI_LOGO_C=""
+    elif [ "$1" -lt 4 ]; then
+        UI_LOGO_C="${UI_ESC}[38;5;69m"
+    elif [ "$1" -lt 9 ]; then
+        UI_LOGO_C="${UI_ESC}[38;5;75m"
+    else
+        UI_LOGO_C="${UI_ESC}[38;5;81m"
+    fi
+}
+
+ui_logo() {
+    local y=0 x bits bit line
+    while [ "$y" -lt 5 ]; do
+        ui_logo_row "$y"
+        bits="$UI_LOGO_BITS"
+        line="  "
+        x=0
+        while [ "$x" -lt 14 ]; do
+            bit=${bits%"${bits#?}"}
+            bits=${bits#?}
+            if [ "$bit" = 1 ]; then
+                ui_logo_color "$x"
+                line="${line}${UI_LOGO_C}${UI_G_BLOCK}${UI_G_BLOCK}"
+            else
+                line="${line}  "
+            fi
+            x=$((x + 1))
+        done
+        printf '%s%s\n' "$line" "$UI_RESET"
+        y=$((y + 1))
+    done
+}
+
+# ------------------------------------------------------------------- input ---
+
+# ui_ask <label> [default] -> UI_ANSWER
+ui_ask() {
+    printf '  %s%s%s %s' "$UI_ACCENT" "$UI_G_POINT" "$UI_RESET" "$1"
+    if [ -n "${2:-}" ]; then
+        printf ' %s(%s)%s' "$UI_DIM" "$2" "$UI_RESET"
+    fi
+    printf ': '
+    IFS= read -r UI_ANSWER
+    if [ -z "$UI_ANSWER" ]; then
+        UI_ANSWER="${2:-}"
+    fi
+}
+
+# ui_confirm <question> [y|n], returns 0 for yes
+ui_confirm() {
+    local default=${2:-y} answer
+    printf '  %s?%s %s ' "$UI_WARN" "$UI_RESET" "$1"
+    if [ "$default" = y ]; then
+        printf '%s[Y/n]%s ' "$UI_DIM" "$UI_RESET"
+    else
+        printf '%s[y/N]%s ' "$UI_DIM" "$UI_RESET"
+    fi
+    IFS= read -r answer
+    if [ -z "$answer" ]; then
+        answer="$default"
+    fi
+    case "$answer" in
+        y|Y|yes|YES) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+ui_read_key() {
+    local key rest
+    if [ -n "${ZSH_VERSION:-}" ]; then
+        key=""
+        read -s -k 1 key < /dev/tty 2>/dev/null || return 1
+        if [ "$key" = "$UI_ESC" ]; then
+            rest=""
+            read -s -k 2 -t 1 rest < /dev/tty 2>/dev/null
+            key="$key$rest"
+        fi
+    else
+        IFS= read -rsn1 key < /dev/tty 2>/dev/null || return 1
+        if [ "$key" = "$UI_ESC" ]; then
+            IFS= read -rsn2 -t 1 rest < /dev/tty 2>/dev/null
+            key="$key$rest"
+        fi
+    fi
+    UI_KEY="$key"
+}
+
+# ------------------------------------------------------------------- menu ---
+
+ui_menu_draw() {
+    local selected=$1 i=1 item name desc
+    shift
+    for item in "$@"; do
+        name=${item%%|*}
+        desc=${item#*|}
+        if [ "$i" -eq "$selected" ]; then
+            printf '  %s%s%s %s%-14s%s %s%s%s\n' \
+                "$UI_ACCENT" "$UI_G_POINT" "$UI_RESET" \
+                "$UI_BOLD" "$name" "$UI_RESET" \
+                "$UI_DIM" "$desc" "$UI_RESET"
+        else
+            printf '    %s%-14s%s %s%s%s\n' \
+                "$UI_DIM" "$name" "$UI_RESET" "$UI_DIM" "$desc" "$UI_RESET"
+        fi
+        i=$((i + 1))
+    done
+    local pickmax=$#
+    if [ "$pickmax" -gt 9 ]; then
+        pickmax=9
+    fi
+    printf '\n  %sup/down move   1-%s pick   enter confirm   q quit%s\n' \
+        "$UI_DIM" "$pickmax" "$UI_RESET"
+}
+
+ui_menu_plain() {
+    local i=1 item name desc answer
+    for item in "$@"; do
+        name=${item%%|*}
+        desc=${item#*|}
+        printf '  %s[%s]%s %s%-14s%s %s%s%s\n' \
+            "$UI_ACCENT" "$i" "$UI_RESET" \
+            "$UI_BOLD" "$name" "$UI_RESET" \
+            "$UI_DIM" "$desc" "$UI_RESET"
+        i=$((i + 1))
+    done
+    printf '\n'
+    printf '  %s%s%s Your choice: ' "$UI_ACCENT" "$UI_G_POINT" "$UI_RESET"
+    IFS= read -r answer
+    case "$answer" in
+        ''|*[!0-9]*) UI_CHOICE=0 ;;
+        *) UI_CHOICE="$answer" ;;
+    esac
+    if [ "$UI_CHOICE" -lt 1 ] || [ "$UI_CHOICE" -gt $# ]; then
+        UI_CHOICE=0
+    fi
+}
+
+# ui_menu <title> <subtitle> <name|description> ...
+# Sets UI_CHOICE to the 1 based index, or 0 when the menu was cancelled.
+ui_menu() {
+    local title="$1" subtitle="$2" selected=1 count lines
+    shift 2
+    count=$#
+    UI_CHOICE=0
+    UI_CHOICE_NAME=""
+
+    ui_heading "$title" "$subtitle"
+
+    if ! ui_interactive; then
+        ui_menu_plain "$@"
+        ui_menu_resolve "$@"
+        return 0
+    fi
+
+    lines=$((count + 2))
+    ui_menu_draw "$selected" "$@"
+    printf '%s' "$UI_HIDE"
+
+    while :; do
+        if ! ui_read_key; then
+            UI_CHOICE=0
+            break
+        fi
+        case "$UI_KEY" in
+            "${UI_ESC}[A"|k) selected=$((selected - 1)) ;;
+            "${UI_ESC}[B"|j) selected=$((selected + 1)) ;;
+            [1-9])
+                if [ "$UI_KEY" -le "$count" ]; then
+                    selected="$UI_KEY"
+                    UI_CHOICE="$selected"
+                    break
+                fi
+                ;;
+            ""|" "|"$UI_CR"|"$UI_LF")
+                UI_CHOICE="$selected"
+                break
+                ;;
+            q|Q|"$UI_ESC")
+                UI_CHOICE=0
+                break
+                ;;
+        esac
+        if [ "$selected" -lt 1 ]; then
+            selected="$count"
+        fi
+        if [ "$selected" -gt "$count" ]; then
+            selected=1
+        fi
+        printf '%s' "${UI_ESC}[${lines}A"
+        ui_menu_draw "$selected" "$@"
+    done
+
+    printf '%s%s%s' "${UI_ESC}[${lines}A" "$UI_CLR_BELOW" "$UI_SHOW"
+    ui_menu_resolve "$@"
+}
+
+ui_menu_resolve() {
+    local i=1 item
+    if [ "$UI_CHOICE" -lt 1 ]; then
+        ui_note "cancelled"
+        ui_gap
+        return 0
+    fi
+    for item in "$@"; do
+        if [ "$i" -eq "$UI_CHOICE" ]; then
+            UI_CHOICE_NAME=${item%%|*}
+            printf '  %s%s%s %s%s%s   %s%s%s\n\n' \
+                "$UI_ACCENT" "$UI_G_ARROW" "$UI_RESET" \
+                "$UI_BOLD" "$UI_CHOICE_NAME" "$UI_RESET" \
+                "$UI_DIM" "${item#*|}" "$UI_RESET"
+            return 0
+        fi
+        i=$((i + 1))
+    done
+}
+
+# ----------------------------------------------------- legacy print helpers ---
+# Kept for .ohmytool. Signatures and line break behaviour are unchanged, only the
+# palette follows the primitives above.
+
+ui_legacy_color() {
+    case "$1" in
+        black) UI_LEGACY_C="${UI_ESC}[30m" ;;
+        red) UI_LEGACY_C="$UI_ERR" ;;
+        green) UI_LEGACY_C="$UI_OK" ;;
+        yellow) UI_LEGACY_C="$UI_WARN" ;;
+        blue) UI_LEGACY_C="$UI_ACCENT" ;;
+        magenta) UI_LEGACY_C="${UI_ESC}[35m" ;;
+        cyan) UI_LEGACY_C="$UI_ACCENT" ;;
+        *) UI_LEGACY_C="" ;;
+    esac
+    if [ "$UI_COLOR" = 0 ]; then
+        UI_LEGACY_C=""
+    fi
+}
+
+print_line() {
+    ui_rule "${2:-$(ui_cols)}"
+}
+
 print_text() {
     local text_color="$1"
     local text="$2"
-    local blink="$3"
     local width="$4"
-    with=${width:-${#text}}
+    local padding="" i=0
 
-    local padding=""
-    local blink_color=""
+    ui_legacy_color "$text_color"
 
-    case "$text_color" in
-        "black") text_color_code=30 ;;
-        "red") text_color_code=31 ;;
-        "green") text_color_code=32 ;;
-        "yellow") text_color_code=33 ;;
-        "blue") text_color_code=34 ;;
-        "magenta") text_color_code=35 ;;
-        "cyan") text_color_code=36 ;;
-        "white") text_color_code=37 ;;
-        *) text_color_code=37 ;; # Default to white if color not recognized
-    esac
-
-    # Create padding
-    for ((i = 0; i < (width - ${#text}) / 2; i++)); do
-        padding+=" "
-    done
-
-    # Set blink color if blinking
-    if [ "$blink" = "true" ]; then
-        blink_color="5;"
+    if [ -n "$width" ] && [ "$width" -gt "${#text}" ]; then
+        while [ "$i" -lt $(((width - ${#text}) / 2)) ]; do
+            padding="$padding "
+            i=$((i + 1))
+        done
     fi
 
-    # Print text with color and optional blink
-    printf "\e[%s%sm%s%s\e[0m\e[%sm\e[0m" "${blink_color}" "${text_color_code}" "${padding}" "${text}" "${padding}"
-    
+    printf '%s%s%s%s' "$UI_LEGACY_C" "$padding" "$text" "$UI_RESET"
 }
 
 print_table_text() {
-    local text="$1"
-    local blink="$2"
-    local text_color="$3"
-    local border_color="$4"
-    local lenth="$5"
-    local width=${lenth:-${#text}}
-    
-    local text_width=${#text}
-    local border=""
-    local padding=""
-    local blink_color=""
-    
-    # Set text color
-    local text_color_code=""
-    case "$text_color" in
-        "black") text_color_code=30 ;;
-        "red") text_color_code=31 ;;
-        "green") text_color_code=32 ;;
-        "yellow") text_color_code=33 ;;
-        "blue") text_color_code=34 ;;
-        "magenta") text_color_code=35 ;;
-        "cyan") text_color_code=36 ;;
-        "white") text_color_code=37 ;;
-        *) text_color_code=37 ;; # Default to white if color not recognized
-    esac
-    
-    # Set border color
-    local border_color_code=""
-    case "$border_color" in
-        "black") border_color_code=30 ;;
-        "red") border_color_code=31 ;;
-        "green") border_color_code=32 ;;
-        "yellow") border_color_code=33 ;;
-        "blue") border_color_code=34 ;;
-        "magenta") border_color_code=35 ;;
-        "cyan") border_color_code=36 ;;
-        "white") border_color_code=37 ;;
-        *) border_color_code=37 ;; # Default to white if color not recognized
-    esac
-    
-    # Create border
-    for ((i = 0; i < width; i++)); do
-        border+="═"
-    done
-    
-    # Create padding
-    for ((i = 0; i < (width-2 - ${#text}) / 2; i++)); do
-        padding+=" "
-    done
-    
-    # Set blink color if blinking
-    if [ "$blink" = "true" ]; then
-        blink_color="5;"
-    fi
-    
-    # Print border
-    printf "\e[%sm%s\e[0m\n" "${border_color_code}" "${border}"
-    
-    # Print text with color and optional blink
-    printf "\e[%sm|\e[%s%sm%s%s\e[0m\e[%sm%s|\e[0m\n" "${border_color_code}" "${blink_color}" "${text_color_code}" "${padding}" "${text}" "${border_color_code}" "${padding}"
-    
-    # Print border
-    printf "\e[%sm%s\e[0m\n" "${border_color_code}" "${border}"
+    printf '\n  %s%s%s\n' "$UI_BOLD" "$1" "$UI_RESET"
 }
 
-# Function to print error message
 print_error() {
-    local message="$1"
-    printf "\n"
-    printf "  "
-    print_text "red" "ERROR:" "false"
-    printf " "
-    print_text "white" "$message" "false"
-    printf "\n"
+    printf '\n'
+    ui_err "$1"
 }
 
-# Function to print warning message
 print_warning() {
-    local message="$1"
-    printf "\n"
-    printf "  "
-    print_text "yellow" "WARNING:" "false"
-    printf " "
-    print_text "white" "$message" "false"
-    printf "\n"
+    printf '\n'
+    ui_warn "$1"
 }
 
-# Function to print success message
 print_success() {
-    local message="$1"
-    printf "\n"
-    printf "  "
-    print_text "green" "SUCCESS:" "false"
-    printf " "
-    print_text "white" "$message" "false"
-    printf "\n"
+    printf '\n'
+    ui_ok "$1"
 }
 
-# Function to print info message
 print_info() {
-    local message="$1"
-    printf "\n"
-    printf "  "
-    print_text "cyan" "INFO:" "false"
-    printf " "
-    print_text "white" "$message" "false"
-    printf "\n"
+    printf '\n'
+    ui_info "$1"
 }
 
-# Function to print input prompt (modern CLI style)
 print_prompt() {
-    local prompt_text="$1"
-    local default_value="$2"
-
-    printf "\n"
-    printf "  "
-    print_text "cyan" "→" "false"
-    printf " "
-    print_text "white" "$prompt_text" "false"
-
-    if [ -n "$default_value" ]; then
-        printf " "
-        print_text "yellow" "(default: $default_value)" "false"
+    printf '\n'
+    printf '  %s%s%s %s' "$UI_ACCENT" "$UI_G_POINT" "$UI_RESET" "$1"
+    if [ -n "${2:-}" ]; then
+        printf ' %s(default: %s)%s' "$UI_DIM" "$2" "$UI_RESET"
     fi
-
-    printf "\n"
-    printf "  "
-    print_text "cyan" "›" "false"
-    printf " "
+    printf ': '
 }
 
-# Function to print a section header
 print_section() {
-    local title="$1"
-    local color="${2:-cyan}"
-
-    printf "\n"
-    print_line "$color" $(tput cols)
-    printf "  "
-    print_text "$color" "$title" "false"
-    printf "\n"
-    print_line "$color" $(tput cols)
-    printf "\n"
+    ui_heading "$1"
 }
 
-# Function to print menu options (modern style)
 print_menu_option() {
-    local number="$1"
-    local title="$2"
-    local description="$3"
-
-    printf "  "
-    print_text "yellow" "[$number]" "false"
-    printf " "
-    print_text "green" "$title" "false"
-
-    if [ -n "$description" ]; then
-        printf "\n      "
-        print_text "white" "$description" "false"
+    printf '  %s[%s]%s %s%s%s' "$UI_ACCENT" "$1" "$UI_RESET" "$UI_BOLD" "$2" "$UI_RESET"
+    if [ -n "${3:-}" ]; then
+        printf '\n      %s%s%s' "$UI_DIM" "$3" "$UI_RESET"
     fi
-    printf "\n"
+    printf '\n'
 }
 
-# Function to print step indicator
+print_item() {
+    printf '  %s[%s]%s %s\n' "$UI_ACCENT" "$1" "$UI_RESET" "$2"
+}
+
+print_separator() {
+    ui_rule "$(ui_cols)"
+}
+
 print_step() {
-    local step_num="$1"
-    local step_text="$2"
-    local step_status="${3:-pending}"  # pending, running, done
-
-    printf "  "
-
-    case "$step_status" in
-        "pending")
-            print_text "white" "[ ]" "false"
-            ;;
-        "running")
-            print_text "yellow" "[▶]" "false"
-            ;;
-        "done")
-            print_text "green" "[✓]" "false"
-            ;;
+    case "${3:-pending}" in
+        done) printf '  %s%s%s ' "$UI_OK" "$UI_G_OK" "$UI_RESET" ;;
+        running) printf '  %s%s%s ' "$UI_ACCENT" "$UI_G_ARROW" "$UI_RESET" ;;
+        *) printf '  %s%s%s ' "$UI_DIM" "$UI_G_DOT" "$UI_RESET" ;;
     esac
-
-    printf " "
-    print_text "white" "Step $step_num:" "false"
-    printf " "
-    print_text "cyan" "$step_text" "false"
-    printf "\n"
+    printf '%sStep %s%s %s%s%s\n' "$UI_DIM" "$1" "$UI_RESET" "$UI_BOLD" "$2" "$UI_RESET"
 }
 
-# Function to print confirmation prompt
 print_confirm() {
-    local message="$1"
-    local default="${2:-y}"
-
-    printf "\n"
-    printf "  "
-    print_text "yellow" "?" "false"
-    printf " "
-    print_text "white" "$message" "false"
-    printf " "
-
-    if [ "$default" = "y" ]; then
-        print_text "cyan" "([y]/n)" "false"
+    printf '\n'
+    printf '  %s?%s %s ' "$UI_WARN" "$UI_RESET" "$1"
+    if [ "${2:-y}" = y ]; then
+        printf '%s[Y/n]%s ' "$UI_DIM" "$UI_RESET"
     else
-        print_text "cyan" "(y/[n])" "false"
+        printf '%s[y/N]%s ' "$UI_DIM" "$UI_RESET"
     fi
-
-    printf "\n"
-    printf "  "
-    print_text "cyan" "›" "false"
-    printf " "
 }

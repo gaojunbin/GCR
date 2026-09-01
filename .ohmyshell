@@ -46,7 +46,7 @@ elif [[ "$SHELL" == *"bash" ]];then
     shell_file=~/.bashrc
     export PS1="$PS1\[\e]1337;CurrentDir="'$(pwd)\a\]'
 else
-    print_error "Invalid shell type: $SHELL"
+    ui_err "unsupported shell: $SHELL"
 fi
 
 # 1. check update
@@ -55,23 +55,18 @@ GCR_update_file=$HOME/.gcr.update.lock
 GCR_plugin_update_file=$HOME/.gcr.plugin.update.lock
 
 show_update_info(){
-    printf "\n"
-    printf "  "
-    print_text "yellow" "●" "false"
-    printf " "
-    print_text "white" "Recent Updates" "false"
-    printf "\n"
-
-    # Get updates with minimal formatting
-    local updates=$(curl -s https://raw.githubusercontent.com/gaojunbin/GCR/master/recent_updates 2>/dev/null)
-    if [ -n "$updates" ]; then
-        echo "$updates" | while IFS= read -r line; do
-            if [ -n "$line" ]; then
-                printf "     %s\n" "$line"
-            fi
-        done
+    local updates=$(curl -fsSL https://raw.githubusercontent.com/gaojunbin/GCR/master/recent_updates 2>/dev/null)
+    if [ -z "$updates" ]; then
+        return 0
     fi
-    printf "\n"
+
+    ui_heading "Recent updates"
+    echo "$updates" | while IFS= read -r line; do
+        if [ -n "$line" ]; then
+            ui_note "$line"
+        fi
+    done
+    ui_gap
 }
 
 gcr_need_update(){
@@ -121,16 +116,34 @@ gcr_need_update(){
 
 # support update GCR Toolkit from GitHub Repo
 myupdate(){
-    print_table_text "Updating GCR ..." "true" "yellow" "red" $(tput cols)
-    curl -o ~/.ohmyshell https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell
-    curl -o ~/.ohmytool https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool 
-    curl -o ~/.ohmyzsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh
-    curl -o ~/.p9k.zsh https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh
-    curl -o ~/.vimrc https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc
-    curl -o ~/.ohmyprint https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint
+    local base=https://raw.githubusercontent.com/gaojunbin/GCR/master
+    local tmp=${TMPDIR:-/tmp}/gcr-update.$$
+    local failed=0 file
+
+    ui_heading "Updating GCR" "github.com/gaojunbin/GCR"
+    for file in .ohmyshell .ohmytool .ohmyzsh .p9k.zsh .vimrc .ohmyprint; do
+        ui_step "$file"
+        if curl -fsSL "$base/$file" -o "$tmp"; then
+            mv "$tmp" "$HOME/$file"
+            ui_step_ok "$file"
+        else
+            ui_step_err "$file"
+            failed=1
+        fi
+    done
+    rm -f "$tmp"
+
+    if [ "$failed" = 1 ]; then
+        ui_gap
+        ui_err "some files could not be downloaded, GCR was left as it was"
+        ui_gap
+        return 1
+    fi
+
     date +%s > $GCR_update_file
-    print_table_text "Success!" "false" "yellow" "red" $(tput cols)
     show_update_info
+    ui_note "reloading ${shell_file}"
+    ui_gap
     source ${shell_file}
 }
 
@@ -150,13 +163,8 @@ find_gcr_update(){
             myupdate
         else
             show_update_info
-            printf "  "
-            print_text "cyan" "→" "false"
-            printf " "
-            print_text "white" "Run " "false"
-            print_text "green" "myupdate" "false"
-            print_text "white" " to upgrade" "false"
-            printf "\n\n"
+            printf '  %s%s%s A new version is available, run %smyupdate%s to upgrade\n\n' \
+                "$UI_ACCENT" "$UI_G_UP" "$UI_RESET" "$UI_BOLD" "$UI_RESET"
             date +%s > $GCR_update_file
         fi
     fi
@@ -203,83 +211,35 @@ else
 fi
 
 # 2.show GCR info
-# show document info
-printf "  "
-print_text "cyan" "→" "false"
-printf " "
-print_text "white" "Documentation: " "false"
-print_text "cyan" "https://gcr.junbingao.com" "false"
-printf "\n\n"
+# one quiet line on every login
+printf '  %s%s GCR   %sohmyshell%s%s for commands   docs gcr.junbingao.com%s\n\n' \
+    "$UI_DIM" "$UI_G_DOT" "$UI_ACCENT" "$UI_RESET" "$UI_DIM" "$UI_RESET"
 
 show_GCR_info(){
-    star_line=""
-    for ((i = 0; i < $(tput cols); i++)); do
-            star_line+="*"
-    done
-    print_text "green" $star_line "true"
-    printf "\n"
-    printf "\n"
-    print_text "yellow" "Welcome to GCR Toolkit!" "false" $(tput cols)
-    printf "\n"
-    printf "\n"
-    print_text "green" $star_line "true"
-    printf "\n"
-    printf "\n"
-    print_line "cyan" $(tput cols)
-    print_text "cyan" "Basic Info:" "false"
-    printf "\n"
-    printf "\t"
-    print_text "blue" "Author: " "false"
-    print_text "white" "Junbin Gao" "false"
-    printf "\n"
-    printf "\t"
-    print_text "blue" "Github: " "false"
-    print_text "white" "https://github.com/gaojunbin/GCR" "false"
-    printf "\n"
-    printf "\t"
-    print_text "blue" "Intro : " "false"
-    print_text "white" "GCR is a shell plugin that makes it easier and more elegant to use the command line on a unix operating system without having to memorize cumbersome, retarded commands." "false"
-    printf "\n"
-    print_line "cyan" $(tput cols)
-    if [[ "$SHELL" == *"zsh" ]];then
-        for k in "${(@k)manual_ohmyshell}"; do
-            print_text "cyan" "Manual:" "false"
-            printf "\n"
-            printf "\t"
-            print_text "blue" "ohmyshell: " "false"
-            print_text "white" "Some basic command in shell. Type " "false"
-            print_text "green" "$ ohmyshell " "false"
-            print_text "white" "see all the available functions. " "false"
-            printf "\n"
-            printf "\t\t"
-            print_text "green" "$k: " "false"
-            print_text "white" "${manual_ohmyshell[$k]}" "false"
-            printf "\n"
+    ui_gap
+    ui_logo
+    ui_heading "GCR Toolkit" "make your shell more powerful"
+    ui_field "Author" "Junbin Gao"
+    ui_field "GitHub" "github.com/gaojunbin/GCR"
+    ui_field "Docs" "gcr.junbingao.com"
 
-            printf "\n"
-            printf "\t"
-            print_text "blue" "ohmytool: " "false"
-            print_text "white" "One-click installation and environment setup toolkit. Type " "false"
-            print_text "green" "$ ohmytool " "false"
-            print_text "white" "see all the available functions. " "false"
-            printf "\n"
-            for k in "${(@k)manual_ohmytool}"; do
-                printf "\t\t"
-                print_text "green" "$k: " "false"
-                print_text "white" "${manual_ohmytool[$k]}" "false"
-                printf "\n"
-            done
-                done
-            else
-                print_error "Only zsh shell is supported for this feature!"
+    if [ -z "${ZSH_VERSION:-}" ]; then
+        ui_gap
+        ui_note "the command manual needs zsh"
+        return 0
     fi
-    print_line "cyan" $(tput cols)
-}
-# welcome message
-if [ "${SHOW_GCR_INFO:-}" = "true" ]; then
-    show_GCR_info
-fi
 
+    ui_heading "ohmyshell" "shell commands, run ohmyshell for the full list"
+    for k in "${(@ko)manual_ohmyshell}"; do
+        ui_item "$k" "${manual_ohmyshell[$k]}"
+    done
+
+    ui_heading "ohmytool" "installers and setup, run ohmytool for the full list"
+    for k in "${(@ko)manual_ohmytool}"; do
+        ui_item "$k" "${manual_ohmytool[$k]}" 30
+    done
+    ui_gap
+}
 # 3.main content
 
 export PATH=$HOME:$PATH
@@ -287,6 +247,11 @@ export PATH=$HOME:$PATH
 source ~/.ohmyzsh
 source ~/.p9k.zsh
 source ~/.ohmytool
+
+# welcome message, after .ohmytool so its manual is known
+if [ "${SHOW_GCR_INFO:-}" = "true" ]; then
+    show_GCR_info
+fi
 
 # support server-administration
 if [ -d ~/.server-administration ];then
@@ -307,44 +272,27 @@ if [ -f ~/.safe-rm ];then
     alias delf='/bin/rm -rf'
 
     empty_trash() {
-        echo "Do you want to:"
-        echo "1) Clear all files in the Trash"
-        echo "2) Clear files not used for over 30 days in the Trash"
-        echo -n "Enter your choice (1 or 2): "
-        read choice
-
-        case $choice in
+        ui_menu "empty_trash" "$trash_dir" \
+            "everything|Remove all files in the trash" \
+            "older than 30d|Remove files untouched for 30 days"
+        case "$UI_CHOICE" in
             1)
-                print_info "Clearing all files in the Trash..."
+                ui_step "clearing the trash"
                 /bin/rm -rf "$trash_dir"/*
-                print_success "All files in the Trash have been cleared."
+                ui_step_ok "trash cleared"
                 ;;
             2)
-                print_info "Clearing files not used for over 30 days in the Trash..."
+                ui_step "clearing files older than 30 days"
                 find "$trash_dir" -type f -mtime +30 -exec /bin/rm -f {} \;
                 find "$trash_dir" -type d -empty -mtime +30 -exec rmdir {} \;
-                print_success "Files not used for over 30 days in the Trash have been cleared."
-                ;;
-            *)
-                print_error "Invalid choice. Please enter 1 or 2."
+                ui_step_ok "files older than 30 days cleared"
                 ;;
         esac
+        ui_gap
     }
 else
-    printf "\n"
-    print_line "red" $(tput cols)
-    printf "  "
-    print_text "yellow" "WARNING:" "false"
-    printf " "
-    print_text "white" "Your current 'rm' command is dangerous!" "false"
-    printf "\n"
-    printf "  "
-    print_text "white" "Run " "false"
-    print_text "green" "install_safe_rm" "false"
-    print_text "white" " and restart your shell to enable safe deletion." "false"
-    printf "\n"
-    print_line "red" $(tput cols)
-    printf "\n"
+    printf '  %s%s%s rm is unprotected, run %sinstall_safe_rm%s and restart your shell\n\n' \
+        "$UI_WARN" "$UI_G_WARN" "$UI_RESET" "$UI_BOLD" "$UI_RESET"
 fi
 
 # rewite vim and code
@@ -360,46 +308,15 @@ else
 fi
 
 ohmyshell(){
-    print_table_text "GCR Command Reference" "false" "cyan" "green" $(tput cols)
-    printf "\n"
-
-    printf "  "
-    print_text "green" "myupdate    " "false"
-    print_text "white" "Update GCR Toolkit from GitHub" "false"
-    printf "\n"
-
-    printf "  "
-    print_text "green" "mytool      " "false"
-    print_text "white" "Common tools for daily tasks" "false"
-    printf "\n"
-
-    printf "  "
-    print_text "green" "mypip       " "false"
-    print_text "white" "Python pip management tools" "false"
-    printf "\n"
-
-    printf "  "
-    print_text "green" "myenv       " "false"
-    print_text "white" "Anaconda environment management" "false"
-    printf "\n"
-
-    printf "  "
-    print_text "green" "mygpu       " "false"
-    print_text "white" "GPU and CUDA utilities" "false"
-    printf "\n"
-
-    printf "  "
-    print_text "green" "mypermission" "false"
-    print_text "white" " Permission and password management" "false"
-    printf "\n"
-
-    printf "  "
-    print_text "green" "mygit       " "false"
-    print_text "white" "Git workflow shortcuts" "false"
-    printf "\n"
-
-    printf "\n"
-    print_line "green" $(tput cols)
+    ui_heading "GCR Command Reference" "run any entry to open its menu"
+    ui_item "myupdate" "Update GCR Toolkit from GitHub"
+    ui_item "mytool" "Common tools for daily tasks"
+    ui_item "mypip" "Python pip management tools"
+    ui_item "myenv" "Anaconda environment management"
+    ui_item "mygpu" "GPU and CUDA utilities"
+    ui_item "mypermission" "Permission and password management"
+    ui_item "mygit" "Git workflow shortcuts"
+    ui_gap
 }
 
 # >>> mytool >>>
@@ -414,274 +331,229 @@ ohmyshell(){
 
 # open jupyter notebook
 jp(){
-    print_table_text "Jupyter notebook starting..." "false" "green" "cyan" $(tput cols)
+    local port
+    ui_heading "jp" "start jupyter lab"
     if [ -z "$JupyterPort" ]; then
-        print_text "green" "Input port: " "false"
-        read port
+        ui_ask "Port" "8888"
+        port=$UI_ANSWER
     else
         port=$JupyterPort
     fi
+    ui_command "jupyter lab --port ${port} --no-browser"
+    ui_gap
     jupyter lab --port ${port} --no-browser
 }
 
 # ssh -NL
 listen(){
-    print_table_text "This is a funtion for SSH port forwarding. It has 3 modes." "false" "green" "cyan" $(tput cols)
-    print_text "green" "[1] -L :Local Forwarding - Local port listen the remote port." "false"
-    printf "\n"
-    print_text "green" "[2] -R :Remote Forwarding - Remote port listen the local port." "false"
-    printf "\n"
-    print_text "green" "[3] -D :Dynamic Forwarding - Use remote to forward local port. (socks5)" "false"
-    printf "\n"
-    print_text "green" "Your choose(default: 1): " "false"
-    read func_num
-    if [[ "${func_num}" = 1 ]] || [[ "${func_num}" = "" ]];then
-        echo '[1] -L :Local Forwarding - Local port listen the remote port.'
-        print_text "green" "Known hosts: " "false"
-        print_text "yellow" "$(awk '/^\s*Host/ { printf "%s | ", $2 }' ~/.ssh/config)" "false"
-        printf "\n"
-        echo -e 'The Host: \c'
-        read Host
-        echo -e 'The Remote Port: \c'
-        read RPort
-        echo -e 'The Local Port (default: = Remote Port): \c'
-        read LPort
-        if [ "${LPort}" = "" ];then
-            LPort=${RPort}
-        fi
-        printf "\n"
-        echo '$ ssh -L localhost:'"$LPort"':localhost:'"$RPort"' '"$Host"' -N'
-        echo -e "Running at: \033[4mhttp://localhost:${LPort}\033[0m"
-        ssh -L localhost:${LPort}:localhost:${RPort} ${Host} -N
+    local host rport lport
+    ui_menu "listen" "ssh port forwarding" \
+        "local -L|A local port listens to a remote port" \
+        "remote -R|A remote port listens to a local port" \
+        "dynamic -D|A socks5 proxy through the remote host"
 
-    elif [ "${func_num}" = 2 ];then
-        echo '[2] -R :Remote Forwarding - Remote port listen the local port.'
-        echo -e 'The Host: \c'
-        read Host
-        echo -e 'The Local Port: \c'
-        read LPort
-        echo -e 'The Remote Port (default: = Local Port): \c'
-        read RPort
-        if [ "${RPort}" = "" ];then
-            RPort=${LPort}
-        fi
-        printf "\n"
-        echo -e "$ ssh -R localhost:$RPort"':localhost:'"$LPort $Host -N"
-        ssh -R localhost:${RPort}:localhost:${LPort} ${Host} -N
-    elif [ "${func_num}" = 3 ];then
-        echo '[3] -D :Dynamic Forwarding - Use remote to forward local port. (socks5)'
-        echo -e 'The Host: \c'
-        read Host
-        echo -e 'The LPort Port: \c'
-        read LPort
-        printf "\n"
-        echo -e "$ ssh -D $LPort $Host -N"
-        ssh -D ${LPort} ${Host} -N
-    else
-        print_error "Invalid input! Please enter a valid option number."
-    fi
-    unset func_num
+    case "$UI_CHOICE" in
+        1)
+            ui_note "known hosts: $(awk '/^[[:space:]]*Host[[:space:]]/ { printf "%s ", $2 }' ~/.ssh/config 2>/dev/null)"
+            ui_ask "Host"
+            host=$UI_ANSWER
+            ui_ask "Remote port"
+            rport=$UI_ANSWER
+            ui_ask "Local port" "$rport"
+            lport=$UI_ANSWER
+            ui_gap
+            ui_command "ssh -L localhost:${lport}:localhost:${rport} ${host} -N"
+            ui_note "running at http://localhost:${lport}"
+            ui_gap
+            ssh -L localhost:${lport}:localhost:${rport} ${host} -N
+            ;;
+        2)
+            ui_ask "Host"
+            host=$UI_ANSWER
+            ui_ask "Local port"
+            lport=$UI_ANSWER
+            ui_ask "Remote port" "$lport"
+            rport=$UI_ANSWER
+            ui_gap
+            ui_command "ssh -R localhost:${rport}:localhost:${lport} ${host} -N"
+            ui_gap
+            ssh -R localhost:${rport}:localhost:${lport} ${host} -N
+            ;;
+        3)
+            ui_ask "Host"
+            host=$UI_ANSWER
+            ui_ask "Local port"
+            lport=$UI_ANSWER
+            ui_gap
+            ui_command "ssh -D ${lport} ${host} -N"
+            ui_gap
+            ssh -D ${lport} ${host} -N
+            ;;
+    esac
 }
 
 # add environment variable to PATH
 pathadd(){
-    print_table_text "This is a funtion to add environment variable to PATH." "false" "green" "cyan" $(tput cols)
-    print_text "green" "path: " "false"
-    read pth
-    print_text "green" "whether to add to ${shell_file} (add permanently)? ([y]/n)? " "false"
-    read yon
-    if [ "${yon}" = "y" ];then
+    local pth
+    ui_heading "pathadd" "add a directory to PATH"
+    ui_ask "Directory"
+    pth=$UI_ANSWER
+    if [ -z "$pth" ]; then
+        ui_err "no directory given"
+        return 1
+    fi
+
+    if ui_confirm "Add it to ${shell_file} permanently?"; then
         echo '# >>> [Added by .ohmyshell] Add PATH to env >>>' >> ${shell_file}
         echo "export PATH=${pth}:"'$PATH' >> ${shell_file}
         echo '# <<< [Added by .ohmyshell] Add PATH to env end <<<' >> ${shell_file}
+        ui_ok "added to ${shell_file}"
     else
         export PATH=${pth}:$PATH
+        ui_ok "added to PATH for this session"
     fi
-    unset pth
-    unset yon
+    ui_gap
 }
 
 # Set conda initial and add startup shell to bashrc/zshrc.
 condainit(){
-    print_table_text "This is a funtion to set conda initial and add startup shell to bashrc/zshrc." "false" "green" "cyan" $(tput cols)
-    print_text "green" "anaconda installed path (e.g. /usr/local/anaconda3): " "false"
-    read pth
-    cpth=${pth}'/etc/profile.d/conda.sh'
-    print_text "green" "whether to add [source ${cpth}] to ${shell_file}? ([y]/n)? " "false"
-    read yon
-    yon=${yon:-y}
-    if [ "${yon}" = "y" ];then
+    local pth cpth
+    ui_heading "condainit" "add the conda hook to your shell profile"
+    ui_ask "Anaconda path" "/usr/local/anaconda3"
+    pth=$UI_ANSWER
+    cpth=${pth}/etc/profile.d/conda.sh
+
+    if [ ! -f "$cpth" ]; then
+        ui_warn "${cpth} does not exist"
+    fi
+
+    if ui_confirm "Add source ${cpth} to ${shell_file}?"; then
         echo '# >>> [Added by .ohmyshell] Conda initial >>>' >> ${shell_file}
         echo "source ${cpth}" >> ${shell_file}
         echo '# <<< [Added by .ohmyshell] Conda initial end <<<' >> ${shell_file}
-        echo "Complete add [source ${cpth}] to ${shell_file}"
+        ui_ok "added to ${shell_file}"
     fi
-    unset yon
+    ui_gap
 }
 
 # view folder and file size
 # TODO: add some param such like sz $1 $2
 sz(){
-    print_table_text "This is a funtion to view folder and file information." "false" "green" "cyan" $(tput cols)
-    print_text "green" "Choose the Function [Number] you want:" "false"
-    printf "\n"
-    print_text "green" "[1] view all computer disk size" "false"
-    printf "\n"
-    print_text "green" "[2] view folder or file size" "false"
-    printf "\n"
-    print_text "green" "[3] view file number in folder" "false"
-    printf "\n"
-    print_text "green" "Your choose: " "false"
-    read func_num
-    if [ "${func_num}" = 1 ];then
-        print_text "green" "$ df -h" "false"
-        printf "\n"
-        df -h
-    elif [ "${func_num}" = 2 ];then
-        print_text "green" "Input the folder or file to view (default: *, not support ~): " "false"
-        read fod_name
-        print_text "green" "Input the max depth to view (default: 0): " "false"
-        read max_depth
+    local target depth
+    ui_menu "sz" "look at disk, folder and file usage" \
+        "disks|Usage of every mounted disk" \
+        "size|Size of a folder or file" \
+        "count|Number of entries in a folder"
 
-        if [ "${max_depth}" = "" ];then
-            max_depth=0
-        fi
-        # Different for MacOs and Linux
-        if [ "$(uname -s)" = Linux ];then
-            if [[ "${fod_name}" = "" ]] || [[ "${fod_name}" = "*" ]];then
-                print_text "green" "$ du -h --max-depth=${max_depth} *" "false"
-                printf "\n"
-                du -h --max-depth=${max_depth} *
+    case "$UI_CHOICE" in
+        1)
+            ui_command "df -h"
+            ui_gap
+            df -h
+            ;;
+        2)
+            ui_ask "Folder or file" "*"
+            target=$UI_ANSWER
+            ui_ask "Max depth" "0"
+            depth=$UI_ANSWER
+            ui_gap
+            if [ "$(uname -s)" = Darwin ]; then
+                ui_command "du -h -d ${depth} ${target}"
+                ui_gap
+                du -h -d ${depth} ${target}
             else
-                print_text "green" "$ du -h --max-depth=${max_depth} ${fod_name}" "false"
-                printf "\n"
-                du -h --max-depth=${max_depth} ${fod_name}
+                ui_command "du -h --max-depth=${depth} ${target}"
+                ui_gap
+                du -h --max-depth=${depth} ${target}
             fi
-        elif [ "$(uname -s)" = Darwin ];then
-            if [[ "${fod_name}" = "" ]] || [[ "${fod_name}" = "*" ]];then
-                print_text "green" "$ du -h -d ${max_depth} *" "false"
-                printf "\n"
-                du -h -d ${max_depth} *
-            else
-                print_text "green" "$ du -h -d ${max_depth} ${fod_name}" "false"
-                printf "\n"
-                du -h -d ${max_depth} ${fod_name}
-            fi
-        else
-            print_text "red" "Not support current OS!" "false"
-        fi
-    elif [ "${func_num}" = 3 ];then
-        print_text "green" "Input the folder to view (default: .): " "false"
-        read fod_name
-        fod_name=${fod_name:.}
-        print_text "green" "Input the file type to view ([A]ll, [D]irectory, [F]ile, [L]ink): " "false"
-        read file_type
-        file_type=${file_type:-A}
-        # A or a both the same, the same as D, F, L
-        if [ "${file_type}" = "A" ] || [ "${file_type}" = "a" ];then
-            print_text "green" "$ ls -l ${fod_name} | grep -c ^" "false"
-            ls -l ${fod_name} | grep -c ^
-        elif [ "${file_type}" = "D" || [ "${file_type}" = "d" ];then
-            print_text "green" "$ ls -l ${fod_name} | grep -c ^d" "false"
-            ls -l ${fod_name} | grep -c ^d
-        elif [ "${file_type}" = "F" || [ "${file_type}" = "f" ];then
-            print_text "green" "$ ls -l ${fod_name} | grep -c ^-" "false"
-            ls -l ${fod_name} | grep -c ^-
-        elif [ "${file_type}" = "L" || [ "${file_type}" = "l" ];then
-            print_text "green" "$ ls -l ${fod_name} | grep -c ^l" "false"
-            ls -l ${fod_name} | grep -c ^l
-        else
-            print_error "Invalid file type! Please enter A, D, F, or L."
-        fi
-
-    else
-        print_error "Invalid input! Please enter a valid option number."
-    fi
+            ;;
+        3)
+            ui_ask "Folder" "."
+            target=$UI_ANSWER
+            ui_menu "count" "$target" \
+                "all|Every entry" \
+                "directories|Directories only" \
+                "files|Regular files only" \
+                "links|Symlinks only"
+            case "$UI_CHOICE" in
+                1) ui_command "ls -l ${target} | grep -c ^" ; ls -l ${target} | grep -c ^ ;;
+                2) ui_command "ls -l ${target} | grep -c ^d" ; ls -l ${target} | grep -c ^d ;;
+                3) ui_command "ls -l ${target} | grep -c ^-" ; ls -l ${target} | grep -c ^- ;;
+                4) ui_command "ls -l ${target} | grep -c ^l" ; ls -l ${target} | grep -c ^l ;;
+            esac
+            ;;
+    esac
+    ui_gap
 }
 
 # listen remote server vpn (Only support Local)
 listen_vpn(){
-    echo 'Listen remote server vpn (Only support Local)'
-    echo -e 'The Host: \c'
-    read listen_vpn_Host
-    echo -e 'The Local Port: \c'
-    read listen_vpn_LPort
-    echo -e "$ ssh -NL localhost:${listen_vpn_LPort}:localhost:9090 ${listen_vpn_Host}"
-    echo -e "Running at: 
-    \033[4mhttp://clash.razord.top\033[0m
-    Host: 120.0.0.1
-    Port: Local Port
-    HTTP proxy port: 7890
-    Socks5 proxy port: 7891
-    Mode: Rules"
-    ssh -NL localhost:${listen_vpn_LPort}:localhost:9090 ${listen_vpn_Host}
+    local host lport
+    ui_heading "listen_vpn" "forward a remote clash dashboard, local only"
+    ui_ask "Host"
+    host=$UI_ANSWER
+    ui_ask "Local port" "9090"
+    lport=$UI_ANSWER
+
+    ui_gap
+    ui_command "ssh -NL localhost:${lport}:localhost:9090 ${host}"
+    ui_field "Dashboard" "http://clash.razord.top"
+    ui_field "Host" "127.0.0.1"
+    ui_field "Port" "$lport"
+    ui_field "HTTP" "7890"
+    ui_field "Socks5" "7891"
+    ui_gap
+    ssh -NL localhost:${lport}:localhost:9090 ${host}
 }
 
 # download file from google drive
 download_googledrive(){
-    echo -e 'This is a funtion to download file/files from google drive.'
+    local fileid
+    ui_heading "download_gd" "download from google drive with gdown"
+    ui_ask "File or folder id"
+    fileid=$UI_ANSWER
+    if [ -z "$fileid" ]; then
+        ui_err "no id given"
+        return 1
+    fi
 
-    # Method 1: use wget to download
-    # echo -e 'file ID: \c'
-    # read fileid
-    # echo -e 'file Name: \c'
-    # read filename
-    # echo -e "$ wget --load-cookies /tmp/cookies.txt \"https://drive.google.com/uc?export=download\&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://drive.google.com/uc?export=download&id=${fileid}' -O- | sed -rn 's/.confirm=([0-9A-Za-z_]+)./\1\n/p')&id=${fileid}\" -O ${filename} && rm -rf /tmp/cookies.txt"
-    # wget --load-cookies /tmp/cookies.txt "https://drive.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://drive.google.com/uc?export=download&id=${fileid}' -O- | sed -rn 's/.confirm=([0-9A-Za-z_]+)./\1\n/p')&id=${fileid}" -O ${filename} && rm -rf /tmp/cookies.txt
-
-    # Method 2: use gdown -  pip install gdown
-    echo -e 'file(s) ID: \c'
-    read fileid
-    echo -e "whether a file folder? ([y]/n)? \c"
-    read yon
-    if [ "${yon}" = "y" ];then
-        gdown ${fileid}
-    else
+    ui_gap
+    if ui_confirm "Is it a folder?" n; then
+        ui_command "gdown --folder ${fileid}"
         gdown --folder ${fileid}
+    else
+        ui_command "gdown ${fileid}"
+        gdown ${fileid}
     fi
 }
 
 # test vps
 vpstest(){
-    echo 'Test the vps.'
+    ui_heading "vpstest" "benchmark this machine with NodeBench"
     bash <(curl -sL https://raw.githubusercontent.com/LloydAsp/NodeBench/main/NodeBench.sh)
 }
 
 # Integrate all tool commands
 mytool(){
-    print_table_text "mytool - Tool Selection Menu" "false" "cyan" "green" $(tput cols)
-    printf "\n"
-    echo -e '  [1] jp            - Open Jupyter Lab'
-    echo -e '  [2] listen        - SSH port forwarding'
-    echo -e '  [3] pathadd       - Add to PATH'
-    echo -e '  [4] condainit     - Initialize Conda'
-    echo -e '  [5] sz            - View disk usage'
-    echo -e '  [6] listen_vpn    - Listen VPN (Local only)'
-    echo -e '  [7] download_gd   - Download from Google Drive'
-    echo -e '  [8] vpstest       - Test VPS performance'
-    printf "\n"
-    print_line "green" $(tput cols)
-    echo -e '\nInput your choice: \c'
-    read func_num
-    if [ "${func_num}" = 1 ];then
-        jp
-    elif [ "${func_num}" = 2 ];then
-        listen
-    elif [ "${func_num}" = 3 ];then
-        pathadd
-    elif [ "${func_num}" = 4 ];then
-        condainit
-    elif [ "${func_num}" = 5 ];then
-        sz
-    elif [ "${func_num}" = 6 ];then
-        listen_vpn
-    elif [ "${func_num}" = 7 ];then
-        download_googledrive
-    elif [ "${func_num}" = 8 ];then
-        vpstest
-    else
-        print_error "Invalid input! Please enter a number between 1-8."
-    fi
+    ui_menu "mytool" "common tools for daily tasks" \
+        "jp|Open Jupyter Lab" \
+        "listen|SSH port forwarding" \
+        "pathadd|Add a directory to PATH" \
+        "condainit|Initialise conda" \
+        "sz|View disk usage" \
+        "listen_vpn|Listen to a remote VPN, local only" \
+        "download_gd|Download from Google Drive" \
+        "vpstest|Test VPS performance"
+    case "$UI_CHOICE" in
+        1) jp ;;
+        2) listen ;;
+        3) pathadd ;;
+        4) condainit ;;
+        5) sz ;;
+        6) listen_vpn ;;
+        7) download_googledrive ;;
+        8) vpstest ;;
+    esac
 }
 # <<< myool end <<<
 
@@ -695,54 +567,45 @@ mytool(){
 
 # modify pip source
 pipset(){
-    THU_SOURCE=https://pypi.tuna.tsinghua.edu.cn/simple
-    ALI_SOURCE=https://mirrors.aliyun.com/pypi/simple/
-    TENCENT_SOURCE=http://mirrors.cloud.tencent.com/pypi/simple
-    echo -e 'pip source:'
-    echo -e '[1] Tsinghua Source'
-    echo -e '[2] ALibaba Source'
-    echo -e '[3] Tencent Source'
-    echo -e 'Input your choose: \c'
-    read func_num
-    if [ "${func_num}" = 1 ];then
-        SOURCE=${THU_SOURCE}
-    elif [ "${func_num}" = 2 ];then
-        SOURCE=${ALI_SOURCE}
-    elif [ "${func_num}" = 3 ];then
-        SOURCE=${TENCENT_SOURCE}
-    else
-        SOURCE=${THU_SOURCE}
-        echo -e 'Invalid Input! Using THU default.'
+    local index
+    ui_menu "pipset" "choose a pip index" \
+        "tsinghua|pypi.tuna.tsinghua.edu.cn" \
+        "aliyun|mirrors.aliyun.com" \
+        "tencent|mirrors.cloud.tencent.com"
 
-    fi
-    echo -e "$ pip config set global.index-url ${SOURCE}"
-    pip config set global.index-url ${SOURCE}
+    case "$UI_CHOICE" in
+        1) index=https://pypi.tuna.tsinghua.edu.cn/simple ;;
+        2) index=https://mirrors.aliyun.com/pypi/simple/ ;;
+        3) index=http://mirrors.cloud.tencent.com/pypi/simple ;;
+        *) return 0 ;;
+    esac
+
+    ui_command "pip config set global.index-url ${index}"
+    pip config set global.index-url ${index}
+    ui_gap
 }
 
 # pip install some base module
 pipbase(){
-    unset i
-    unset yon
-    base_module=('pygments' 'gpustat' 'jupyterlab' 'tensorboard' 'woaigpu' 'gdown' 'shell-gpt')
-    for i in ${base_module}; do
-        print_text "green" "whether to $ pip install ${i} (y/[n])?" "false"
-        read yon
-        yon=${yon:-n}
-        if [ "${yon}" = "y" ]; then
-            pip install ${i}
+    local pkg
+    ui_heading "pipbase" "install the packages GCR leans on"
+    for pkg in pygments gpustat jupyterlab tensorboard woaigpu gdown shell-gpt; do
+        if ui_confirm "pip install ${pkg}?" n; then
+            pip install ${pkg}
         fi
     done
-    unset i
-    unset yon
+    ui_gap
 }
 
 # pip list and pip show
 pipl(){
     if [ "${1}" = "" ]; then
-        echo '$ pip list'
+        ui_command "pip list"
+        ui_gap
         pip list
     else
-        echo -e "$ pip show ${1}"
+        ui_command "pip show ${1}"
+        ui_gap
         pip show ${1}
     fi
 }
@@ -750,14 +613,12 @@ pipl(){
 # pip install
 pipi(){
     if [ "${1}" = "" ]; then
-        echo -e 'whether to $ pip install req*.txt? ([y]/n)? \c'
-        read yon
-        yon=${yon:-y}
-        if [ "${yon}" = "y" ];then
+        if ui_confirm "pip install -r req*.txt?"; then
             pip install -r req*.txt
         fi
     else
-        echo -e "$ pip install $@"
+        ui_command "pip install $@"
+        ui_gap
         pip install "$@"
     fi
 }
@@ -766,9 +627,10 @@ pipi(){
 pipu(){
     if [ "${1}" = "" ]; then
         pipl
-        echo -e 'choose which to uninstall: \c'
-        read pkg
-        pip uninstall ${pkg} 
+        ui_ask "Package to uninstall"
+        if [ -n "$UI_ANSWER" ]; then
+            pip uninstall ${UI_ANSWER}
+        fi
     else
        pip uninstall "$@"
     fi
@@ -776,30 +638,19 @@ pipu(){
 
 # Integrate all tool commands
 mypip(){
-    print_table_text "mypip - Python Package Management" "false" "cyan" "green" $(tput cols)
-    printf "\n"
-    echo -e '  [1] pipset   - Configure pip source'
-    echo -e '  [2] pipbase  - Install base packages'
-    echo -e '  [3] pipl     - List/show packages'
-    echo -e '  [4] pipi     - Install packages'
-    echo -e '  [5] pipu     - Uninstall packages'
-    printf "\n"
-    print_line "green" $(tput cols)
-    echo -e '\nInput your choice: \c'
-    read func_num
-    if [ "${func_num}" = 1 ];then
-        pipset
-    elif [ "${func_num}" = 2 ];then
-        pipbase
-    elif [ "${func_num}" = 3 ];then
-        pipl
-    elif [ "${func_num}" = 4 ];then
-        pipi
-    elif [ "${func_num}" = 5 ];then
-        pipu
-    else
-        print_error "Invalid input! Please enter a number between 1-5."
-    fi
+    ui_menu "mypip" "python package management" \
+        "pipset|Configure the pip source" \
+        "pipbase|Install the base packages" \
+        "pipl|List or show packages" \
+        "pipi|Install packages" \
+        "pipu|Uninstall packages"
+    case "$UI_CHOICE" in
+        1) pipset ;;
+        2) pipbase ;;
+        3) pipl ;;
+        4) pipi ;;
+        5) pipu ;;
+    esac
 }
 # <<< mypip end <<<
 
@@ -812,135 +663,52 @@ mypip(){
 
 # conda activate
 env() {
-    if [ -z "$1" ]; then
-        print_section "Conda Environments" "cyan"
+    local conda_env_list line name location items count
 
-        # 获取conda环境列表
-        conda_env_list=$(conda env list | tail -n +3)
-
-        # 如果没有环境
-        if [ -z "$conda_env_list" ]; then
-            print_warning "No conda environments found"
-            return 1
-        fi
-
-        # 获取终端宽度
-        terminal_width=$(tput cols)
-
-        # 计算合适的列宽
-        env_name_width=$((terminal_width * 30 / 100))
-        location_width=$((terminal_width * 60 / 100))
-
-        # 打印表头
-        printf "  "
-        print_text "cyan" "$(printf "%-*s" "$env_name_width" "Environment")" "false"
-        print_text "green" "$(printf "%-*s" "$location_width" "Location")" "false"
-        print_text "yellow" "Status" "false"
-        printf "\n"
-
-        printf "  "
-        for ((i = 0; i < terminal_width - 4; i++)); do
-            printf "─"
-        done
-        printf "\n"
-
-        # 打印conda环境列表
-        echo "$conda_env_list" | while IFS= read -r line; do
-            # 跳过空行和注释
-            [[ -z "$line" || "$line" == \#* ]] && continue
-
-            if [[ "$line" == *"*"* ]]; then
-                # 当前激活的环境 - 格式: name  *  path
-                env_name=$(echo "$line" | awk '{print $1}')
-                location=$(echo "$line" | awk '{for(i=3;i<=NF;i++) printf "%s ", $i; print ""}' | sed 's/ *$//')
-
-                printf "  "
-                print_text "cyan" "$(printf "%-*s" "$env_name_width" "$env_name")" "false"
-                print_text "white" "$(printf "%-*s" "$location_width" "$location")" "false"
-                print_text "green" "● Active" "false"
-                printf "\n"
-            else
-                # 非激活环境 - 格式: name  path
-                env_name=$(echo "$line" | awk '{print $1}')
-                location=$(echo "$line" | awk '{for(i=2;i<=NF;i++) printf "%s ", $i; print ""}' | sed 's/ *$//')
-
-                printf "  "
-                print_text "white" "$(printf "%-*s" "$env_name_width" "$env_name")" "false"
-                print_text "white" "$(printf "%-*s" "$location_width" "$location")" "false"
-                print_text "white" "○" "false"
-                printf "\n"
-            fi
-        done
-
-        printf "\n"
-        print_line "cyan" $(tput cols)
-        printf "\n"
-
-        # 提取环境名称列表（排除空行和注释）
-        condaenvs=$(echo "$conda_env_list" | grep -v '^#' | grep -v '^$' | awk '{print $1}')
-
-        # 根据shell类型生成环境数组
-        if [[ "$SHELL" == *"zsh" ]]; then
-            envs_array=("${(f)condaenvs}")
-        elif [[ "$SHELL" == *"bash" ]]; then
-            IFS=$'\n' read -r -d '' -a envs_array <<< "$condaenvs"
-        else
-            print_error "Invalid shell type: $SHELL"
-            return 1
-        fi
-
-        # 创建选择菜单
-        print_text "cyan" "Select environment to activate:" "false"
-        printf "\n\n"
-
-        local count=1
-        for env_item in "${envs_array[@]}"; do
-            printf "  "
-            print_text "yellow" "[$count]" "false"
-            printf " "
-            print_text "white" "$env_item" "false"
-            printf "\n"
-            ((count++))
-        done
-
-        printf "  "
-        print_text "yellow" "[$count]" "false"
-        printf " "
-        print_text "red" "deactivate" "false"
-        printf "\n\n"
-
-        print_prompt "Your choice" ""
-        read choice
-
-        # 验证输入是否为数字
-        if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
-            print_error "Please enter a valid number"
-            return 1
-        fi
-
-        if [ "$choice" = "$count" ]; then
-            print_info "Deactivating conda environment..."
-            conda deactivate
-            print_success "Environment deactivated"
-        elif [ "$choice" -ge 1 ] && [ "$choice" -lt "$count" ]; then
-            # 根据shell类型获取正确的数组元素
-            if [[ "$SHELL" == *"zsh" ]]; then
-                # zsh数组从1开始
-                selected_env="${envs_array[$choice]}"
-            else
-                # bash数组从0开始
-                selected_env="${envs_array[$((choice - 1))]}"
-            fi
-
-            print_info "Activating environment: $selected_env"
-            conda activate "$selected_env"
-            print_success "Environment activated: $selected_env"
-        else
-            print_error "Invalid choice. Please enter a number between 1 and $count"
-        fi
-    else
+    if [ -n "$1" ]; then
         conda activate "$1"
+        return
     fi
+
+    conda_env_list=$(conda env list 2>/dev/null | tail -n +3)
+    if [ -z "$conda_env_list" ]; then
+        ui_warn "no conda environments found"
+        return 1
+    fi
+
+    items=()
+    while IFS= read -r line; do
+        case "$line" in
+            ''|'#'*) continue ;;
+        esac
+        name=$(echo "$line" | awk '{print $1}')
+        if [ -z "$name" ]; then
+            continue
+        fi
+        if [[ "$line" == *"*"* ]]; then
+            location=$(echo "$line" | awk '{for(i=3;i<=NF;i++) printf "%s ", $i}')
+            items+=("$name|active   ${location}")
+        else
+            location=$(echo "$line" | awk '{for(i=2;i<=NF;i++) printf "%s ", $i}')
+            items+=("$name|${location}")
+        fi
+    done <<< "$conda_env_list"
+    items+=("deactivate|Leave the current environment")
+    count=${#items[@]}
+
+    ui_menu "env" "conda environments" "${items[@]}"
+    if [ "$UI_CHOICE" -lt 1 ]; then
+        return 0
+    fi
+
+    if [ "$UI_CHOICE" = "$count" ]; then
+        conda deactivate
+        ui_ok "environment deactivated"
+    else
+        conda activate "$UI_CHOICE_NAME"
+        ui_ok "activated ${UI_CHOICE_NAME}"
+    fi
+    ui_gap
 }
 
 # list conda envs
@@ -948,68 +716,72 @@ alias lenv='conda info -e'
 
 # create conda env
 cenv(){
-    echo -e 'The name of the environment to create: \c'
-    read Env_name
-    conda env list
-    echo -e 'Copy from existing env (default no copy): \c'
-    read Source_Env_name
-    if [ "${Source_Env_name}" = "" ];then
-        echo -e 'Python version (default 3.7): \c'
-        read Py_version
-        if [ "${Py_version}" = "" ];then
-            echo -e "$ conda create --name ${Env_name} python=3.7 ipykernel -y"
-            conda create --name ${Env_name} python=3.7 ipykernel -y
-            echo -e "$ python -m ipykernel install --user --name ${Env_name}"
-            python -m ipykernel install --user --name ${Env_name}
-        else
-            echo -e "$ conda create --name ${Env_name} python=${Py_version} ipykernel -y"
-            conda create --name ${Env_name} python=${Py_version} ipykernel -y
-            echo -e "$ python -m ipykernel install --user --name ${Env_name}"
-            python -m ipykernel install --user --name ${Env_name}
-        fi
-    else
-        conda create --name ${Env_name} --clone ${Source_Env_name}
+    local name from py
+    ui_heading "cenv" "create a conda environment"
+    ui_ask "Name"
+    name=$UI_ANSWER
+    if [ -z "$name" ]; then
+        ui_err "no name given"
+        return 1
     fi
+
+    conda env list
+    ui_ask "Clone from an existing environment"
+    from=$UI_ANSWER
+    ui_gap
+
+    if [ -n "$from" ]; then
+        ui_command "conda create --name ${name} --clone ${from}"
+        ui_gap
+        conda create --name ${name} --clone ${from}
+        return
+    fi
+
+    ui_ask "Python version" "3.7"
+    py=$UI_ANSWER
+    ui_gap
+    ui_command "conda create --name ${name} python=${py} ipykernel -y"
+    ui_gap
+    conda create --name ${name} python=${py} ipykernel -y
+    ui_command "python -m ipykernel install --user --name ${name}"
+    python -m ipykernel install --user --name ${name}
 }
 
 # delete conda env
 denv(){
+    local name
+    ui_heading "denv" "delete a conda environment"
     conda env list
-    echo -e 'The name of the environment to delete: \c'
-    read Env_name
-    echo -e "Do you want to delete the environment: ${Env_name}? ([y]/n)? \c"
-    read yon
-    if [ "${yon}" = "y" ];then
-        echo -e "$ conda remove -n ${Env_name} --all"
-        conda remove -n ${Env_name} --all
+    ui_ask "Name"
+    name=$UI_ANSWER
+    if [ -z "$name" ]; then
+        ui_err "no name given"
+        return 1
+    fi
+
+    if ui_confirm "Delete ${name} and everything in it?" n; then
+        ui_command "conda remove -n ${name} --all"
+        ui_gap
+        conda remove -n ${name} --all
     else
-        echo -e "${Env_name} not deleted."
+        ui_note "${name} was left alone"
+        ui_gap
     fi
 }
 
 # Integrate all conda commands
 myenv(){
-    print_table_text "myenv - Conda Environment Management" "false" "cyan" "green" $(tput cols)
-    printf "\n"
-    echo -e '  [1] env    - Activate environment'
-    echo -e '  [2] lenv   - List environments'
-    echo -e '  [3] cenv   - Create environment'
-    echo -e '  [4] denv   - Delete environment'
-    printf "\n"
-    print_line "green" $(tput cols)
-    echo -e '\nInput your choice: \c'
-    read func_num
-    if [ "${func_num}" = 1 ];then
-        env
-    elif [ "${func_num}" = 2 ];then
-        lenv
-    elif [ "${func_num}" = 3 ];then
-        cenv
-    elif [ "${func_num}" = 4 ];then
-        denv
-    else
-        print_error "Invalid input! Please enter a number between 1-4."
-    fi
+    ui_menu "myenv" "conda environment management" \
+        "env|Activate an environment" \
+        "lenv|List environments" \
+        "cenv|Create an environment" \
+        "denv|Delete an environment"
+    case "$UI_CHOICE" in
+        1) env ;;
+        2) lenv ;;
+        3) cenv ;;
+        4) denv ;;
+    esac
 }
 # <<< myenv end <<<
 
@@ -1027,40 +799,30 @@ alias gpus='echo "CUDA_VISIBLE_DEVICES"'
 
 # View pids for all gpus 
 pid(){
-    echo -e "Use sudo? ([y]/n)? \c"
-    read yon
-    if [ "${yon}" = "y" ];then
-        echo '$ sudo fuser -v /dev/nvidia*'
+    if ui_confirm "Use sudo?" n; then
+        ui_command "sudo fuser -v /dev/nvidia*"
+        ui_gap
         sudo fuser -v /dev/nvidia*
     else
-        echo '$ fuser -v /dev/nvidia*'
+        ui_command "fuser -v /dev/nvidia*"
+        ui_gap
         fuser -v /dev/nvidia*
     fi
 }
 
 # Integrate all GPU commands
 mygpu(){
-    print_table_text "mygpu - GPU Management Tools" "false" "cyan" "green" $(tput cols)
-    printf "\n"
-    echo -e '  [1] gpu      - GPU status (gpustat)'
-    echo -e '  [2] nvidia   - GPU status (nvidia-smi)'
-    echo -e '  [3] pid      - View GPU process IDs'
-    echo -e '  [4] gpus     - Show CUDA devices'
-    printf "\n"
-    print_line "green" $(tput cols)
-    echo -e '\nInput your choice: \c'
-    read func_num
-    if [ "${func_num}" = 1 ];then
-        gpu
-    elif [ "${func_num}" = 2 ];then
-        nvidia
-    elif [ "${func_num}" = 3 ];then
-        pid
-    elif [ "${func_num}" = 4 ];then
-        echo 'CUDA_VISIBLE_DEVICES'
-    else
-        print_error "Invalid input! Please enter a number between 1-4."
-    fi
+    ui_menu "mygpu" "gpu and cuda utilities" \
+        "gpu|GPU status through gpustat" \
+        "nvidia|GPU status through nvidia-smi" \
+        "pid|View the processes holding a GPU" \
+        "gpus|Show CUDA_VISIBLE_DEVICES"
+    case "$UI_CHOICE" in
+        1) gpu ;;
+        2) nvidia ;;
+        3) pid ;;
+        4) gpus ;;
+    esac
 }
 # <<< GPU end <<<
 
@@ -1072,76 +834,83 @@ mygpu(){
 
 # chmod
 mychmod(){
-    echo -e 'This is a funtion for [chmod] to modify directory permission levels.'
-    echo -e 'Input directory: \c'
-    read dir
-    if [ -d "${dir}" ];then
-        echo -e 'Input permission level (e.g. 777): \c'
-        read permission
-        echo -e "Do you want to change the directory [${dir}] to [${permission}]? ([y]/n)? \c"
-        read yon
-        if [ "${yon}" = "y" ];then
-            echo -e "Use sudo? ([y]/n)? \c"
-            read yyon
-            if [ "${yyon}" = "y" ];then
-                echo -e "$ sudo chmod -R ${permission} ${dir}"
-                sudo chmod -R ${permission} ${dir}
-            else
-                echo -e "$ chmod -R ${permission} ${dir}"
-                chmod -R ${permission} ${dir}
-            fi
-        fi
-    else
-        echo -e 'Invalid direcctory!'
+    local dir mode
+    ui_heading "mychmod" "change directory permissions"
+    ui_ask "Directory"
+    dir=$UI_ANSWER
+    if [ ! -d "$dir" ]; then
+        ui_err "${dir} is not a directory"
+        return 1
     fi
+
+    ui_ask "Permission, for example 755"
+    mode=$UI_ANSWER
+    if [ -z "$mode" ]; then
+        ui_err "no permission given"
+        return 1
+    fi
+
+    if ! ui_confirm "chmod -R ${mode} ${dir}?"; then
+        ui_note "nothing changed"
+        ui_gap
+        return 0
+    fi
+
+    if ui_confirm "Use sudo?" n; then
+        ui_command "sudo chmod -R ${mode} ${dir}"
+        sudo chmod -R ${mode} ${dir}
+    else
+        ui_command "chmod -R ${mode} ${dir}"
+        chmod -R ${mode} ${dir}
+    fi
+    ui_gap
 }
 
 # chown 
 mychown(){
-    echo -e 'This is a funtion for [chown] to modify directory owners.'
-    echo -e 'Input directory: \c'
-    read dir
-    if [ -d "${dir}" ];then
-        echo -e 'Input new owner (user or user:group): \c'
-        read owner
-        echo -e "Do you want to change the directory [${dir}] to the owner [${owner}]? ([y]/n)? \c"
-        read yon
-        if [ "${yon}" = "y" ];then
-            echo -e "Use sudo? ([y]/n)? \c"
-            read yyon
-            if [ "${yyon}" = "y" ];then
-                echo -e "$ sudo chown -R ${owner} ${dir}"
-                sudo chown -R ${owner} ${dir}
-            else
-                echo -e "$ chown -R ${owner} ${dir}"
-                chown -R ${owner} ${dir}
-            fi
-        fi
-    else
-        echo -e 'Invalid direcctory!'
+    local dir owner
+    ui_heading "mychown" "change directory owners"
+    ui_ask "Directory"
+    dir=$UI_ANSWER
+    if [ ! -d "$dir" ]; then
+        ui_err "${dir} is not a directory"
+        return 1
     fi
+
+    ui_ask "New owner, user or user:group"
+    owner=$UI_ANSWER
+    if [ -z "$owner" ]; then
+        ui_err "no owner given"
+        return 1
+    fi
+
+    if ! ui_confirm "chown -R ${owner} ${dir}?"; then
+        ui_note "nothing changed"
+        ui_gap
+        return 0
+    fi
+
+    if ui_confirm "Use sudo?" n; then
+        ui_command "sudo chown -R ${owner} ${dir}"
+        sudo chown -R ${owner} ${dir}
+    else
+        ui_command "chown -R ${owner} ${dir}"
+        chown -R ${owner} ${dir}
+    fi
+    ui_gap
 }
 
 # Integrate all Permission commands
 mypermission(){
-    print_table_text "mypermission - Permission Management" "false" "cyan" "green" $(tput cols)
-    printf "\n"
-    echo -e '  [1] mychmod  - Modify directory permissions'
-    echo -e '  [2] mychown  - Modify directory owners'
-    echo -e '  [3] passwd   - Change password'
-    printf "\n"
-    print_line "green" $(tput cols)
-    echo -e '\nInput your choice: \c'
-    read func_num
-    if [ "${func_num}" = 1 ];then
-        mychmod
-    elif [ "${func_num}" = 2 ];then
-        mychown
-    elif [ "${func_num}" = 3 ];then
-        passwd
-    else
-        print_error "Invalid input! Please enter a number between 1-3."
-    fi
+    ui_menu "mypermission" "permission and password management" \
+        "mychmod|Change directory permissions" \
+        "mychown|Change directory owners" \
+        "passwd|Change your password"
+    case "$UI_CHOICE" in
+        1) mychmod ;;
+        2) mychown ;;
+        3) passwd ;;
+    esac
 }
 # <<< mypermission end <<<
 
@@ -1151,9 +920,12 @@ alias gita='git add'
 alias gitaa='git add .'
 alias gitb='git branch'
 gitc(){
-    echo -e 'Commit content: \c'
-    read commit
-    git commit -m ${commit}
+    ui_ask "Commit message"
+    if [ -z "$UI_ANSWER" ]; then
+        ui_err "empty commit message"
+        return 1
+    fi
+    git commit -m "$UI_ANSWER"
 }
 alias gitl='git log'
 alias gitr='git reset'
@@ -1161,12 +933,13 @@ alias gc='git clone'
 gitch(){
     if [ "${1}" = "" ]; then
         gitb
-        echo -e 'which branch to checkout: \c'
-        read branch_name
-        git checkout ${branch_name};
-	else
-		git checkout ${1}
-	fi
+        ui_ask "Branch to check out"
+        if [ -n "$UI_ANSWER" ]; then
+            git checkout "$UI_ANSWER"
+        fi
+    else
+        git checkout "${1}"
+    fi
 }
 alias gitps='git push origin master'
 alias gitpl='git pull'
@@ -1174,48 +947,31 @@ alias gitst='git status'
 
 # Integrate all Git commands
 mygit(){
-    print_table_text "mygit - Git Workflow Shortcuts" "false" "cyan" "green" $(tput cols)
-    printf "\n"
-    echo -e '  [1]  gita   - git add'
-    echo -e '  [2]  gitaa  - git add .'
-    echo -e '  [3]  gitc   - git commit'
-    echo -e '  [4]  gitl   - git log'
-    echo -e '  [5]  gitr   - git reset'
-    echo -e '  [6]  gc     - git clone'
-    echo -e '  [7]  gitch  - git checkout'
-    echo -e '  [8]  gitps  - git push origin master'
-    echo -e '  [9]  gitpl  - git pull'
-    echo -e '  [10] gitst  - git status'
-    echo -e '  [11] gitb   - git branch'
-    printf "\n"
-    print_line "green" $(tput cols)
-    echo -e '\nInput your choice: \c'
-    read func_num
-    if [ "${func_num}" = 1 ];then
-        gita
-    elif [ "${func_num}" = 2 ];then
-        gitaa
-    elif [ "${func_num}" = 3 ];then
-        gitc
-    elif [ "${func_num}" = 4 ];then
-        gitl
-    elif [ "${func_num}" = 5 ];then
-        gitr
-    elif [ "${func_num}" = 6 ];then
-        gc
-    elif [ "${func_num}" = 7 ];then
-        gitch
-    elif [ "${func_num}" = 8 ];then
-        gitps
-    elif [ "${func_num}" = 9 ];then
-        gitpl
-    elif [ "${func_num}" = 10 ];then
-        gitst
-    elif [ "${func_num}" = 11 ];then
-        gitb
-    else
-        print_error "Invalid input! Please enter a number between 1-11."
-    fi
+    ui_menu "mygit" "git workflow shortcuts" \
+        "gita|git add" \
+        "gitaa|git add ." \
+        "gitc|git commit" \
+        "gitl|git log" \
+        "gitr|git reset" \
+        "gc|git clone" \
+        "gitch|git checkout" \
+        "gitps|git push origin master" \
+        "gitpl|git pull" \
+        "gitst|git status" \
+        "gitb|git branch"
+    case "$UI_CHOICE" in
+        1) gita ;;
+        2) gitaa ;;
+        3) gitc ;;
+        4) gitl ;;
+        5) gitr ;;
+        6) gc ;;
+        7) gitch ;;
+        8) gitps ;;
+        9) gitpl ;;
+        10) gitst ;;
+        11) gitb ;;
+    esac
 }
 # <<< mygit end <<<
 
@@ -1262,7 +1018,7 @@ download() {
   if [ $# -ge 1 ]; then
     tsz -r "$@"
   else
-    PS3='Please select a file or folder to download: '
+    PS3="$(printf '  %s%s%s select a file or folder: ' "$UI_ACCENT" "$UI_G_POINT" "$UI_RESET")"
     select file in *; do
       if [ -n "$file" ]; then
         tsz -r "$file"
@@ -1277,21 +1033,13 @@ download() {
 
 # upload folder
 upload(){
-    print_table_text "Upload Files/Folders" "false" "cyan" "green" $(tput cols)
-    printf "\n"
-    echo -e '  [1] File(s)'
-    echo -e '  [2] Folder(s)'
-    printf "\n"
-    print_line "green" $(tput cols)
-    echo -e '\nYour choice: \c'
-    read func_num
-    if [ "${func_num}" = 1 ];then
-        trz
-    elif [ "${func_num}" = 2 ];then
-        trz -r
-    else
-        print_error "Invalid input! Please enter 1 or 2."
-    fi
+    ui_menu "upload" "send files to this session" \
+        "files|Upload one or more files" \
+        "folders|Upload one or more folders"
+    case "$UI_CHOICE" in
+        1) trz ;;
+        2) trz -r ;;
+    esac
 }
 # open ssh with tssh --dragfile
 
@@ -1300,65 +1048,58 @@ alias tsshd='tssh --dragfile'
 
 # VPN commands (only for Linux)
 startvpn(){
-    echo 'Start VPN in terminal!'
-    echo 'Must be install vpn before. If not, run install_vpn for linux.'
-    echo -e "socks5 proxy(default: 7891): \c"
-    read all_port
-    echo -e "http proxy(default: 7890): \c"
-    read http_port
-    echo -e "https proxy(default: 7890): \c"
-    read https_port
-    if [ "${all_port}" = "" ];then
-        all_port=7891
-    fi
-    if [ "${http_port}" = "" ];then
-        http_port=7890
-    fi
-    if [ "${https_port}" = "" ];then
-        https_port=7890
-    fi
-    echo -e "$ export ALL_PROXY=socks5://127.0.0.1:${all_port}"
-    echo -e "$ export http_proxy=http://127.0.0.1:${http_port}"
-    echo -e "$ export https_proxy=http://127.0.0.1:${https_port}"
+    local all_port http_port https_port
+    ui_heading "startvpn" "route this shell through a local proxy"
+    ui_ask "Socks5 port" "7891"
+    all_port=$UI_ANSWER
+    ui_ask "HTTP port" "7890"
+    http_port=$UI_ANSWER
+    ui_ask "HTTPS port" "7890"
+    https_port=$UI_ANSWER
+
     export ALL_PROXY=socks5://127.0.0.1:${all_port}
     export http_proxy=http://127.0.0.1:${http_port}
     export https_proxy=http://127.0.0.1:${https_port}
-    echo 'You can see status by $ curl cip.cc / $ curl -x $ALL_PROXY cip.cc'
 
+    ui_gap
+    ui_ok "proxy enabled for this shell"
+    ui_field "ALL_PROXY" "$ALL_PROXY"
+    ui_field "http_proxy" "$http_proxy"
+    ui_field "https_proxy" "$https_proxy"
+    ui_note "check it with curl cip.cc, stop it with stopvpn"
+    ui_gap
 }
-alias stopvpn='echo \
-"Stop VPN in terminal!
-You can see status by $ curl cip.cc" \
-&& unset ALL_PROXY && unset http_proxy && unset https_proxy'
+alias stopvpn='unset ALL_PROXY http_proxy https_proxy && ui_ok "proxy disabled for this shell"'
 
 # a uniform function to view files with different formats
 uview(){
-    if [ "${1}" = "" ]; then
-        echo -e 'File Name: \c'
-        read filename
-	else
-		filename=${1}
-	fi
-
-    if [ -f ${filename} ];then
-        case "${filename}" in
-            *.bam ) samtools view ${filename} | less -S;;
-            * ) echo "Not support this format. Supported formats: [.bam]";;
-        esac
-    else
-        echo "${filename} not exist."
+    local filename=${1}
+    if [ -z "$filename" ]; then
+        ui_ask "File name"
+        filename=$UI_ANSWER
     fi
+
+    if [ ! -f "${filename}" ]; then
+        ui_err "${filename} does not exist"
+        return 1
+    fi
+
+    case "${filename}" in
+        *.bam) samtools view ${filename} | less -S ;;
+        *) ui_err "unsupported format, only .bam for now" ;;
+    esac
 }
 
 # add to docker group
 dockeradd(){
-    print_text "green" "This is a funtion to add user to docker group." "false"
-    printf "\n"
-    print_text "green" "Input the user to add (default: $(whoami)):" "false"
-    read user
-    user=${user:-$(whoami)}
-    sudo gpasswd -a $user docker     #将登陆用户加入到docker用户组中
-    newgrp docker     #更新用户组
+    local user
+    ui_heading "dockeradd" "add a user to the docker group"
+    ui_ask "User" "$(whoami)"
+    user=$UI_ANSWER
+    ui_command "sudo gpasswd -a ${user} docker"
+    ui_gap
+    sudo gpasswd -a $user docker
+    newgrp docker
 }
 
 # <<< Others end <<<
