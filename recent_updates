@@ -1,11 +1,9 @@
-重要提醒‼️
+2026-09-01  界面改版
 
-2025-12-08 NSCC更新后, 需要手动更新 ~/.bash_profile文件, 把原先的：
+安装脚本与终端交互界面全部重做，风格统一。
 
-[ -x "$HOME/zsh/bin/zsh" ] && exec "$HOME/zsh/bin/zsh" -l 
+菜单（mytool / mypip / myenv / mygpu / mypermission / mygit 等）
+支持上下键选择，数字键仍可直接选中，按 q 退出。
 
-改为：
-
-if [[ $- == *i* ]]; then
-    [ -x "$HOME/zsh/bin/zsh" ] && exec "$HOME/zsh/bin/zsh" -l
-fi
+新的安装命令：
+curl -fsSL https://raw.githubusercontent.com/gaojunbin/GCR/master/install_gcr.sh | sh
