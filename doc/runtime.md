@@ -30,6 +30,11 @@ GCR files and adds the shell entry point. It preserves existing `.zshrc` content
 configuration symlinks. Broken links must be repaired first. Modified checkouts are
 recorded as `local` instead of claiming a committed revision.
 
+Oh My Zsh installation skips generated `.zwc` and `.zwc.old` files, including caches
+present in a local checkout. Existing device caches and their permissions are kept;
+Powerlevel10k can regenerate them from updated source when the shell starts. Release
+archives contain source files rather than another machine's compiled caches.
+
 Older installations need to run the one-line installer once: their `myupdate` downloads
 only the former top-level files and cannot install the new modules. Subsequent updates
 can use the new `myupdate` command. On no-sudo targets,

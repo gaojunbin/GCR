@@ -700,11 +700,18 @@ fetch_from_mirror() {
     return 0
 }
 
+copy_oh_my_zsh() (
+    # Compile caches belong to the target machine and can be read-only.
+    omz_staging="$WORKDIR/oh-my-zsh"
+    mkdir -p "$omz_staging" "$GCR_INSTALL_ROOT/.oh-my-zsh" || return
+    tar --exclude='*.zwc' --exclude='*.zwc.old' \
+        -cf "$WORKDIR/oh-my-zsh.tar" -C "$SRC/oh-my-zsh" . || return
+    tar -xf "$WORKDIR/oh-my-zsh.tar" -C "$omz_staging" || return
+    cp -R "$omz_staging/." "$GCR_INSTALL_ROOT/.oh-my-zsh/"
+)
+
 copy_configs() {
-    run_step "Installing Oh My Zsh" '
-        mkdir -p "$GCR_INSTALL_ROOT/.oh-my-zsh" &&
-        cp -R "$SRC/oh-my-zsh/." "$GCR_INSTALL_ROOT/.oh-my-zsh/"
-    '
+    run_step "Installing Oh My Zsh" 'copy_oh_my_zsh'
     . "$SRC/lib/core.sh"
     . "$SRC/config/defaults.sh"
     . "$SRC/lib/transaction.sh"

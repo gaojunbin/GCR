@@ -1,3 +1,10 @@
+2026-09-05  Fix upgrades with read-only Zsh caches
+
+The installer skips generated .zwc and .zwc.old files when copying Oh My Zsh.
+Existing caches and their permissions are preserved. Compiled caches are no longer
+tracked or included in release archives. Rerun the one-line installer after a cache
+permission failure; no manual permission changes are needed.
+
 2026-09-05  Runtime reliability and maintenance
 
 Shell startup uses cached version metadata and a background check with a daily interval.
