@@ -274,12 +274,12 @@ Users only need to memorize one-level functions to access all gcr functions!
 |           |              |           startvpn            |                      VPN for terminal                      |     No      |                        rely on clash                         |
 |           |              |            stopvpn            |                   close VPN for terminal                   |     No      |                                                              |
 |           |              |           dockeradd           |               Add user to docker user group                |     No      |                     need root permission                     |
-|           |              |              cc               |                     Launch Claude Code                     |   Option    |          Offers to install the tool when it is missing          |
+|           |              |              cc               |                Launch Claude Code in YOLO mode             |   Option    |          Offers to install the tool when it is missing          |
 |           |              |              cx               |      Launch Codex with approvals and sandbox bypassed      |   Option    |                                                              |
 |           |              |            cx_init            |     Write the Codex config for a custom endpoint and key   |     No      |              ~/.codex/config.toml and auth.json              |
-|           |              |            cursor             |                Launch the Cursor CLI agent                 |   Option    |                                                              |
-|           |              |            google             |                 Launch the Antigravity CLI                 |   Option    |                                                              |
-|           |              |             grok              |                     Launch Grok Build                      |   Option    |                                                              |
+|           |              |            cursor             |              Launch Cursor CLI in YOLO mode                |   Option    |                                                              |
+|           |              |            google             |            Launch Antigravity CLI in YOLO mode             |   Option    |                                                              |
+|           |              |             grok              |              Launch Grok Build in YOLO mode                |   Option    |                                                              |
 |           |              |                               |                                                            |             |                                                              |
 | ohmytool  |              |                               |                                                            |             |                                                              |
 |           |  (None yet)  |         new_vps_help          |                             -                              |             |                                                              |
@@ -314,4 +314,3 @@ Users only need to memorize one-level functions to access all gcr functions!
 |           |              |      install_discard_vim      |                discard vim and embrace code                |             |                         Recommend!!                          |
 |           |              |        install_joshuto        |                                                            |             |                                                              |
 |           |              |       install_aicoding        | AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI |             | Checks installs and vendor updates, then asks what to install or update |
-

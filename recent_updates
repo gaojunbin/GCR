@@ -1,3 +1,8 @@
+2026-09-05  AI 编程快捷命令
+
+cc、cx、cursor、google、grok 现在默认以各工具的 YOLO 模式启动，
+跳过工具调用审批；cx 同时关闭 Codex 沙箱。
+
 2026-09-04  AI 编程工具
 
 install_aicoding 现在会同时检测安装状态与官方最新版本，

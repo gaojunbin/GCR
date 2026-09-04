@@ -977,11 +977,12 @@ mygit(){
 # >>> AI coding >>>
 # Launchers for the agents that install_aicoding (.ohmytool) manages. When the
 # tool is missing the launcher offers to install it, then starts it.
-# 1. cc     - Claude Code
+# All five shortcuts start their agent in its vendor-provided YOLO/bypass mode.
+# 1. cc     - Claude Code without permission prompts
 # 2. cx     - Codex without approvals and sandbox, cx_init writes its config
-# 3. cursor - Cursor CLI agent
-# 4. google - Antigravity CLI
-# 5. grok   - Grok Build
+# 3. cursor - Cursor CLI agent in YOLO mode
+# 4. google - Antigravity CLI without permission prompts
+# 5. grok   - Grok Build in YOLO mode
 
 # The vendor installers put their binaries here.
 case ":$PATH:" in
@@ -1011,11 +1012,11 @@ aicoding_launch(){
     "$AICODING_BIN" "$@"
 }
 
-cc(){ aicoding_launch claude "$@"; }
+cc(){ aicoding_launch claude --dangerously-skip-permissions "$@"; }
 cx(){ aicoding_launch codex --dangerously-bypass-approvals-and-sandbox "$@"; }
-cursor(){ aicoding_launch cursor "$@"; }
-google(){ aicoding_launch antigravity "$@"; }
-grok(){ aicoding_launch grok "$@"; }
+cursor(){ aicoding_launch cursor --yolo "$@"; }
+google(){ aicoding_launch antigravity --dangerously-skip-permissions "$@"; }
+grok(){ aicoding_launch grok --yolo "$@"; }
 
 # cx_init: write the Codex config for a custom OpenAI compatible endpoint. Only
 # the endpoint and the API key are asked, the rest is fixed. Files go to
