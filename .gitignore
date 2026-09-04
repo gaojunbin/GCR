@@ -2,7 +2,3 @@
 # OS generated files
 # =============================
 .DS_Store
-
-# Zsh compilation caches are generated on the target machine.
-*.zwc
-*.zwc.old

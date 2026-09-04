@@ -1,22 +1,7 @@
-2026-09-05  Fix upgrades with read-only Zsh caches
+2026-09-05  交互体验升级：搜索过滤、多选、返回上一级
 
-The installer skips generated .zwc and .zwc.old files when copying Oh My Zsh.
-Existing caches and their permissions are preserved. Compiled caches are no longer
-tracked or included in release archives. Rerun the one-line installer after a cache
-permission failure; no manual permission changes are needed.
-
-2026-09-05  Runtime reliability and maintenance
-
-Shell startup uses cached version metadata and a background check with a daily interval.
-Tool installers load on first use. Updates download one commit, verify a SHA-256 manifest
-and shell syntax, preserve configuration symlinks, and save a snapshot for gcr rollback.
-Failed writes and handled interrupts restore the previous contents.
-
-New gcr status, doctor, install --dry-run and profile commands share a tool catalog.
-User settings live in ~/.config/gcr/config.sh. Compose installers preserve existing
-configuration and return deployment failures. Conda kernel registration uses the new
-environment's Python. Terminal navigation supports both CSI and SS3 arrow sequences.
-
-The runtime has focused modules, isolated Bash/Zsh regression tests and macOS/Ubuntu CI.
-Existing installations must rerun sh install_gcr.sh once to install the new module layout.
-See doc/runtime.md for configuration and recovery details.
+菜单新增 / 键即输即搜过滤，长列表自动滚动，方向键不再有一秒延迟；
+新增多选菜单（空格勾选、a 全选），install_aicoding、install_base、pipbase 改为一次勾选批量执行；
+子菜单按 q / Esc 回到上一级并原地重绘，Ctrl-C 随时干净退出；
+gitch、denv、cenv、download 改为列表选择，不再手动输入名称；
+myupdate 修复：后台任务提示与 safe-rm 报错不再刷屏，更新后询问是否重启 shell，仅显示最新一条更新说明。

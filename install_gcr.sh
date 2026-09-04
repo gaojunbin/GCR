@@ -12,7 +12,6 @@
 #
 set -eu
 
-GCR_INSTALL_ROOT="${GCR_INSTALL_ROOT:-$HOME}"
 GCR_REPO_URL="${GCR_REPO_URL:-https://github.com/gaojunbin/GCR.git}"
 GCR_MIRROR_URL="${GCR_MIRROR_URL-https://gcr.junbingao.com/gcr.tar.gz}"
 GCR_SITE="https://gcr.junbingao.com"
@@ -648,7 +647,7 @@ preflight_build_tools() {
     if ! builds_from_source; then
         return 0
     fi
-    if [ -x "$GCR_INSTALL_ROOT/zsh/bin/zsh" ]; then
+    if [ -x "$HOME/zsh/bin/zsh" ]; then
         return 0
     fi
     if ! command -v make >/dev/null 2>&1; then
@@ -686,13 +685,13 @@ fetch_from_mirror() {
     fi
 
     if ! run_step_status "Downloading GCR" \
-        'curl -fsSL --connect-timeout 5 --max-time 120 "$GCR_MIRROR_URL" -o "$WORKDIR/gcr.tar.gz" && tar -xzf "$WORKDIR/gcr.tar.gz" -C "$WORKDIR"'; then
+        'curl -fsSL "$GCR_MIRROR_URL" -o "$WORKDIR/gcr.tar.gz" && tar -xzf "$WORKDIR/gcr.tar.gz" -C "$WORKDIR"'; then
         rm -rf "$SRC"
         ui_note "$GCR_MIRROR_URL is unreachable, falling back to github.com"
         return 1
     fi
 
-    if [ ! -f "$SRC/manifest.sha256" ] || [ ! -f "$SRC/lib/core.sh" ]; then
+    if [ ! -f "$SRC/.ohmyshell" ]; then
         rm -rf "$SRC"
         ui_note "the mirror looks incomplete, falling back to github.com"
         return 1
@@ -700,37 +699,17 @@ fetch_from_mirror() {
     return 0
 }
 
-copy_oh_my_zsh() (
-    # Compile caches belong to the target machine and can be read-only.
-    omz_staging="$WORKDIR/oh-my-zsh"
-    mkdir -p "$omz_staging" "$GCR_INSTALL_ROOT/.oh-my-zsh" || return
-    tar --exclude='*.zwc' --exclude='*.zwc.old' \
-        -cf "$WORKDIR/oh-my-zsh.tar" -C "$SRC/oh-my-zsh" . || return
-    tar -xf "$WORKDIR/oh-my-zsh.tar" -C "$omz_staging" || return
-    cp -R "$omz_staging/." "$GCR_INSTALL_ROOT/.oh-my-zsh/"
-)
-
 copy_configs() {
-    run_step "Installing Oh My Zsh" 'copy_oh_my_zsh'
-    . "$SRC/lib/core.sh"
-    . "$SRC/config/defaults.sh"
-    . "$SRC/lib/transaction.sh"
-    GCR_CONFIG_FILE="${GCR_CONFIG_FILE:-${XDG_CONFIG_HOME:-$GCR_INSTALL_ROOT/.config}/gcr/config.sh}"
-    if [ -f "$GCR_CONFIG_FILE" ]; then . "$GCR_CONFIG_FILE"; fi
-    installed_revision=$(git -C "$SRC" rev-parse HEAD 2>/dev/null || printf local)
-    if [ -n "$(git -C "$SRC" status --porcelain 2>/dev/null)" ]; then installed_revision=local; fi
-    if ! gcr_install_payload "$SRC" "$installed_revision"; then
-        die "GCR configuration installation failed" "existing files were restored; fix the reported error and retry"
-    fi
-    ui_ok "installed verified GCR configuration"
+    run_step "Installing shell config" '
+        cp "$SRC/.ohmyshell" "$SRC/.ohmytool" "$SRC/.ohmyzsh" "$SRC/.p9k.zsh" "$SRC/.ohmyprint" "$HOME/" &&
+        mkdir -p "$HOME/.oh-my-zsh" &&
+        cp -R "$SRC/oh-my-zsh/." "$HOME/.oh-my-zsh/"
+    '
 }
 
 append_profile() {
     profile_line="$1"
-    profile_file="$GCR_INSTALL_ROOT/.bash_profile"
-    if [ -L "$profile_file" ] && [ ! -e "$profile_file" ]; then
-        die "~/.bash_profile is a broken symlink" "repair its target before installing GCR"
-    fi
+    profile_file="$HOME/.bash_profile"
     if [ ! -f "$profile_file" ]; then
         : > "$profile_file"
     fi
@@ -744,36 +723,16 @@ append_profile() {
     printf '%s\n' "$profile_line" >> "$profile_file"
 }
 
-installer_quote() {
-    printf '"'
-    printf '%s' "$1" | sed 's/[\\"$`]/\\&/g'
-    printf '"'
-}
-
-hook_bash_profile() {
-    zsh_binary=$(installer_quote "$GCR_INSTALL_ROOT/zsh/bin/zsh")
-    zsh_directory=$(installer_quote "$GCR_INSTALL_ROOT/zsh/bin")
-    append_profile "export PATH=$zsh_directory:\$PATH"
-    append_profile "export SHELL=$zsh_binary"
-    append_profile "case \$- in *i*) [ -x $zsh_binary ] && exec $zsh_binary -l ;; esac"
-}
-
 build_zsh() {
-    if [ -x "$GCR_INSTALL_ROOT/zsh/bin/zsh" ]; then
-        export PATH="$GCR_INSTALL_ROOT/zsh/bin:$PATH"
+    if [ -x "$HOME/zsh/bin/zsh" ]; then
         ui_ok "zsh $GCR_ZSH_VERSION already built in ~/zsh"
         return 0
     fi
-    mkdir -p "$GCR_INSTALL_ROOT/zsh"
-    run_step "Unpacking zsh $GCR_ZSH_VERSION" 'tar -xf "$SRC/zsh/zsh-$GCR_ZSH_VERSION.tar.xz" -C "$GCR_INSTALL_ROOT"'
+    mkdir -p "$HOME/zsh"
+    run_step "Unpacking zsh $GCR_ZSH_VERSION" 'tar -xf "$SRC/zsh/zsh-$GCR_ZSH_VERSION.tar.xz" -C "$HOME"'
     run_step "Building zsh $GCR_ZSH_VERSION, this takes a few minutes" '
-        cd "$GCR_INSTALL_ROOT/zsh" && ./configure --prefix="$GCR_INSTALL_ROOT/zsh" && make && make install
+        cd "$HOME/zsh" && ./configure --prefix="$HOME/zsh" && make && make install
     '
-    export PATH="$GCR_INSTALL_ROOT/zsh/bin:$PATH"
-}
-
-installer_root() {
-    if [ "$(id -u)" = 0 ]; then "$@"; else sudo "$@"; fi
 }
 
 install_zsh() {
@@ -785,9 +744,9 @@ install_zsh() {
                     die "sudo authentication failed" "pick the no sudo target to build zsh into ~/zsh instead"
                 fi
             fi
-            run_step "Installing zsh" 'installer_root env DEBIAN_FRONTEND=noninteractive apt-get install -y zsh'
+            run_step "Installing zsh" 'sudo DEBIAN_FRONTEND=noninteractive apt-get install -y zsh'
             if [ "${SHELL:-}" != "$(command -v zsh)" ]; then
-                run_step "Making zsh your login shell" 'installer_root chsh -s "$(command -v zsh)" "$(whoami)"'
+                run_step "Making zsh your login shell" 'sudo chsh -s "$(command -v zsh)" "$(whoami)"'
             fi
             ;;
         macos)
@@ -802,55 +761,69 @@ install_zsh() {
             ;;
         ubuntu-nosudo|hpc)
             build_zsh
-            hook_bash_profile
+            append_profile 'export PATH=$HOME/zsh/bin:$PATH'
+            append_profile 'export SHELL=$HOME/zsh/bin/zsh'
+            append_profile '[ -f $HOME/zsh/bin/zsh ] && exec $HOME/zsh/bin/zsh -l'
             ui_ok "hooked zsh into ~/.bash_profile"
             ;;
         nscc)
             build_zsh
-            append_profile 'export FPATH=$HOME/zsh/share/zsh/5.9/functions:$HOME/zsh/share/zsh/site-functions:/usr/local/share/zsh/site-functions:$HOME/.cache/oh-my-zsh/completions:$HOME/.oh-my-zsh/completions:$HOME/.oh-my-zsh/functions:$HOME/.oh-my-zsh/plugins/git:$HOME/.oh-my-zsh/plugins/extract:$HOME/.oh-my-zsh/plugins/autojump:$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting:$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions:$HOME/.oh-my-zsh/custom/plugins/zsh-myincr:$HOME/.oh-my-zsh/plugins/aliases:$HOME/.oh-my-zsh/plugins/docker:$HOME/.oh-my-zsh/plugins/docker-compose:$HOME/.oh-my-zsh/plugins/gitignore:$HOME/.oh-my-zsh/plugins/sudo:$FPATH'
-            hook_bash_profile
+            append_profile 'export FPATH=$HOME/zsh/share/zsh/5.9/functions:$HOME/zsh/share/zsh/site-functions:/usr/local/share/zsh/site-functions:$HOME/.cache/oh-my-zsh/completions:$HOME/.oh-my-zsh/completions:$HOME/.oh-my-zsh/functions:$HOME/.oh-my-zsh/plugins/git:$HOME/.oh-my-zsh/plugins/extract:$HOME/.oh-my-zsh/plugins/autojump:$HOME/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting:$HOME/.oh-my-zsh/custom/plugins/zsh-autosuggestions:$HOME/.oh-my-zsh/custom/plugins/zsh-myincr:$HOME/.oh-my-zsh/plugins/aliases:$HOME/.oh-my-zsh/plugins/docker:$HOME/.oh-my-zsh/plugins/docker-compos:$HOME/.oh-my-zsh/plugins/gitignore:$HOME/.oh-my-zsh/plugins/sud:$FPATH'
+            append_profile 'export PATH=$HOME/zsh/bin:$PATH'
+            append_profile 'export SHELL=$HOME/zsh/bin/zsh'
+            append_profile '[ -f $HOME/zsh/bin/zsh ] && exec $HOME/zsh/bin/zsh -l'
             ui_ok "hooked zsh into ~/.bash_profile"
             ;;
     esac
 }
 
-write_zshrc() {
-    zshrc="$GCR_INSTALL_ROOT/.zshrc"
-    if [ -L "$zshrc" ] && [ ! -e "$zshrc" ]; then
-        die "~/.zshrc is a broken symlink" "repair its target before installing GCR"
+preview_zshrc() {
+    sed -n '1,6p' "$1" | while IFS= read -r preview_line; do
+        printf '    %s%s%s\n' "$C_DIM" "$preview_line" "$C_RESET"
+    done
+    if [ "$(wc -l < "$1" | tr -d ' ')" -gt 6 ]; then
+        printf '    %s%s%s\n' "$C_DIM" "..." "$C_RESET"
     fi
+}
+
+write_zshrc() {
+    zshrc="$HOME/.zshrc"
+
+    if [ -s "$zshrc" ]; then
+        ui_gap
+        ui_warn "~/.zshrc already exists, $(wc -l < "$zshrc" | tr -d ' ') lines"
+        preview_zshrc "$zshrc"
+        ui_gap
+        if ui_confirm "Replace it with a fresh GCR config?"; then
+            cp "$zshrc" "$zshrc.gcr-backup"
+            : > "$zshrc"
+            ui_note "old file kept at ~/.zshrc.gcr-backup"
+        else
+            ui_note "keeping your file, GCR lines are appended to it"
+        fi
+        ui_gap
+    fi
+
     if ! grep -Fq "$GCR_MARKER" "$zshrc" 2>/dev/null; then
         {
-            printf '\n%s\n' "$GCR_MARKER"
-            printf 'source %s\n' "$(installer_quote "$GCR_INSTALL_ROOT/.ohmyshell")"
+            printf '%s\n' "$GCR_MARKER"
+            printf 'SHOW_GCR_INFO=false\n'
+            printf 'CHECK_GCR_UPDATE=true\n'
+            printf 'source ~/.ohmyshell\n'
             printf '%s\n' "$GCR_MARKER"
         } >> "$zshrc"
     fi
-    if [ -L "$GCR_CONFIG_FILE" ] && [ ! -e "$GCR_CONFIG_FILE" ]; then
-        die "GCR_CONFIG_FILE is a broken symlink" "repair its target before installing GCR"
-    fi
-    if [ ! -e "$GCR_CONFIG_FILE" ]; then
-        mkdir -p "${GCR_CONFIG_FILE%/*}"
-        cat > "$GCR_CONFIG_FILE" <<'CONFIG_EOF'
-# GCR user settings. This file is never replaced by updates.
-# CHECK_GCR_UPDATE=true
-# AUTO_GCR_UPDATE=false
-# SHOW_GCR_INFO=false
-# GCR_UPDATE_INTERVAL=86400
-# GCR_CONNECT_TIMEOUT=5
-# GCR_DOWNLOAD_TIMEOUT=30
-# GCR_NO_ANIM=1
-CONFIG_EOF
-    fi
+
     if [ "$TARGET" = nscc ] && ! grep -q '^module ()' "$zshrc" 2>/dev/null; then
         cat >> "$zshrc" <<'ZSHRC_EOF'
-module () {
-    eval "$(/opt/cray/pe/modules/3.2.11.6/bin/modulecmd zsh "$@")"
+module ()
+{
+    eval `/opt/cray/pe/modules/3.2.11.6/bin/modulecmd bash $*`
 }
 ZSHRC_EOF
     fi
-    ui_ok "configured ~/.zshrc; existing content and symlinks were preserved"
-    ui_note "user settings: $GCR_CONFIG_FILE"
+
+    ui_ok "configured ~/.zshrc"
 }
 
 finish() {
@@ -905,8 +878,8 @@ main() {
     choose_target
     preflight_build_tools
     fetch_source
-    install_zsh
     copy_configs
+    install_zsh
     write_zshrc
     finish
 }
