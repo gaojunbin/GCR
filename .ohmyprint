@@ -47,34 +47,69 @@ ui_init() {
     UI_LF='
 '
 
+    UI_TRUECOLOR=0
+    case "${COLORTERM:-}" in
+        truecolor|24bit) UI_TRUECOLOR=1 ;;
+    esac
+
     if [ "$UI_COLOR" = 1 ]; then
-        case "$(tput colors 2>/dev/null || echo 8)" in
-            *[0-9][0-9][0-9]*)
-                UI_ACCENT="${UI_ESC}[38;5;32m"
-                UI_OK="${UI_ESC}[38;5;35m"
-                UI_WARN="${UI_ESC}[38;5;172m"
-                UI_ERR="${UI_ESC}[38;5;167m"
-                ;;
-            *)
-                UI_ACCENT="${UI_ESC}[34m"
-                UI_OK="${UI_ESC}[32m"
-                UI_WARN="${UI_ESC}[33m"
-                UI_ERR="${UI_ESC}[31m"
-                ;;
-        esac
+        if [ "$UI_TRUECOLOR" = 1 ]; then
+            # 24-bit TrueColor
+            UI_ACCENT="${UI_ESC}[38;2;56;189;248m"   # Sky blue (#38bdf8)
+            UI_OK="${UI_ESC}[38;2;52;211;153m"       # Emerald green (#34d399)
+            UI_WARN="${UI_ESC}[38;2;251;191;36m"     # Warm amber (#fbbf24)
+            UI_ERR="${UI_ESC}[38;2;248;113;113m"     # Coral red (#f87171)
+            UI_PURPLE="${UI_ESC}[38;2;167;139;250m"  # Soft purple (#a78bfa)
+            UI_CYAN="${UI_ESC}[38;2;34;211;238m"     # Electric cyan (#22d3ee)
+            UI_MUTED="${UI_ESC}[38;2;148;163;184m"   # Slate gray (#94a3b8)
+            UI_SEL_BG="${UI_ESC}[48;2;30;41;59m"     # Dark slate bg (#1e293b)
+        else
+            case "$(tput colors 2>/dev/null || echo 8)" in
+                *[0-9][0-9][0-9]*)
+                    # 256 colors
+                    UI_ACCENT="${UI_ESC}[38;5;39m"
+                    UI_OK="${UI_ESC}[38;5;42m"
+                    UI_WARN="${UI_ESC}[38;5;214m"
+                    UI_ERR="${UI_ESC}[38;5;203m"
+                    UI_PURPLE="${UI_ESC}[38;5;141m"
+                    UI_CYAN="${UI_ESC}[38;5;51m"
+                    UI_MUTED="${UI_ESC}[38;5;245m"
+                    UI_SEL_BG="${UI_ESC}[48;5;236m"
+                    ;;
+                *)
+                    # Basic 8/16 colors
+                    UI_ACCENT="${UI_ESC}[36m"
+                    UI_OK="${UI_ESC}[32m"
+                    UI_WARN="${UI_ESC}[33m"
+                    UI_ERR="${UI_ESC}[31m"
+                    UI_PURPLE="${UI_ESC}[35m"
+                    UI_CYAN="${UI_ESC}[36m"
+                    UI_MUTED="${UI_ESC}[2m"
+                    UI_SEL_BG=""
+                    ;;
+            esac
+        fi
         UI_RESET="${UI_ESC}[0m"
         UI_BOLD="${UI_ESC}[1m"
         UI_DIM="${UI_ESC}[2m"
+        UI_ITALIC="${UI_ESC}[3m"
         UI_UNDER="${UI_ESC}[4m"
+        UI_REVERSE="${UI_ESC}[7m"
     else
         UI_ACCENT=""
         UI_OK=""
         UI_WARN=""
         UI_ERR=""
+        UI_PURPLE=""
+        UI_CYAN=""
+        UI_MUTED=""
+        UI_SEL_BG=""
         UI_RESET=""
         UI_BOLD=""
         UI_DIM=""
+        UI_ITALIC=""
         UI_UNDER=""
+        UI_REVERSE=""
     fi
 
     UI_HIDE="${UI_ESC}[?25l"
@@ -87,29 +122,55 @@ ui_init() {
         *UTF-8*|*utf-8*|*UTF8*|*utf8*) UI_UNICODE=1 ;;
     esac
     case "${TERM_PROGRAM:-}" in
-        Apple_Terminal|iTerm.app|vscode|WezTerm|ghostty) UI_UNICODE=1 ;;
+        Apple_Terminal|iTerm.app|vscode|WezTerm|ghostty|Alacritty|kitty) UI_UNICODE=1 ;;
     esac
 
     if [ "$UI_UNICODE" = 1 ]; then
         UI_G_OK="✓"
         UI_G_ERR="✗"
-        UI_G_WARN="!"
+        UI_G_WARN="▲"
+        UI_G_INFO="✦"
         UI_G_DOT="·"
         UI_G_POINT="›"
+        UI_G_POINTER="❯"
+        UI_G_RADIO_ON="◉"
+        UI_G_RADIO_OFF="◯"
         UI_G_ARROW="→"
         UI_G_UP="↑"
+        UI_G_DOWN="↓"
         UI_G_RULE="─"
         UI_G_BLOCK="█"
+        UI_G_BOX_TL="╭"
+        UI_G_BOX_TR="╮"
+        UI_G_BOX_BL="╰"
+        UI_G_BOX_BR="╯"
+        UI_G_BOX_H="─"
+        UI_G_BOX_V="│"
+        UI_G_BAR_FILL="█"
+        UI_G_BAR_EMPTY="░"
     else
         UI_G_OK="ok"
         UI_G_ERR="x"
         UI_G_WARN="!"
+        UI_G_INFO="*"
         UI_G_DOT="-"
         UI_G_POINT=">"
+        UI_G_POINTER=">"
+        UI_G_RADIO_ON="[*]"
+        UI_G_RADIO_OFF="[ ]"
         UI_G_ARROW="->"
         UI_G_UP="^"
+        UI_G_DOWN="v"
         UI_G_RULE="-"
         UI_G_BLOCK="#"
+        UI_G_BOX_TL="+"
+        UI_G_BOX_TR="+"
+        UI_G_BOX_BL="+"
+        UI_G_BOX_BR="+"
+        UI_G_BOX_H="-"
+        UI_G_BOX_V="|"
+        UI_G_BAR_FILL="#"
+        UI_G_BAR_EMPTY="-"
     fi
 
     UI_COLS=$(ui_cols)
@@ -125,9 +186,9 @@ ui_gap() {
 
 # ui_heading <title> [subtitle]
 ui_heading() {
-    printf '\n  %s%s%s' "$UI_BOLD" "$1" "$UI_RESET"
+    printf '\n  %s%s%s%s' "$UI_BOLD" "$UI_ACCENT" "$1" "$UI_RESET"
     if [ -n "${2:-}" ]; then
-        printf '   %s%s%s' "$UI_DIM" "$2" "$UI_RESET"
+        printf '  %s%s%s' "$UI_MUTED" "$2" "$UI_RESET"
     fi
     printf '\n\n'
 }
@@ -139,7 +200,7 @@ ui_rule() {
         line="${line}${UI_G_RULE}"
         i=$((i + 1))
     done
-    printf '%s%s%s\n' "$UI_DIM" "$line" "$UI_RESET"
+    printf '%s%s%s\n' "$UI_MUTED" "$line" "$UI_RESET"
 }
 
 ui_ok() {
@@ -159,29 +220,36 @@ ui_info() {
 }
 
 ui_note() {
-    printf '  %s%s%s\n' "$UI_DIM" "$1" "$UI_RESET"
+    printf '  %s%s%s\n' "$UI_MUTED" "$1" "$UI_RESET"
 }
 
 # ui_item <name> <description> [name column width]
 ui_item() {
-    local width=${3:-14}
-    printf "  %s%-${width}s%s %s%s%s\n" \
-        "$UI_ACCENT" "$1" "$UI_RESET" "$UI_DIM" "$2" "$UI_RESET"
+    local width=${3:-16}
+    local name="$1" desc="$2"
+    local pad=$((width - ${#name}))
+    local spaces="  "
+    if [ "$pad" -gt 0 ]; then
+        spaces=$(printf '%*s' "$pad" "")
+    fi
+    printf "  %s%s%s%s  %s%s%s\n" \
+        "$UI_ACCENT" "$name" "$UI_RESET" "$spaces" "$UI_MUTED" "$desc" "$UI_RESET"
 }
 
-# ui_field <label> <value>
+# ui_field <label> <value> [label width]
 ui_field() {
-    printf '  %s%-10s%s %s\n' "$UI_DIM" "$1" "$UI_RESET" "$2"
+    local width=${3:-12}
+    printf '  %s%-*s%s %s\n' "$UI_MUTED" "$width" "$1" "$UI_RESET" "$2"
 }
 
 # ui_command <command line>
 ui_command() {
-    printf '    %s%s%s\n' "$UI_ACCENT" "$1" "$UI_RESET"
+    printf '    %s%s%s %s%s%s\n' "$UI_MUTED" "$" "$UI_RESET" "$UI_ACCENT" "$1" "$UI_RESET"
 }
 
 # ui_step <label>, later closed by ui_step_ok or ui_step_err
 ui_step() {
-    printf '  %s%s%s %s%s%s' "$UI_DIM" "$UI_G_DOT" "$UI_RESET" "$UI_DIM" "$1" "$UI_RESET"
+    printf '  %s%s%s %s%s%s' "$UI_MUTED" "$UI_G_DOT" "$UI_RESET" "$UI_MUTED" "$1" "$UI_RESET"
 }
 
 ui_step_ok() {
@@ -192,6 +260,88 @@ ui_step_ok() {
 ui_step_err() {
     printf '\r%s' "$UI_CLR"
     ui_err "$1"
+}
+
+# ui_badge <type: ok|warn|err|info|purple|muted> <text>
+ui_badge() {
+    local type="$1" text="$2" fg=""
+    case "$type" in
+        ok|success)   fg="$UI_OK" ;;
+        warn|warning) fg="$UI_WARN" ;;
+        err|error)    fg="$UI_ERR" ;;
+        info)         fg="$UI_ACCENT" ;;
+        purple)       fg="$UI_PURPLE" ;;
+        cyan)         fg="$UI_CYAN" ;;
+        *)            fg="$UI_MUTED" ;;
+    esac
+    printf '%s[%s]%s' "$fg" "$text" "$UI_RESET"
+}
+
+# ui_card <title> [subtitle] <lines...>
+# Renders a sleek rounded bordered card
+ui_card() {
+    local title="$1" subtitle="${2:-}"
+    shift 2
+    local width=$((UI_COLS - 4))
+    if [ "$width" -gt 74 ]; then width=74; fi
+    if [ "$width" -lt 36 ]; then width=36; fi
+
+    local header=" $title "
+    if [ -n "$subtitle" ]; then
+        header=" $title  $subtitle "
+    fi
+    local hlen=${#header}
+    local rem=$((width - hlen - 3))
+    if [ "$rem" -lt 1 ]; then rem=1; fi
+
+    local hr="" i=0
+    while [ "$i" -lt "$rem" ]; do
+        hr="${hr}${UI_G_BOX_H}"
+        i=$((i + 1))
+    done
+
+    printf '  %s%s%s%s%s%s%s%s%s\n' \
+        "$UI_MUTED" "$UI_G_BOX_TL" "$UI_G_BOX_H" "$UI_RESET" \
+        "$UI_BOLD$UI_ACCENT" "$header" "$UI_RESET" \
+        "$UI_MUTED" "$hr$UI_G_BOX_TR" "$UI_RESET"
+
+    local line
+    for line in "$@"; do
+        printf '  %s%s%s  %s\n' "$UI_MUTED" "$UI_G_BOX_V" "$UI_RESET" "$line"
+    done
+
+    local bot="" i=0
+    local bot_len=$((width - 2))
+    while [ "$i" -lt "$bot_len" ]; do
+        bot="${bot}${UI_G_BOX_H}"
+        i=$((i + 1))
+    done
+    printf '  %s%s%s%s%s\n' \
+        "$UI_MUTED" "$UI_G_BOX_BL" "$bot" "$UI_G_BOX_BR" "$UI_RESET"
+}
+
+# ui_progress <current> <total> [width] [label]
+ui_progress() {
+    local cur=$1 tot=$2 w=${3:-24} lbl="${4:-}"
+    if [ "$tot" -le 0 ]; then tot=1; fi
+    local pct=$(( (cur * 100) / tot ))
+    if [ "$pct" -gt 100 ]; then pct=100; fi
+    local filled=$(( (cur * w) / tot ))
+    if [ "$filled" -gt "$w" ]; then filled=$w; fi
+    local empty=$((w - filled))
+
+    local bar_f="" bar_e="" i=0
+    while [ "$i" -lt "$filled" ]; do bar_f="${bar_f}${UI_G_BAR_FILL}"; i=$((i + 1)); done
+    i=0
+    while [ "$i" -lt "$empty" ]; do bar_e="${bar_e}${UI_G_BAR_EMPTY}"; i=$((i + 1)); done
+
+    printf '  %s[%s%s%s%s] %s%3d%%%s (%d/%d)' \
+        "$UI_MUTED" "$UI_ACCENT" "$bar_f" "$UI_MUTED" "$bar_e" \
+        "$UI_BOLD" "$pct" "$UI_RESET" "$cur" "$tot"
+    if [ -n "$lbl" ]; then
+        printf '  %s%s%s' "$UI_MUTED" "$lbl" "$UI_RESET"
+    fi
+    printf '\n'
 }
 
 # ------------------------------------------------------------------- logo ---
@@ -209,12 +359,22 @@ ui_logo_row() {
 ui_logo_color() {
     if [ "$UI_COLOR" = 0 ]; then
         UI_LOGO_C=""
+    elif [ "$UI_TRUECOLOR" = 1 ]; then
+        case "$1" in
+            0|1)   UI_LOGO_C="${UI_ESC}[38;2;56;189;248m" ;;
+            2|3)   UI_LOGO_C="${UI_ESC}[38;2;59;130;246m" ;;
+            4|5)   UI_LOGO_C="${UI_ESC}[38;2;96;165;250m" ;;
+            6|7)   UI_LOGO_C="${UI_ESC}[38;2;129;140;248m" ;;
+            8|9)   UI_LOGO_C="${UI_ESC}[38;2;147;197;253m" ;;
+            10|11) UI_LOGO_C="${UI_ESC}[38;2;165;180;252m" ;;
+            *)     UI_LOGO_C="${UI_ESC}[38;2;199;210;254m" ;;
+        esac
     elif [ "$1" -lt 4 ]; then
-        UI_LOGO_C="${UI_ESC}[38;5;69m"
+        UI_LOGO_C="${UI_ESC}[38;5;39m"
     elif [ "$1" -lt 9 ]; then
         UI_LOGO_C="${UI_ESC}[38;5;75m"
     else
-        UI_LOGO_C="${UI_ESC}[38;5;81m"
+        UI_LOGO_C="${UI_ESC}[38;5;111m"
     fi
 }
 
@@ -241,15 +401,23 @@ ui_logo() {
     done
 }
 
+ui_banner() {
+    ui_gap
+    ui_logo
+    printf '  %s%sGCR Toolkit%s  %s%smake your shell more powerful%s\n' \
+        "$UI_BOLD" "$UI_ACCENT" "$UI_RESET" "$UI_MUTED" "$UI_ITALIC" "$UI_RESET"
+    ui_gap
+}
+
 # ------------------------------------------------------------------- input ---
 
 # ui_ask <label> [default] -> UI_ANSWER
 ui_ask() {
-    printf '  %s%s%s %s' "$UI_ACCENT" "$UI_G_POINT" "$UI_RESET" "$1"
+    printf '  %s%s%s %s%s%s' "$UI_ACCENT" "$UI_G_POINTER" "$UI_RESET" "$UI_BOLD" "$1" "$UI_RESET"
     if [ -n "${2:-}" ]; then
-        printf ' %s(%s)%s' "$UI_DIM" "$2" "$UI_RESET"
+        printf ' %s(%s)%s' "$UI_MUTED" "$2" "$UI_RESET"
     fi
-    printf ': '
+    printf ' %s›%s ' "$UI_ACCENT" "$UI_RESET"
     IFS= read -r UI_ANSWER
     if [ -z "$UI_ANSWER" ]; then
         UI_ANSWER="${2:-}"
@@ -259,11 +427,11 @@ ui_ask() {
 # ui_confirm <question> [y|n], returns 0 for yes
 ui_confirm() {
     local default=${2:-y} answer
-    printf '  %s?%s %s ' "$UI_WARN" "$UI_RESET" "$1"
+    printf '  %s?%s %s%s%s ' "$UI_WARN" "$UI_RESET" "$UI_BOLD" "$1" "$UI_RESET"
     if [ "$default" = y ]; then
-        printf '%s[Y/n]%s ' "$UI_DIM" "$UI_RESET"
+        printf '%s[%s%sY%s%s/n]%s ' "$UI_MUTED" "$UI_RESET" "$UI_ACCENT$UI_BOLD" "$UI_RESET" "$UI_MUTED" "$UI_RESET"
     else
-        printf '%s[y/N]%s ' "$UI_DIM" "$UI_RESET"
+        printf '%s[y/%s%sN%s%s]%s ' "$UI_MUTED" "$UI_RESET" "$UI_ACCENT$UI_BOLD" "$UI_RESET" "$UI_MUTED" "$UI_RESET"
     fi
     IFS= read -r answer
     if [ -z "$answer" ]; then
@@ -275,6 +443,11 @@ ui_confirm() {
     esac
 }
 
+# ask_yes_no: compatibility alias for .ohmytool
+ask_yes_no() {
+    ui_confirm "$1" "${2:-y}"
+}
+
 ui_read_key() {
     local key rest
     if [ -n "${ZSH_VERSION:-}" ]; then
@@ -282,13 +455,13 @@ ui_read_key() {
         read -s -k 1 key < /dev/tty 2>/dev/null || return 1
         if [ "$key" = "$UI_ESC" ]; then
             rest=""
-            read -s -k 2 -t 1 rest < /dev/tty 2>/dev/null
+            read -s -k 3 -t 1 rest < /dev/tty 2>/dev/null
             key="$key$rest"
         fi
     else
         IFS= read -rsn1 key < /dev/tty 2>/dev/null || return 1
         if [ "$key" = "$UI_ESC" ]; then
-            IFS= read -rsn2 -t 1 rest < /dev/tty 2>/dev/null
+            IFS= read -rsn3 -t 1 rest < /dev/tty 2>/dev/null
             key="$key$rest"
         fi
     fi
@@ -300,42 +473,74 @@ ui_read_key() {
 ui_menu_draw() {
     local selected=$1 i=1 item name desc
     shift
+    local count=$#
+
+    # Dynamic column width calculation for perfect alignment
+    local max_w=10
+    for item in "$@"; do
+        name=${item%%|*}
+        if [ "${#name}" -gt "$max_w" ]; then
+            max_w=${#name}
+        fi
+    done
+    if [ "$max_w" -gt 28 ]; then
+        max_w=28
+    fi
+
     for item in "$@"; do
         name=${item%%|*}
         desc=${item#*|}
         if [ "$i" -eq "$selected" ]; then
-            printf '  %s%s%s %s%2s%s  %s%-14s%s %s%s%s\n' \
-                "$UI_ACCENT" "$UI_G_POINT" "$UI_RESET" \
-                "$UI_ACCENT" "$i" "$UI_RESET" \
+            printf '  %s%s%s %s%2s%s %s%s%s %s%-'${max_w}'s%s  %s%s%s\n' \
+                "$UI_ACCENT" "$UI_G_POINTER" "$UI_RESET" \
+                "$UI_BOLD$UI_ACCENT" "$i" "$UI_RESET" \
+                "$UI_ACCENT" "$UI_G_RADIO_ON" "$UI_RESET" \
                 "$UI_BOLD" "$name" "$UI_RESET" \
-                "$UI_DIM" "$desc" "$UI_RESET"
+                "$UI_RESET" "$desc" "$UI_RESET"
         else
-            printf '    %s%2s  %-14s %s%s%s\n' \
-                "$UI_DIM" "$i" "$name" "$desc" "$UI_RESET" ""
+            printf '     %s%2s%s %s%s%s %s%-'${max_w}'s%s  %s%s%s\n' \
+                "$UI_MUTED" "$i" "$UI_RESET" \
+                "$UI_MUTED" "$UI_G_RADIO_OFF" "$UI_RESET" \
+                "$UI_RESET" "$name" "$UI_RESET" \
+                "$UI_MUTED" "$desc" "$UI_RESET"
         fi
         i=$((i + 1))
     done
-    local pickmax=$#
-    if [ "$pickmax" -gt 9 ]; then
-        pickmax=9
+
+    local pick_hint="1-${count}"
+    if [ "$count" -gt 9 ]; then
+        pick_hint="1-${count}"
     fi
-    printf '\n  %sup/down move   1-%s pick   enter confirm   q quit%s\n' \
-        "$UI_DIM" "$pickmax" "$UI_RESET"
+    printf '\n  %s↑/↓ move%s %s·%s %s%s pick%s %s·%s %senter confirm%s %s·%s %sq quit%s\n' \
+        "$UI_MUTED" "$UI_RESET" \
+        "$UI_MUTED" "$UI_RESET" \
+        "$UI_MUTED" "$pick_hint" "$UI_RESET" \
+        "$UI_MUTED" "$UI_RESET" \
+        "$UI_MUTED" "$UI_RESET" \
+        "$UI_MUTED" "$UI_RESET" \
+        "$UI_MUTED" "$UI_RESET"
 }
 
 ui_menu_plain() {
     local i=1 item name desc answer
+    local max_w=10
+    for item in "$@"; do
+        name=${item%%|*}
+        if [ "${#name}" -gt "$max_w" ]; then max_w=${#name}; fi
+    done
+    if [ "$max_w" -gt 28 ]; then max_w=28; fi
+
     for item in "$@"; do
         name=${item%%|*}
         desc=${item#*|}
-        printf '  %s[%s]%s %s%-14s%s %s%s%s\n' \
+        printf '  %s[%2s]%s %s%-'${max_w}'s%s  %s%s%s\n' \
             "$UI_ACCENT" "$i" "$UI_RESET" \
             "$UI_BOLD" "$name" "$UI_RESET" \
-            "$UI_DIM" "$desc" "$UI_RESET"
+            "$UI_MUTED" "$desc" "$UI_RESET"
         i=$((i + 1))
     done
     printf '\n'
-    printf '  %s%s%s Your choice: ' "$UI_ACCENT" "$UI_G_POINT" "$UI_RESET"
+    printf '  %s%s%s Your choice (1-%s): ' "$UI_ACCENT" "$UI_G_POINTER" "$UI_RESET" "$#"
     IFS= read -r answer
     case "$answer" in
         ''|*[!0-9]*) UI_CHOICE=0 ;;
@@ -373,13 +578,55 @@ ui_menu() {
             break
         fi
         case "$UI_KEY" in
-            "${UI_ESC}[A"|k) selected=$((selected - 1)) ;;
-            "${UI_ESC}[B"|j) selected=$((selected + 1)) ;;
+            "${UI_ESC}[A"|"${UI_ESC}OA"|k)
+                selected=$((selected - 1))
+                ;;
+            "${UI_ESC}[B"|"${UI_ESC}OB"|j)
+                selected=$((selected + 1))
+                ;;
+            "${UI_ESC}[H"|"${UI_ESC}[1~"|g)
+                selected=1
+                ;;
+            "${UI_ESC}[F"|"${UI_ESC}[4~"|G)
+                selected="$count"
+                ;;
             [1-9])
-                if [ "$UI_KEY" -le "$count" ]; then
-                    selected="$UI_KEY"
-                    UI_CHOICE="$selected"
-                    break
+                if [ "$count" -le 9 ]; then
+                    if [ "$UI_KEY" -le "$count" ]; then
+                        selected="$UI_KEY"
+                        UI_CHOICE="$selected"
+                        break
+                    fi
+                else
+                    local max_tens=$((count / 10))
+                    if [ "$UI_KEY" -le "$max_tens" ]; then
+                        selected="$UI_KEY"
+                        printf '%s' "${UI_ESC}[${lines}A"
+                        ui_menu_draw "$selected" "$@"
+                        if ui_read_key && [ -n "$UI_KEY" ]; then
+                            case "$UI_KEY" in
+                                [0-9])
+                                    local combined="${selected}${UI_KEY}"
+                                    if [ "$combined" -ge 1 ] && [ "$combined" -le "$count" ]; then
+                                        selected="$combined"
+                                        UI_CHOICE="$selected"
+                                        break
+                                    fi
+                                    ;;
+                                ""|" "|"$UI_CR"|"$UI_LF")
+                                    UI_CHOICE="$selected"
+                                    break
+                                    ;;
+                                *)
+                                    continue
+                                    ;;
+                            esac
+                        fi
+                    elif [ "$UI_KEY" -le "$count" ]; then
+                        selected="$UI_KEY"
+                        UI_CHOICE="$selected"
+                        break
+                    fi
                 fi
                 ;;
             ""|" "|"$UI_CR"|"$UI_LF")
@@ -391,6 +638,7 @@ ui_menu() {
                 break
                 ;;
         esac
+
         if [ "$selected" -lt 1 ]; then
             selected="$count"
         fi
@@ -415,10 +663,11 @@ ui_menu_resolve() {
     for item in "$@"; do
         if [ "$i" -eq "$UI_CHOICE" ]; then
             UI_CHOICE_NAME=${item%%|*}
-            printf '  %s%s%s %s%s%s   %s%s%s\n\n' \
-                "$UI_ACCENT" "$UI_G_ARROW" "$UI_RESET" \
+            printf '  %s%s%s %s%s%s  %s%s%s %s%s%s\n\n' \
+                "$UI_OK" "$UI_G_OK" "$UI_RESET" \
                 "$UI_BOLD" "$UI_CHOICE_NAME" "$UI_RESET" \
-                "$UI_DIM" "${item#*|}" "$UI_RESET"
+                "$UI_MUTED" "$UI_G_ARROW" "$UI_RESET" \
+                "$UI_MUTED" "${item#*|}" "$UI_RESET"
             return 0
         fi
         i=$((i + 1))
@@ -431,14 +680,15 @@ ui_menu_resolve() {
 
 ui_legacy_color() {
     case "$1" in
-        black) UI_LEGACY_C="${UI_ESC}[30m" ;;
-        red) UI_LEGACY_C="$UI_ERR" ;;
-        green) UI_LEGACY_C="$UI_OK" ;;
-        yellow) UI_LEGACY_C="$UI_WARN" ;;
-        blue) UI_LEGACY_C="$UI_ACCENT" ;;
-        magenta) UI_LEGACY_C="${UI_ESC}[35m" ;;
-        cyan) UI_LEGACY_C="$UI_ACCENT" ;;
-        *) UI_LEGACY_C="" ;;
+        black)   UI_LEGACY_C="${UI_ESC}[30m" ;;
+        red)     UI_LEGACY_C="$UI_ERR" ;;
+        green)   UI_LEGACY_C="$UI_OK" ;;
+        yellow)  UI_LEGACY_C="$UI_WARN" ;;
+        blue)    UI_LEGACY_C="$UI_ACCENT" ;;
+        magenta) UI_LEGACY_C="$UI_PURPLE" ;;
+        cyan)    UI_LEGACY_C="$UI_CYAN" ;;
+        white)   UI_LEGACY_C="${UI_ESC}[37m" ;;
+        *)       UI_LEGACY_C="" ;;
     esac
     if [ "$UI_COLOR" = 0 ]; then
         UI_LEGACY_C=""
@@ -493,9 +743,9 @@ print_info() {
 
 print_prompt() {
     printf '\n'
-    printf '  %s%s%s %s' "$UI_ACCENT" "$UI_G_POINT" "$UI_RESET" "$1"
+    printf '  %s%s%s %s' "$UI_ACCENT" "$UI_G_POINTER" "$UI_RESET" "$1"
     if [ -n "${2:-}" ]; then
-        printf ' %s(default: %s)%s' "$UI_DIM" "$2" "$UI_RESET"
+        printf ' %s(default: %s)%s' "$UI_MUTED" "$2" "$UI_RESET"
     fi
     printf ': '
 }
@@ -507,13 +757,13 @@ print_section() {
 print_menu_option() {
     printf '  %s[%s]%s %s%s%s' "$UI_ACCENT" "$1" "$UI_RESET" "$UI_BOLD" "$2" "$UI_RESET"
     if [ -n "${3:-}" ]; then
-        printf '\n      %s%s%s' "$UI_DIM" "$3" "$UI_RESET"
+        printf '  %s%s%s' "$UI_MUTED" "$3" "$UI_RESET"
     fi
     printf '\n'
 }
 
 print_item() {
-    printf '  %s[%s]%s %s\n' "$UI_ACCENT" "$1" "$UI_RESET" "$2"
+    printf '  %s[%2s]%s %s\n' "$UI_ACCENT" "$1" "$UI_RESET" "$2"
 }
 
 print_separator() {
@@ -522,19 +772,19 @@ print_separator() {
 
 print_step() {
     case "${3:-pending}" in
-        done) printf '  %s%s%s ' "$UI_OK" "$UI_G_OK" "$UI_RESET" ;;
+        done)    printf '  %s%s%s ' "$UI_OK" "$UI_G_OK" "$UI_RESET" ;;
         running) printf '  %s%s%s ' "$UI_ACCENT" "$UI_G_ARROW" "$UI_RESET" ;;
-        *) printf '  %s%s%s ' "$UI_DIM" "$UI_G_DOT" "$UI_RESET" ;;
+        *)       printf '  %s%s%s ' "$UI_MUTED" "$UI_G_DOT" "$UI_RESET" ;;
     esac
-    printf '%sStep %s%s %s%s%s\n' "$UI_DIM" "$1" "$UI_RESET" "$UI_BOLD" "$2" "$UI_RESET"
+    printf '%sStep %s%s %s%s%s\n' "$UI_MUTED" "$1" "$UI_RESET" "$UI_BOLD" "$2" "$UI_RESET"
 }
 
 print_confirm() {
     printf '\n'
     printf '  %s?%s %s ' "$UI_WARN" "$UI_RESET" "$1"
     if [ "${2:-y}" = y ]; then
-        printf '%s[Y/n]%s ' "$UI_DIM" "$UI_RESET"
+        printf '%s[Y/n]%s ' "$UI_MUTED" "$UI_RESET"
     else
-        printf '%s[y/N]%s ' "$UI_DIM" "$UI_RESET"
+        printf '%s[y/N]%s ' "$UI_MUTED" "$UI_RESET"
     fi
 }

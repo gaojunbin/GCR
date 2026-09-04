@@ -164,149 +164,278 @@ if [[ "$SHELL" == *"zsh" ]];then
     )
 fi
 
+_ohmytool_category() {
+    local cat="$1" item name desc
+    shift
+    printf '  %s%s%s\n' "$UI_BOLD$UI_ACCENT" "$cat" "$UI_RESET"
+    for item in "$@"; do
+        name=${item%%|*}
+        desc=${item#*|}
+        ui_item "$name" "$desc" 28
+    done
+    ui_gap
+}
+
+_ohmytool_list(){
+    ui_heading "ohmytool" "server management & toolkits catalog"
+
+    ui_note "One-click installation and environment setup. Run any command directly or run ohmytool for the interactive menu."
+    ui_gap
+
+    _ohmytool_category "AI Coding Agents" \
+        "install_aicoding|Install or update Claude Code, Codex, Cursor CLI, Grok Build, Antigravity"
+
+    _ohmytool_category "Basic Tools & Setup" \
+        "new_vps_help|Quick start guide & recommended sequence for new servers" \
+        "install_base|Essential command-line tools (autojump, fzf, trzsz)"
+
+    _ohmytool_category "Development Tools" \
+        "install_spacevim|Enhanced Vim editor" \
+        "install_discard_vim|Remote editing with VS Code / Sublime" \
+        "install_autojump|Smart directory navigation" \
+        "install_fzf|Command-line fuzzy finder" \
+        "install_htop_wo_sudo|Process monitor without sudo" \
+        "install_joshuto|Modern terminal file browser"
+
+    _ohmytool_category "Infrastructure" \
+        "install_docker|Docker & docker-compose (Ubuntu)" \
+        "install_nginxproxy|Nginx Proxy Manager web interface" \
+        "install_frp|Intranet penetration tool"
+
+    _ohmytool_category "Network & Proxy" \
+        "install_vpn|Clash VPN (Linux only)" \
+        "install_buildvpn|VPN for overseas servers" \
+        "install_xui|X-UI VPN panel" \
+        "install_xrayr|XrayR VPN solution"
+
+    _ohmytool_category "File Management" \
+        "install_trzsz|Simple file transfer (trz / tsz)" \
+        "install_tssh|SSH client with trzsz support" \
+        "install_safe_rm|Safe deletion with trash bin"
+
+    _ohmytool_category "Web Applications" \
+        "install_homeweb|Personal homepage" \
+        "install_newtab|Browser new tab page" \
+        "install_deepl|DeepL translation service" \
+        "install_chatgpt|ChatGPT web interface"
+
+    _ohmytool_category "Storage & Media" \
+        "install_cloudreve|Private cloud storage" \
+        "install_qbittorrent|BitTorrent client" \
+        "install_jellyfin|Media streaming server" \
+        "install_image|Lsky-pro image hosting"
+
+    _ohmytool_category "Productivity & Monitoring" \
+        "install_overleaf|LaTeX collaboration platform" \
+        "install_copypaste|Text sharing service" \
+        "install_webmonitor|Website monitoring" \
+        "install_serverstatus|Server status monitoring" \
+        "install_vncdocker|VNC remote desktop"
+
+    _ohmytool_category "Research & Admin" \
+        "install_PBShelper|PBS job management helper" \
+        "install_server-administration|Server administration toolkit" \
+        "install_colorls|Colorful ls (requires Ruby)"
+
+    ui_gap
+    ui_note "Tip: Run 'ohmytool' for interactive menu, or type any function name above directly."
+    ui_gap
+}
+
 ohmytool(){
-    print_section "ohmytool - Server Management Toolkit" "green"
+    if [ "${1:-}" = "-l" ] || [ "${1:-}" = "--list" ] || ! ui_interactive; then
+        _ohmytool_list
+        return 0
+    fi
 
-    print_text "white" "One-click installation and environment setup for server management." "false"
-    printf "\n\n"
-
-    # Basic Tools
-    print_text "cyan" "Basic Tools & Setup:" "false"
-    printf "\n"
-    print_menu_option "*" "new_vps_help" "Quick start guide for new servers"
-    print_menu_option "*" "install_base" "Essential command-line tools"
-
-    printf "\n"
-    print_text "cyan" "Network & Proxy:" "false"
-    printf "\n"
-    print_menu_option "*" "install_vpn" "Clash VPN (Linux only)"
-    print_menu_option "*" "install_buildvpn" "VPN for overseas servers"
-    print_menu_option "*" "install_xui" "X-UI VPN panel"
-    print_menu_option "*" "install_xrayr" "XrayR VPN solution"
-
-    printf "\n"
-    print_text "cyan" "Infrastructure:" "false"
-    printf "\n"
-    print_menu_option "*" "install_docker" "Docker & docker-compose (Ubuntu)"
-    print_menu_option "*" "install_nginxproxy" "Nginx proxy manager"
-    print_menu_option "*" "install_frp" "Intranet penetration tool"
-
-    printf "\n"
-    print_text "cyan" "File Management:" "false"
-    printf "\n"
-    print_menu_option "*" "install_trzsz" "Simple file transfer (trz/tsz)"
-    print_menu_option "*" "install_tssh" "SSH client with trzsz support"
-    print_menu_option "*" "install_joshuto" "Modern file browser"
-    print_menu_option "*" "install_safe_rm" "Safe deletion with trash"
-
-    printf "\n"
-    print_text "cyan" "Development Tools:" "false"
-    printf "\n"
-    print_menu_option "*" "install_spacevim" "Enhanced Vim editor"
-    print_menu_option "*" "install_discard_vim" "Remote editing with VS Code/Sublime"
-    print_menu_option "*" "install_autojump" "Smart directory navigation"
-    print_menu_option "*" "install_fzf" "Fuzzy finder"
-    print_menu_option "*" "install_htop_wo_sudo" "Process monitor without sudo"
-
-    printf "\n"
-    print_text "cyan" "AI Coding Agents:" "false"
-    printf "\n"
-    print_menu_option "*" "install_aicoding" "Install/update Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI"
-
-    printf "\n"
-    print_text "cyan" "Web Applications:" "false"
-    printf "\n"
-    print_menu_option "*" "install_homeweb" "Personal homepage"
-    print_menu_option "*" "install_newtab" "Browser new tab page"
-    print_menu_option "*" "install_deepl" "DeepL translation service"
-    print_menu_option "*" "install_chatgpt" "ChatGPT web interface"
-
-    printf "\n"
-    print_text "cyan" "Storage & Media:" "false"
-    printf "\n"
-    print_menu_option "*" "install_cloudreve" "Private cloud storage"
-    print_menu_option "*" "install_qbittorrent" "BitTorrent client"
-    print_menu_option "*" "install_jellyfin" "Media streaming server"
-    print_menu_option "*" "install_image" "Image hosting (lsky-pro)"
-
-    printf "\n"
-    print_text "cyan" "Productivity:" "false"
-    printf "\n"
-    print_menu_option "*" "install_overleaf" "LaTeX collaboration platform"
-    print_menu_option "*" "install_copypaste" "Text sharing service"
-    print_menu_option "*" "install_webmonitor" "Website monitoring"
-
-    printf "\n"
-    print_text "cyan" "System & Monitoring:" "false"
-    printf "\n"
-    print_menu_option "*" "install_serverstatus" "Server status monitoring"
-    print_menu_option "*" "install_vncdocker" "VNC remote desktop"
-    print_menu_option "*" "install_colorls" "Colorful ls (requires Ruby)"
-
-    printf "\n"
-    print_text "cyan" "Research Tools:" "false"
-    printf "\n"
-    print_menu_option "*" "install_PBShelper" "PBS job management helper"
-    print_menu_option "*" "install_server-administration" "Server admin toolkit"
-
-    printf "\n"
-    print_line "green" $(tput cols)
-    printf "\n"
-    print_text "yellow" "Type the function name to run installation" "false"
-    printf "\n"
+    ui_menu "ohmytool" "server management & tools catalog" \
+        "aicoding|AI Coding Agents (Claude, Codex, Cursor, Grok, Antigravity)" \
+        "base|Essential Tools (base tools, new server guide)" \
+        "dev|Development Tools (SpaceVim, discard-vim, fzf, autojump, joshuto)" \
+        "infra|Infrastructure (Docker, Nginx Proxy Manager, FRP)" \
+        "vpn|Network & Proxy (Clash VPN, X-UI, XrayR, BuildVPN)" \
+        "files|File Management (trzsz, tssh, safe-rm, joshuto)" \
+        "web|Web Applications (HomeWeb, NewTab, DeepL, ChatGPT)" \
+        "media|Storage & Media (Cloudreve, qBittorrent, Jellyfin, Image)" \
+        "productivity|Productivity (Overleaf, CopyPaste, ServerStatus)" \
+        "system|System Admin (htop, PBShelper, server-administration)" \
+        "all|View full catalog (all tools)"
+    case "$UI_CHOICE" in
+        1) install_aicoding ;;
+        2)
+            ui_menu "Essential Tools" "base setup" \
+                "install_base|Essential command-line tools (autojump, fzf, trzsz)" \
+                "new_vps_help|Recommended sequence for new servers"
+            case "$UI_CHOICE" in
+                1) install_base ;;
+                2) new_vps_help ;;
+            esac
+            ;;
+        3)
+            ui_menu "Development Tools" "editors & navigation" \
+                "install_spacevim|Enhanced Vim editor" \
+                "install_discard_vim|Remote editing with VS Code/Sublime" \
+                "install_autojump|Smart directory navigation" \
+                "install_fzf|Command-line fuzzy finder" \
+                "install_htop_wo_sudo|Process monitor without sudo" \
+                "install_joshuto|Modern terminal file browser"
+            case "$UI_CHOICE" in
+                1) install_spacevim ;;
+                2) install_discard_vim ;;
+                3) install_autojump ;;
+                4) install_fzf ;;
+                5) install_htop_wo_sudo ;;
+                6) install_joshuto ;;
+            esac
+            ;;
+        4)
+            ui_menu "Infrastructure" "container & network" \
+                "install_docker|Docker & docker-compose (Ubuntu)" \
+                "install_nginxproxy|Nginx Proxy Manager web UI" \
+                "install_frp|Fast reverse proxy / intranet penetration"
+            case "$UI_CHOICE" in
+                1) install_docker ;;
+                2) install_nginxproxy ;;
+                3) install_frp ;;
+            esac
+            ;;
+        5)
+            ui_menu "Network & Proxy" "vpn & proxy tools" \
+                "install_vpn|Clash VPN (Linux only)" \
+                "install_buildvpn|VPN for overseas servers" \
+                "install_xui|X-UI VPN panel" \
+                "install_xrayr|XrayR VPN solution"
+            case "$UI_CHOICE" in
+                1) install_vpn ;;
+                2) install_buildvpn ;;
+                3) install_xui ;;
+                4) install_xrayr ;;
+            esac
+            ;;
+        6)
+            ui_menu "File Management" "transfer & utilities" \
+                "install_trzsz|Simple file transfer (trz / tsz)" \
+                "install_tssh|SSH client with trzsz support" \
+                "install_joshuto|Modern terminal file browser" \
+                "install_safe_rm|Safe file deletion with trash bin"
+            case "$UI_CHOICE" in
+                1) install_trzsz ;;
+                2) install_tssh ;;
+                3) install_joshuto ;;
+                4) install_safe_rm ;;
+            esac
+            ;;
+        7)
+            ui_menu "Web Applications" "self-hosted web apps" \
+                "install_homeweb|Personal homepage" \
+                "install_newtab|Browser new tab page" \
+                "install_deepl|DeepL translation web service" \
+                "install_chatgpt|ChatGPT web interface"
+            case "$UI_CHOICE" in
+                1) install_homeweb ;;
+                2) install_newtab ;;
+                3) install_deepl ;;
+                4) install_chatgpt ;;
+            esac
+            ;;
+        8)
+            ui_menu "Storage & Media" "storage & streaming" \
+                "install_cloudreve|Private cloud drive" \
+                "install_qbittorrent|BitTorrent download client" \
+                "install_jellyfin|Media streaming server" \
+                "install_image|Lsky-pro image hosting"
+            case "$UI_CHOICE" in
+                1) install_cloudreve ;;
+                2) install_qbittorrent ;;
+                3) install_jellyfin ;;
+                4) install_image ;;
+            esac
+            ;;
+        9)
+            ui_menu "Productivity & Monitoring" "tools & status" \
+                "install_overleaf|LaTeX collaboration platform" \
+                "install_copypaste|Text sharing service" \
+                "install_webmonitor|Website uptime monitoring" \
+                "install_serverstatus|Server status monitoring" \
+                "install_vncdocker|VNC remote desktop"
+            case "$UI_CHOICE" in
+                1) install_overleaf ;;
+                2) install_copypaste ;;
+                3) install_webmonitor ;;
+                4) install_serverstatus ;;
+                5) install_vncdocker ;;
+            esac
+            ;;
+        10)
+            ui_menu "System & Research" "admin tools" \
+                "install_htop_wo_sudo|htop monitor without sudo" \
+                "install_PBShelper|PBS cluster job management helper" \
+                "install_server-administration|Server admin toolkit" \
+                "install_colorls|Colorls with Ruby"
+            case "$UI_CHOICE" in
+                1) install_htop_wo_sudo ;;
+                2) install_PBShelper ;;
+                3) install_server-administration ;;
+                4) install_colorls ;;
+            esac
+            ;;
+        11)
+            _ohmytool_list
+            ;;
+    esac
 }
 
 # Reminde you what to install when you get a new server.
 new_vps_help(){
-    print_section "New VPS Setup Guide"
+    ui_heading "New VPS Setup Guide" "recommended sequence for freshly provisioned servers"
 
-    print_text "white" "Welcome! Here's a recommended installation sequence for your new server:"
-    printf "\n"
+    ui_note "Welcome! Here is a recommended sequence to get your server fully configured:"
+    ui_gap
 
-    print_step "Step 0: Install base tools"
-    print_info "Run: install_base"
-    printf "\n"
+    print_step "0" "Install base tools (autojump, fzf, trzsz)"
+    ui_command "install_base"
+    ui_gap
 
-    print_step "Step 1: Configure network (if in China)"
-    print_info "Run: install_vpn"
-    printf "\n"
+    print_step "1" "Configure network proxy (if server is in China)"
+    ui_command "install_vpn"
+    ui_gap
 
-    print_step "Step 2: Set up SSH security"
-    print_info "Run: install_server-administration, then use myadduser"
-    printf "\n"
+    print_step "2" "Configure SSH security and user accounts"
+    ui_command "install_server-administration && myadduser"
+    ui_gap
 
-    print_step "Step 3: Install Docker environment"
-    print_info "Run: install_docker"
-    printf "\n"
+    print_step "3" "Install Docker environment"
+    ui_command "install_docker"
+    ui_gap
 
-    print_step "Step 4: Install Nginx proxy manager"
-    print_info "Run: install_nginxproxy"
-    printf "\n"
+    print_step "4" "Install Nginx Proxy Manager (SSL & reverse proxy)"
+    ui_command "install_nginxproxy"
+    ui_gap
 
-    print_separator
+    ui_rule
 
-    print_text "cyan" "\nOptional Services:"
-    print_item "5" "DeepL translator: install_deepl"
-    print_item "6" "Personal homepage: install_homeweb"
-    print_item "7" "New tab page: install_newtab"
-    print_item "8" "LaTeX editor: install_overleaf"
-    print_item "9" "Cloud storage: install_cloudreve"
-    print_item "10" "Server monitor: install_serverstatus"
-    print_item "11" "Intranet penetration: install_frp"
-    print_item "12" "ChatGPT interface: install_chatgpt"
-    print_item "13" "File transfer: install_trzsz"
-    print_item "14" "SSH client: install_tssh"
-    print_item "15" "VPN panel: install_xui"
-    print_item "16" "BitTorrent: install_qbittorrent"
-    print_item "17" "Media server: install_jellyfin"
-    print_item "18" "Image hosting: install_image"
-    print_item "19" "Safe deletion: install_safe_rm"
-    print_item "20" "Remote editing: install_discard_vim"
-    print_item "21" "File browser: install_joshuto"
+    ui_heading "Optional Services & Applications" "install as needed"
+    ui_item "install_deepl" "DeepL translation service" 24
+    ui_item "install_homeweb" "Personal homepage" 24
+    ui_item "install_newtab" "Browser new tab page" 24
+    ui_item "install_overleaf" "LaTeX collaboration platform" 24
+    ui_item "install_cloudreve" "Private cloud storage" 24
+    ui_item "install_serverstatus" "Server status monitoring" 24
+    ui_item "install_frp" "Intranet penetration tool" 24
+    ui_item "install_chatgpt" "ChatGPT web interface" 24
+    ui_item "install_trzsz" "Fast file transfer (trz / tsz)" 24
+    ui_item "install_tssh" "SSH client with trzsz support" 24
+    ui_item "install_xui" "X-UI VPN panel" 24
+    ui_item "install_qbittorrent" "BitTorrent client" 24
+    ui_item "install_jellyfin" "Media streaming server" 24
+    ui_item "install_image" "Image hosting (lsky-pro)" 24
+    ui_item "install_safe_rm" "Safe deletion with trash bin" 24
+    ui_item "install_discard_vim" "Remote editing with VS Code / Sublime" 24
+    ui_item "install_joshuto" "Modern terminal file browser" 24
 
-    printf "\n"
-    print_warning "Remember to configure nginx proxy after installation!"
-    printf "\n"
+    ui_gap
+    ui_warn "Remember to configure Nginx proxy ports and SSL certificates after installing web apps!"
+    ui_gap
 }
 
 # =================================== Install plugin=============================================
@@ -1699,34 +1828,34 @@ aicoding_row() {
     aicoding_status "$2" || return 1
     case "$AICODING_STATE" in
         missing)
-            printf '  %s%2s%s  %-16s %s%s%s %snot installed%s\n' \
-                "$UI_DIM" "$1" "$UI_RESET" "$AICODING_NAME" \
-                "$UI_ERR" "$UI_G_ERR" "$UI_RESET" "$UI_DIM" "$UI_RESET"
+            printf '  %s%2s%s  %-18s %s  %snot installed%s\n' \
+                "$UI_MUTED" "$1" "$UI_RESET" "$AICODING_NAME" \
+                "$(ui_badge err "MISSING")" \
+                "$UI_MUTED" "$UI_RESET"
             ;;
         update)
-            printf '  %s%2s%s  %-16s %s%s%s %s%s %s %s%s %supdate available%s\n' \
-                "$UI_DIM" "$1" "$UI_RESET" "$AICODING_NAME" \
-                "$UI_WARN" "$UI_G_WARN" "$UI_RESET" \
-                "$UI_DIM" "$AICODING_CURRENT" "$UI_G_ARROW" "$AICODING_LATEST" \
-                "$UI_RESET" "$UI_WARN" "$UI_RESET"
+            printf '  %s%2s%s  %-18s %s  %s%s %s %s%s\n' \
+                "$UI_MUTED" "$1" "$UI_RESET" "$AICODING_NAME" \
+                "$(ui_badge warn "UPDATE")" \
+                "$UI_MUTED" "$AICODING_CURRENT" "$UI_G_ARROW" "$AICODING_LATEST" "$UI_RESET"
             ;;
         current)
-            printf '  %s%2s%s  %-16s %s%s%s %s%s (latest)%s\n' \
-                "$UI_DIM" "$1" "$UI_RESET" "$AICODING_NAME" \
-                "$UI_OK" "$UI_G_OK" "$UI_RESET" \
-                "$UI_DIM" "$AICODING_CURRENT" "$UI_RESET"
+            printf '  %s%2s%s  %-18s %s  %s%s (latest)%s\n' \
+                "$UI_MUTED" "$1" "$UI_RESET" "$AICODING_NAME" \
+                "$(ui_badge ok "READY")" \
+                "$UI_MUTED" "$AICODING_CURRENT" "$UI_RESET"
             ;;
         ahead)
-            printf '  %s%2s%s  %-16s %s%s%s %s%s (newer than %s)%s\n' \
-                "$UI_DIM" "$1" "$UI_RESET" "$AICODING_NAME" \
-                "$UI_OK" "$UI_G_OK" "$UI_RESET" \
-                "$UI_DIM" "$AICODING_CURRENT" "$AICODING_LATEST" "$UI_RESET"
+            printf '  %s%2s%s  %-18s %s  %s%s (ahead of %s)%s\n' \
+                "$UI_MUTED" "$1" "$UI_RESET" "$AICODING_NAME" \
+                "$(ui_badge purple "DEV")" \
+                "$UI_MUTED" "$AICODING_CURRENT" "$AICODING_LATEST" "$UI_RESET"
             ;;
         *)
-            printf '  %s%2s%s  %-16s %s%s%s %s%s (update check unavailable)%s\n' \
-                "$UI_DIM" "$1" "$UI_RESET" "$AICODING_NAME" \
-                "$UI_WARN" "$UI_G_WARN" "$UI_RESET" \
-                "$UI_DIM" "${AICODING_CURRENT:-installed}" "$UI_RESET"
+            printf '  %s%2s%s  %-18s %s  %s%s%s\n' \
+                "$UI_MUTED" "$1" "$UI_RESET" "$AICODING_NAME" \
+                "$(ui_badge info "INSTALLED")" \
+                "$UI_MUTED" "${AICODING_CURRENT:-installed}" "$UI_RESET"
             ;;
     esac
 }

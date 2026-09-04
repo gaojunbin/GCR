@@ -62,10 +62,17 @@ show_update_info(){
         return 0
     fi
 
-    ui_heading "Recent updates"
+    ui_heading "Recent updates" "github.com/gaojunbin/GCR"
     echo "$updates" | while IFS= read -r line; do
         if [ -n "$line" ]; then
-            ui_note "$line"
+            case "$line" in
+                202[0-9]-*)
+                    printf '  %s%s %s%s\n' "$UI_ACCENT" "$UI_G_INFO" "$UI_BOLD" "$line$UI_RESET"
+                    ;;
+                *)
+                    printf '    %s%s%s\n' "$UI_MUTED" "$line" "$UI_RESET"
+                    ;;
+            esac
         else
             ui_gap
         fi
@@ -215,12 +222,10 @@ else
 fi
 
 show_GCR_info(){
-    ui_gap
-    ui_logo
-    ui_heading "GCR Toolkit" "make your shell more powerful"
-    ui_field "Author" "Junbin Gao"
-    ui_field "GitHub" "github.com/gaojunbin/GCR"
-    ui_field "Docs" "gcr.junbingao.com"
+    ui_banner
+    ui_field "Author" "Junbin Gao" 10
+    ui_field "GitHub" "github.com/gaojunbin/GCR" 10
+    ui_field "Docs" "gcr.junbingao.com" 10
 
     if [ -z "${ZSH_VERSION:-}" ]; then
         ui_gap
@@ -228,15 +233,20 @@ show_GCR_info(){
         return 0
     fi
 
-    ui_heading "ohmyshell" "shell commands, run ohmyshell for the full list"
+    ui_heading "Core Commands" "run ohmyshell for interactive command hub"
     for k in "${(@ko)manual_ohmyshell}"; do
-        ui_item "$k" "${manual_ohmyshell[$k]}"
+        ui_item "$k" "${manual_ohmyshell[$k]}" 16
     done
 
-    ui_heading "ohmytool" "installers and setup, run ohmytool for the full list"
-    for k in "${(@ko)manual_ohmytool}"; do
-        ui_item "$k" "${manual_ohmytool[$k]}" 30
-    done
+    ui_heading "AI Coding Launchers" "run any command to launch or install"
+    ui_item "cc" "Claude Code without permission prompts" 16
+    ui_item "cx" "Codex without approvals and sandbox" 16
+    ui_item "cursor" "Cursor CLI agent in YOLO mode" 16
+    ui_item "google" "Antigravity CLI in bypass mode" 16
+    ui_item "grok" "Grok Build in YOLO mode" 16
+
+    ui_gap
+    ui_note "run ohmytool to install Docker, VPN, SpaceVim, AI agents and server tools"
     ui_gap
 }
 # 3.main content
@@ -307,15 +317,39 @@ else
 fi
 
 ohmyshell(){
-    ui_heading "GCR Command Reference" "run any entry to open its menu"
-    ui_item "myupdate" "Update GCR Toolkit from GitHub"
-    ui_item "mytool" "Common tools for daily tasks"
-    ui_item "mypip" "Python pip management tools"
-    ui_item "myenv" "Anaconda environment management"
-    ui_item "mygpu" "GPU and CUDA utilities"
-    ui_item "mypermission" "Permission and password management"
-    ui_item "mygit" "Git workflow shortcuts"
-    ui_gap
+    if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ] || ! ui_interactive; then
+        ui_heading "GCR Command Reference" "run any entry to open its menu"
+        ui_item "mytool" "Common tools for daily tasks" 16
+        ui_item "mygit" "Git workflow shortcuts" 16
+        ui_item "myenv" "Anaconda environment management" 16
+        ui_item "mypip" "Python pip package management" 16
+        ui_item "mygpu" "GPU and CUDA utilities" 16
+        ui_item "mypermission" "Permission and password management" 16
+        ui_item "install_ai" "AI coding agents (Claude, Codex, Cursor...)" 16
+        ui_item "myupdate" "Update GCR Toolkit from GitHub" 16
+        ui_gap
+        return 0
+    fi
+
+    ui_menu "ohmyshell" "GCR interactive command hub" \
+        "mytool|Common tools for daily tasks" \
+        "mygit|Git workflow shortcuts" \
+        "myenv|Anaconda environment management" \
+        "mypip|Python pip package management" \
+        "mygpu|GPU and CUDA utilities" \
+        "mypermission|Permission and password management" \
+        "install_ai|AI coding agents (Claude, Codex, Cursor...)" \
+        "myupdate|Update GCR Toolkit from GitHub"
+    case "$UI_CHOICE" in
+        1) mytool ;;
+        2) mygit ;;
+        3) myenv ;;
+        4) mypip ;;
+        5) mygpu ;;
+        6) mypermission ;;
+        7) install_aicoding ;;
+        8) myupdate ;;
+    esac
 }
 
 # >>> mytool >>>
@@ -1032,7 +1066,7 @@ cx_init(){
         return 1
     fi
 
-    printf '  %s%s%s API key %s(hidden)%s: ' "$UI_ACCENT" "$UI_G_POINT" "$UI_RESET" "$UI_DIM" "$UI_RESET"
+    printf '  %s%s%s %sAPI key%s %s(hidden)%s %s›%s ' "$UI_ACCENT" "$UI_G_POINTER" "$UI_RESET" "$UI_BOLD" "$UI_RESET" "$UI_MUTED" "$UI_RESET" "$UI_ACCENT" "$UI_RESET"
     IFS= read -rs key
     printf '\n'
     if [ -z "$key" ]; then

@@ -44,14 +44,37 @@ ui_init() {
         esac
     fi
 
+    UI_TRUECOLOR=0
+    case "${COLORTERM:-}" in
+        truecolor|24bit) UI_TRUECOLOR=1 ;;
+    esac
+
     if [ "$UI_COLOR" = 1 ]; then
+        if [ "$UI_TRUECOLOR" = 1 ]; then
+            C_ACCENT="${ESC}[38;2;56;189;248m"   # Sky blue
+            C_OK="${ESC}[38;2;52;211;153m"       # Emerald green
+            C_WARN="${ESC}[38;2;251;191;36m"     # Warm amber
+            C_ERR="${ESC}[38;2;248;113;113m"     # Coral red
+            C_PURPLE="${ESC}[38;2;167;139;250m"  # Soft purple
+            C_MUTED="${ESC}[38;2;148;163;184m"   # Slate gray
+        elif [ "$UI_COLORS256" = 1 ]; then
+            C_ACCENT="${ESC}[38;5;39m"
+            C_OK="${ESC}[38;5;42m"
+            C_WARN="${ESC}[38;5;214m"
+            C_ERR="${ESC}[38;5;203m"
+            C_PURPLE="${ESC}[38;5;141m"
+            C_MUTED="${ESC}[38;5;245m"
+        else
+            C_ACCENT="${ESC}[36m"
+            C_OK="${ESC}[32m"
+            C_WARN="${ESC}[33m"
+            C_ERR="${ESC}[31m"
+            C_PURPLE="${ESC}[35m"
+            C_MUTED="${ESC}[2m"
+        fi
         C_RESET="${ESC}[0m"
         C_BOLD="${ESC}[1m"
         C_DIM="${ESC}[2m"
-        C_OK="${ESC}[32m"
-        C_WARN="${ESC}[33m"
-        C_ERR="${ESC}[31m"
-        C_ACCENT="${ESC}[36m"
     else
         C_RESET=""
         C_BOLD=""
@@ -59,6 +82,8 @@ ui_init() {
         C_OK=""
         C_WARN=""
         C_ERR=""
+        C_PURPLE=""
+        C_MUTED=""
         C_ACCENT=""
     fi
 
@@ -82,9 +107,12 @@ ui_init() {
     if [ "$UI_UNICODE" = 1 ]; then
         G_OK="✓"
         G_ERR="✗"
-        G_WARN="!"
+        G_WARN="▲"
         G_DOT="·"
         G_POINT="›"
+        G_POINTER="❯"
+        G_RADIO_ON="◉"
+        G_RADIO_OFF="◯"
         G_ARROW="→"
         G_BLOCK="█"
     else
@@ -93,6 +121,9 @@ ui_init() {
         G_WARN="!"
         G_DOT="-"
         G_POINT=">"
+        G_POINTER=">"
+        G_RADIO_ON="[*]"
+        G_RADIO_OFF="[ ]"
         G_ARROW="->"
         G_BLOCK="#"
     fi
@@ -133,11 +164,11 @@ ui_gap() {
 }
 
 ui_title() {
-    printf '  %s%s%s\n' "$C_BOLD" "$1" "$C_RESET"
+    printf '  %s%s%s%s\n' "$C_BOLD" "$C_ACCENT" "$1" "$C_RESET"
 }
 
 ui_note() {
-    printf '  %s%s%s\n' "$C_DIM" "$1" "$C_RESET"
+    printf '  %s%s%s\n' "$C_MUTED" "$1" "$C_RESET"
 }
 
 ui_ok() {
@@ -153,11 +184,11 @@ ui_err() {
 }
 
 ui_hint() {
-    printf '  %s%s%s\n' "$C_DIM" "$1" "$C_RESET"
+    printf '  %s%s%s\n' "$C_MUTED" "$1" "$C_RESET"
 }
 
 ui_command() {
-    printf '    %s%s%s\n' "$C_ACCENT" "$1" "$C_RESET"
+    printf '    %s%s%s %s%s%s\n' "$C_MUTED" "$" "$C_RESET" "$C_ACCENT" "$1" "$C_RESET"
 }
 
 die() {
@@ -184,11 +215,23 @@ logo_row() {
 }
 
 logo_color() {
-    if [ "$UI_COLORS256" = 1 ]; then
+    if [ "$UI_COLOR" = 0 ]; then
+        LOGO_C=""
+    elif [ "$UI_TRUECOLOR" = 1 ]; then
         case "$1" in
-            0|1|2|3) LOGO_C="${ESC}[38;5;69m" ;;
+            0|1)   LOGO_C="${ESC}[38;2;56;189;248m" ;;
+            2|3)   LOGO_C="${ESC}[38;2;59;130;246m" ;;
+            4|5)   LOGO_C="${ESC}[38;2;96;165;250m" ;;
+            6|7)   LOGO_C="${ESC}[38;2;129;140;248m" ;;
+            8|9)   LOGO_C="${ESC}[38;2;147;197;253m" ;;
+            10|11) LOGO_C="${ESC}[38;2;165;180;252m" ;;
+            *)     LOGO_C="${ESC}[38;2;199;210;254m" ;;
+        esac
+    elif [ "$UI_COLORS256" = 1 ]; then
+        case "$1" in
+            0|1|2|3)   LOGO_C="${ESC}[38;5;39m" ;;
             4|5|6|7|8) LOGO_C="${ESC}[38;5;75m" ;;
-            *) LOGO_C="${ESC}[38;5;81m" ;;
+            *)         LOGO_C="${ESC}[38;5;111m" ;;
         esac
     elif [ "$UI_COLOR" = 1 ]; then
         LOGO_C="$C_ACCENT"
@@ -447,19 +490,24 @@ menu_draw() {
     while [ "$i" -le 5 ]; do
         target_name "$i"
         if [ "$i" -eq "$1" ]; then
-            printf '  %s%s%s %s%-26s%s %s%s%s\n' \
-                "$C_ACCENT" "$G_POINT" "$C_RESET" \
+            printf '  %s%s%s %s%s%s %s%s%s %s%-24s%s  %s%s%s\n' \
+                "$C_ACCENT" "$G_POINTER" "$C_RESET" \
+                "$C_BOLD$C_ACCENT" "$i" "$C_RESET" \
+                "$C_ACCENT" "$G_RADIO_ON" "$C_RESET" \
                 "$C_BOLD" "$TARGET_LABEL" "$C_RESET" \
-                "$C_DIM" "$TARGET_HINT" "$C_RESET"
+                "$C_MUTED" "$TARGET_HINT" "$C_RESET"
         else
-            printf '    %s%-26s%s %s%s%s\n' \
-                "$C_DIM" "$TARGET_LABEL" "$C_RESET" \
-                "$C_DIM" "$TARGET_HINT" "$C_RESET"
+            printf '     %s%s%s %s%s%s %s%-24s%s  %s%s%s\n' \
+                "$C_MUTED" "$i" "$C_RESET" \
+                "$C_MUTED" "$G_RADIO_OFF" "$C_RESET" \
+                "$C_RESET" "$TARGET_LABEL" "$C_RESET" \
+                "$C_MUTED" "$TARGET_HINT" "$C_RESET"
         fi
         i=$((i + 1))
     done
     ui_gap
-    ui_hint "up/down move   1-5 pick   enter confirm   q quit"
+    printf '  %s↑/↓ move  ·  1-5 pick  ·  enter confirm  ·  q quit%s\n' \
+        "$C_MUTED" "$C_RESET"
 }
 
 choose_target() {
@@ -519,7 +567,10 @@ choose_target() {
     printf '%s%s%s' "${ESC}[7A" "$CLR_BELOW" "$CURSOR_SHOW"
     target_name "$selected"
     TARGET="$TARGET_ID"
-    printf '  %s%s%s %s\n' "$C_ACCENT" "$G_ARROW" "$C_RESET" "$TARGET_LABEL"
+    printf '  %s%s%s %s%s%s  %s%s%s\n' \
+        "$C_OK" "$G_OK" "$C_RESET" \
+        "$C_BOLD" "$TARGET_LABEL" "$C_RESET" \
+        "$C_MUTED" "(selected)" "$C_RESET"
     ui_gap
 }
 
@@ -773,13 +824,18 @@ finish() {
     fi
 
     ui_gap
-    ui_title "GCR is installed."
-    ui_gap
-    ui_note "Restart your shell, or run:"
-    ui_gap
-    ui_command "$restart_command"
-    ui_gap
-    ui_note "Docs and updates: $GCR_SITE"
+    printf '  %s╭─%s %s%sGCR is installed and ready!%s\n' "$C_MUTED" "$C_RESET" "$C_BOLD$C_OK" "" "$C_RESET"
+    printf '  %s│%s\n' "$C_MUTED" "$C_RESET"
+    printf '  %s│%s  To start using GCR, restart your shell or run:\n' "$C_MUTED" "$C_RESET"
+    printf '  %s│%s    %s%s%s\n' "$C_MUTED" "$C_RESET" "$C_BOLD$C_ACCENT" "$restart_command" "$C_RESET"
+    printf '  %s│%s\n' "$C_MUTED" "$C_RESET"
+    printf '  %s│%s  %sQuick start:%s\n' "$C_MUTED" "$C_RESET" "$C_BOLD" "$C_RESET"
+    printf '  %s│%s    %s·%s %s%-14s%s %s%s%s\n' "$C_MUTED" "$C_RESET" "$C_ACCENT" "$C_RESET" "$C_BOLD" "ohmyshell" "$C_RESET" "$C_MUTED" "Open GCR interactive command hub" "$C_RESET"
+    printf '  %s│%s    %s·%s %s%-14s%s %s%s%s\n' "$C_MUTED" "$C_RESET" "$C_ACCENT" "$C_RESET" "$C_BOLD" "mytool" "$C_RESET" "$C_MUTED" "Daily utilities (jupyter, proxy, disk...)" "$C_RESET"
+    printf '  %s│%s    %s·%s %s%-14s%s %s%s%s\n' "$C_MUTED" "$C_RESET" "$C_ACCENT" "$C_RESET" "$C_BOLD" "mygit" "$C_RESET" "$C_MUTED" "Git workflow shortcuts" "$C_RESET"
+    printf '  %s│%s\n' "$C_MUTED" "$C_RESET"
+    printf '  %s│%s  Docs: %s%s%s\n' "$C_MUTED" "$C_RESET" "$C_ACCENT" "$GCR_SITE" "$C_RESET"
+    printf '  %s╰─────────────────────────────────────────────────────────────%s\n' "$C_MUTED" "$C_RESET"
     ui_gap
 }
 
