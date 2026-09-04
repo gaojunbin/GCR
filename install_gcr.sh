@@ -52,6 +52,7 @@ ui_init() {
     if [ "$UI_COLOR" = 1 ]; then
         if [ "$UI_TRUECOLOR" = 1 ]; then
             C_ACCENT="${ESC}[38;2;56;189;248m"   # Sky blue
+            C_CYAN="${ESC}[38;2;34;211;238m"     # Electric cyan
             C_OK="${ESC}[38;2;52;211;153m"       # Emerald green
             C_WARN="${ESC}[38;2;251;191;36m"     # Warm amber
             C_ERR="${ESC}[38;2;248;113;113m"     # Coral red
@@ -59,6 +60,7 @@ ui_init() {
             C_MUTED="${ESC}[38;2;148;163;184m"   # Slate gray
         elif [ "$UI_COLORS256" = 1 ]; then
             C_ACCENT="${ESC}[38;5;39m"
+            C_CYAN="${ESC}[38;5;51m"
             C_OK="${ESC}[38;5;42m"
             C_WARN="${ESC}[38;5;214m"
             C_ERR="${ESC}[38;5;203m"
@@ -66,6 +68,7 @@ ui_init() {
             C_MUTED="${ESC}[38;5;245m"
         else
             C_ACCENT="${ESC}[36m"
+            C_CYAN="${ESC}[36m"
             C_OK="${ESC}[32m"
             C_WARN="${ESC}[33m"
             C_ERR="${ESC}[31m"
@@ -83,6 +86,7 @@ ui_init() {
         C_WARN=""
         C_ERR=""
         C_PURPLE=""
+        C_CYAN=""
         C_MUTED=""
         C_ACCENT=""
     fi
@@ -400,8 +404,14 @@ run_step_status() {
             step_detail=$(log_tail "$step_title" "$step_log")
         fi
         spin_char "$step_i"
+        case $((step_i % 4)) in
+            0) spin_c="$C_CYAN" ;;
+            1) spin_c="$C_ACCENT" ;;
+            2) spin_c="$C_PURPLE" ;;
+            3) spin_c="$C_OK" ;;
+        esac
         printf '\r%s  %s%s%s %s  %s%s%s' "$CLR_LINE" \
-            "$C_ACCENT" "$SPIN_CH" "$C_RESET" "$step_title" \
+            "$spin_c" "$SPIN_CH" "$C_RESET" "$step_title" \
             "$C_DIM" "$step_detail" "$C_RESET"
         step_i=$((step_i + 1))
         sleep "$UI_TICK"

@@ -133,12 +133,9 @@ myupdate(){
 
     ui_heading "Updating GCR" "github.com/gaojunbin/GCR"
     for file in .ohmyshell .ohmytool .ohmyzsh .p9k.zsh .vimrc .ohmyprint; do
-        ui_step "$file"
-        if curl -fsSL "$base/$file" -o "$tmp"; then
-            mv "$tmp" "$HOME/$file"
-            ui_step_ok "$file"
+        if ui_spin "$file" "curl -fsSL '$base/$file' -o '$tmp' && mv '$tmp' '$HOME/$file'"; then
+            :
         else
-            ui_step_err "$file"
             failed=1
         fi
     done

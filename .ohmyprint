@@ -173,6 +173,16 @@ ui_init() {
         UI_G_BAR_EMPTY="-"
     fi
 
+    UI_FRACSLEEP=0
+    if sleep 0.01 2>/dev/null; then
+        UI_FRACSLEEP=1
+    fi
+
+    GCR_ANIM=0
+    if [ "$UI_TTY" = 1 ] && [ "$UI_FRACSLEEP" = 1 ] && [ "${GCR_NO_ANIM:-0}" != 1 ]; then
+        GCR_ANIM=1
+    fi
+
     UI_COLS=$(ui_cols)
 }
 
@@ -262,6 +272,74 @@ ui_step_err() {
     ui_err "$1"
 }
 
+# ui_spin <label> <command...>
+# Runs command behind a sleek animated braille spinner.
+# In non-interactive or non-animation environments, falls back to ui_step / ui_step_ok.
+ui_spin() {
+    local label="$1"
+    shift
+    local cmd="$*"
+
+    if [ "${GCR_ANIM:-0}" != 1 ] || ! ui_interactive; then
+        ui_step "$label"
+        if eval "$cmd" >/dev/null 2>&1; then
+            ui_step_ok "$label"
+            return 0
+        else
+            ui_step_err "$label"
+            return 1
+        fi
+    fi
+
+    local frames
+    if [ "$UI_UNICODE" = 1 ]; then
+        frames="⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏"
+    else
+        frames="/ - \\ |"
+    fi
+
+    local tmp_out
+    tmp_out=$(mktemp 2>/dev/null || echo "/tmp/gcr_spin_$$")
+    ( eval "$cmd" ) >"$tmp_out" 2>&1 &
+    local pid=$!
+    local status=0
+
+    trap 'printf "%s" "$UI_SHOW"; kill "$pid" 2>/dev/null; rm -f "$tmp_out" 2>/dev/null; trap - INT TERM; return 130' INT TERM
+
+    printf '%s' "$UI_HIDE"
+    local i=0 f color
+    while kill -0 "$pid" 2>/dev/null; do
+        for f in $frames; do
+            if ! kill -0 "$pid" 2>/dev/null; then
+                break
+            fi
+            case $((i % 4)) in
+                0) color="$UI_CYAN" ;;
+                1) color="$UI_ACCENT" ;;
+                2) color="$UI_PURPLE" ;;
+                3) color="$UI_OK" ;;
+            esac
+            printf '\r%s  %s%s%s %s%s%s' "$UI_CLR" "$color" "$f" "$UI_RESET" "$UI_MUTED" "$label" "$UI_RESET"
+            i=$((i + 1))
+            sleep 0.05 2>/dev/null || sleep 1
+        done
+    done
+
+    wait "$pid" 2>/dev/null
+    status=$?
+    trap - INT TERM
+    printf '%s' "$UI_SHOW"
+    rm -f "$tmp_out" 2>/dev/null
+
+    if [ "$status" -eq 0 ]; then
+        ui_step_ok "$label"
+        return 0
+    else
+        ui_step_err "$label"
+        return "$status"
+    fi
+}
+
 # ui_badge <type: ok|warn|err|info|purple|muted> <text>
 ui_badge() {
     local type="$1" text="$2" fg=""
@@ -344,6 +422,38 @@ ui_progress() {
     printf '\n'
 }
 
+# ui_progress_anim <current> <total> [width] [label]
+# In-place updating progress bar for smooth dynamic progress
+ui_progress_anim() {
+    local cur=$1 tot=$2 w=${3:-24} lbl="${4:-}"
+    if [ "$tot" -le 0 ]; then tot=1; fi
+    local pct=$(( (cur * 100) / tot ))
+    if [ "$pct" -gt 100 ]; then pct=100; fi
+    local filled=$(( (cur * w) / tot ))
+    if [ "$filled" -gt "$w" ]; then filled=$w; fi
+    local empty=$((w - filled))
+
+    local bar_f="" bar_e="" i=0
+    while [ "$i" -lt "$filled" ]; do bar_f="${bar_f}${UI_G_BAR_FILL}"; i=$((i + 1)); done
+    i=0
+    while [ "$i" -lt "$empty" ]; do bar_e="${bar_e}${UI_G_BAR_EMPTY}"; i=$((i + 1)); done
+
+    if [ "${GCR_ANIM:-0}" = 1 ] && ui_interactive; then
+        printf '\r%s  %s[%s%s%s%s] %s%3d%%%s (%d/%d)' \
+            "$UI_CLR" \
+            "$UI_MUTED" "$UI_ACCENT" "$bar_f" "$UI_MUTED" "$bar_e" \
+            "$UI_BOLD" "$pct" "$UI_RESET" "$cur" "$tot"
+        if [ -n "$lbl" ]; then
+            printf '  %s%s%s' "$UI_MUTED" "$lbl" "$UI_RESET"
+        fi
+        if [ "$cur" -ge "$tot" ]; then
+            printf '\n'
+        fi
+    else
+        ui_progress "$cur" "$tot" "$w" "$lbl"
+    fi
+}
+
 # ------------------------------------------------------------------- logo ---
 
 ui_logo_row() {
@@ -401,9 +511,64 @@ ui_logo() {
     done
 }
 
+# ui_logo_shine: dynamic light sweep across the GCR logo
+ui_logo_shine() {
+    if [ "${GCR_ANIM:-0}" != 1 ] || ! ui_interactive; then
+        ui_logo
+        return 0
+    fi
+
+    printf '%s' "$UI_HIDE"
+    trap 'printf "%s" "$UI_SHOW"; trap - INT TERM; return 130' INT TERM
+    local head=0 y bits bit line x
+    while [ "$head" -lt 16 ]; do
+        y=0
+        while [ "$y" -lt 5 ]; do
+            ui_logo_row "$y"
+            bits="$UI_LOGO_BITS"
+            line="  "
+            x=0
+            while [ "$x" -lt 14 ]; do
+                bit=${bits%"${bits#?}"}
+                bits=${bits#?}
+                if [ "$bit" = 1 ]; then
+                    if [ "$x" -eq "$head" ]; then
+                        if [ "$UI_TRUECOLOR" = 1 ]; then
+                            line="${line}${UI_ESC}[38;2;255;255;255m${UI_G_BLOCK}${UI_G_BLOCK}"
+                        else
+                            line="${line}${UI_ESC}[38;5;231m${UI_G_BLOCK}${UI_G_BLOCK}"
+                        fi
+                    elif [ "$x" -eq $((head - 1)) ] || [ "$x" -eq $((head + 1)) ]; then
+                        if [ "$UI_TRUECOLOR" = 1 ]; then
+                            line="${line}${UI_ESC}[38;2;147;197;253m${UI_G_BLOCK}${UI_G_BLOCK}"
+                        else
+                            line="${line}${UI_ESC}[38;5;153m${UI_G_BLOCK}${UI_G_BLOCK}"
+                        fi
+                    else
+                        ui_logo_color "$x"
+                        line="${line}${UI_LOGO_C}${UI_G_BLOCK}${UI_G_BLOCK}"
+                    fi
+                else
+                    line="${line}  "
+                fi
+                x=$((x + 1))
+            done
+            printf '%s%s\n' "$line" "$UI_RESET"
+            y=$((y + 1))
+        done
+        sleep 0.012 2>/dev/null || sleep 1
+        head=$((head + 1))
+        if [ "$head" -lt 16 ]; then
+            printf '%s' "${UI_ESC}[5A"
+        fi
+    done
+    trap - INT TERM
+    printf '%s' "$UI_SHOW"
+}
+
 ui_banner() {
     ui_gap
-    ui_logo
+    ui_logo_shine
     printf '  %s%sGCR Toolkit%s  %s%smake your shell more powerful%s\n' \
         "$UI_BOLD" "$UI_ACCENT" "$UI_RESET" "$UI_MUTED" "$UI_ITALIC" "$UI_RESET"
     ui_gap
@@ -519,6 +684,38 @@ ui_menu_draw() {
         "$UI_MUTED" "$UI_RESET" \
         "$UI_MUTED" "$UI_RESET" \
         "$UI_MUTED" "$UI_RESET"
+}
+
+ui_menu_confirm_flash() {
+    local selected=$1 i=1 item name desc
+    shift
+    local max_w=10
+    for item in "$@"; do
+        name=${item%%|*}
+        if [ "${#name}" -gt "$max_w" ]; then max_w=${#name}; fi
+    done
+    if [ "$max_w" -gt 28 ]; then max_w=28; fi
+
+    for item in "$@"; do
+        name=${item%%|*}
+        desc=${item#*|}
+        if [ "$i" -eq "$selected" ]; then
+            printf '  %s%s%s %s%2s%s %s%s%s %s%-'${max_w}'s%s  %s%s%s\n' \
+                "$UI_OK" "$UI_G_POINTER" "$UI_RESET" \
+                "$UI_BOLD$UI_OK" "$i" "$UI_RESET" \
+                "$UI_OK$UI_BOLD" "$UI_G_OK" "$UI_RESET" \
+                "$UI_BOLD$UI_OK" "$name" "$UI_RESET" \
+                "$UI_OK" "$desc" "$UI_RESET"
+        else
+            printf '     %s%2s%s %s%s%s %s%-'${max_w}'s%s  %s%s%s\n' \
+                "$UI_MUTED" "$i" "$UI_RESET" \
+                "$UI_MUTED" "$UI_G_RADIO_OFF" "$UI_RESET" \
+                "$UI_MUTED" "$name" "$UI_RESET" \
+                "$UI_MUTED" "$desc" "$UI_RESET"
+        fi
+        i=$((i + 1))
+    done
+    printf '\n%s\n' "$UI_CLR"
 }
 
 ui_menu_plain() {
@@ -648,6 +845,12 @@ ui_menu() {
         printf '%s' "${UI_ESC}[${lines}A"
         ui_menu_draw "$selected" "$@"
     done
+
+    if [ "${GCR_ANIM:-0}" = 1 ] && [ "$UI_CHOICE" -gt 0 ]; then
+        printf '%s' "${UI_ESC}[${lines}A"
+        ui_menu_confirm_flash "$UI_CHOICE" "$@"
+        sleep 0.08 2>/dev/null || true
+    fi
 
     printf '%s%s%s' "${UI_ESC}[${lines}A" "$UI_CLR_BELOW" "$UI_SHOW"
     ui_menu_resolve "$@"

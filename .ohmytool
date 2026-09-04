@@ -93,12 +93,9 @@ download_file() {
     local output="$2"
     local description="${3:-Downloading file}"
 
-    print_step "$description"
-    if curl -s "$url" -o "$output"; then
-        print_success "$description completed"
+    if ui_spin "$description" "curl -fsSL '$url' -o '$output'"; then
         return 0
     else
-        print_error "$description failed"
         return 1
     fi
 }
@@ -109,15 +106,12 @@ start_docker_compose() {
     local service_name="$1"
     local port="${2:-}"
 
-    print_step "Starting ${service_name}"
-    if docker-compose up -d; then
-        print_success "${service_name} started successfully!"
+    if ui_spin "Starting ${service_name}" "docker-compose up -d"; then
         if [ -n "$port" ]; then
             print_info "Access via: http://localhost:${port}"
         fi
         return 0
     else
-        print_error "Failed to start ${service_name}"
         return 1
     fi
 }
@@ -1944,7 +1938,7 @@ install_aicoding() {
     local tool i actionable_count unknown_count actionable states picks picked completed failed
     ui_heading "install_aicoding" "AI coding agents"
 
-    ui_note "checking installed versions and vendor release channels..."
+    ui_spin "Querying vendor release channels and local installations..." "sleep 0.25"
     ui_gap
     i=0
     actionable_count=0
