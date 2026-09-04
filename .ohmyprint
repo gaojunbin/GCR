@@ -302,7 +302,7 @@ ui_spin() {
     tmp_out=$(mktemp 2>/dev/null || echo "/tmp/gcr_spin_$$")
     ( eval "$cmd" ) >"$tmp_out" 2>&1 &
     local pid=$!
-    local status=0
+    local cmd_status=0
 
     trap 'printf "%s" "$UI_SHOW"; kill "$pid" 2>/dev/null; rm -f "$tmp_out" 2>/dev/null; trap - INT TERM; return 130' INT TERM
 
@@ -326,17 +326,17 @@ ui_spin() {
     done
 
     wait "$pid" 2>/dev/null
-    status=$?
+    cmd_status=$?
     trap - INT TERM
     printf '%s' "$UI_SHOW"
     rm -f "$tmp_out" 2>/dev/null
 
-    if [ "$status" -eq 0 ]; then
+    if [ "$cmd_status" -eq 0 ]; then
         ui_step_ok "$label"
         return 0
     else
         ui_step_err "$label"
-        return "$status"
+        return "$cmd_status"
     fi
 }
 
