@@ -31,6 +31,29 @@ ui_cols() {
     printf '%s' "$cols"
 }
 
+ui_rows() {
+    local rows=$(tput lines 2>/dev/null)
+    case "$rows" in
+        ''|*[!0-9]*) rows=24 ;;
+    esac
+    printf '%s' "$rows"
+}
+
+# ui_fit <text> <width> -> UI_FIT, the text cut to the width with an ellipsis.
+ui_fit() {
+    local keep
+    UI_FIT="$1"
+    if [ "$2" -le 0 ]; then
+        UI_FIT=""
+    elif [ "${#1}" -gt "$2" ]; then
+        keep=$(($2 - ${#UI_G_ELLIPSIS}))
+        if [ "$keep" -lt 1 ]; then
+            keep=1
+        fi
+        UI_FIT="${1:0:$keep}${UI_G_ELLIPSIS}"
+    fi
+}
+
 ui_init() {
     UI_TTY=0
     if ui_has_tty && [ "${TERM:-}" != "dumb" ]; then
@@ -116,6 +139,16 @@ ui_init() {
     UI_SHOW="${UI_ESC}[?25h"
     UI_CLR="${UI_ESC}[K"
     UI_CLR_BELOW="${UI_ESC}[J"
+    UI_DEL=$(printf '\177')
+    UI_BS=$(printf '\b')
+    UI_TAB=$(printf '\t')
+    UI_INT=$(printf '\003')
+
+    # How long to wait for the rest of an escape sequence: an arrow key arrives
+    # whole, a bare escape is reported after this. zsh reads with a timeout in
+    # seconds, bash sets the terminal read timer in tenths of a second.
+    UI_KEY_WAIT=0.05
+    UI_KEY_WAIT_DS=1
 
     UI_UNICODE=0
     case "${LC_ALL:-${LC_CTYPE:-${LANG:-}}}" in
@@ -148,6 +181,9 @@ ui_init() {
         UI_G_BOX_V="│"
         UI_G_BAR_FILL="█"
         UI_G_BAR_EMPTY="░"
+        UI_G_CHECK_ON="◼"
+        UI_G_CHECK_OFF="◻"
+        UI_G_ELLIPSIS="…"
     else
         UI_G_OK="ok"
         UI_G_ERR="x"
@@ -171,6 +207,9 @@ ui_init() {
         UI_G_BOX_V="|"
         UI_G_BAR_FILL="#"
         UI_G_BAR_EMPTY="-"
+        UI_G_CHECK_ON="[x]"
+        UI_G_CHECK_OFF="[ ]"
+        UI_G_ELLIPSIS="..."
     fi
 
     UI_FRACSLEEP=0
@@ -272,9 +311,41 @@ ui_step_err() {
     ui_err "$1"
 }
 
+# Spinner frames, one per tick, cycling through four accent colors. Runs until
+# the process in $2 exits, or forever when no pid is given.
+ui_spin_frames() {
+    if [ -n "${ZSH_VERSION:-}" ]; then
+        setopt localoptions shwordsplit
+    fi
+    local label="$1" pid="${2:-}" frames f i=0 color
+    if [ "$UI_UNICODE" = 1 ]; then
+        frames="⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏"
+    else
+        frames="/ - \\ |"
+    fi
+    while :; do
+        for f in $frames; do
+            if [ -n "$pid" ] && ! kill -0 "$pid" 2>/dev/null; then
+                return 0
+            fi
+            case $((i % 4)) in
+                0) color="$UI_CYAN" ;;
+                1) color="$UI_ACCENT" ;;
+                2) color="$UI_PURPLE" ;;
+                3) color="$UI_OK" ;;
+            esac
+            printf '\r%s  %s%s%s %s%s%s' "$UI_CLR" "$color" "$f" "$UI_RESET" "$UI_MUTED" "$label" "$UI_RESET"
+            i=$((i + 1))
+            sleep 0.05 2>/dev/null || sleep 1
+        done
+    done
+}
+
 # ui_spin <label> <command...>
-# Runs command behind a sleek animated braille spinner.
-# In non-interactive or non-animation environments, falls back to ui_step / ui_step_ok.
+# Runs the command behind a spinner and closes the line with ok or failure.
+# The command output is discarded. Without a terminal it degrades to
+# ui_step / ui_step_ok. Interactive shells announce background jobs, so the
+# job is started quietly: zsh with monitor off, bash disowned.
 ui_spin() {
     local label="$1"
     shift
@@ -291,45 +362,33 @@ ui_spin() {
         fi
     fi
 
-    local frames
-    if [ "$UI_UNICODE" = 1 ]; then
-        frames="⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏"
-    else
-        frames="/ - \\ |"
+    if [ -n "${ZSH_VERSION:-}" ]; then
+        setopt localoptions nomonitor nonotify
     fi
 
-    local tmp_out
-    tmp_out=$(mktemp 2>/dev/null || echo "/tmp/gcr_spin_$$")
-    ( eval "$cmd" ) >"$tmp_out" 2>&1 &
-    local pid=$!
-    local cmd_status=0
+    local tmp_out tmp_status pid cmd_status
+    tmp_out=$(mktemp 2>/dev/null || printf '%s' "${TMPDIR:-/tmp}/gcr_spin_$$")
+    tmp_status="$tmp_out.status"
+    { ( eval "$cmd" ) >"$tmp_out" 2>&1; printf '%s' "$?" >"$tmp_status"; } &
+    pid=$!
+    if [ -z "${ZSH_VERSION:-}" ]; then
+        disown "$pid" 2>/dev/null
+    fi
 
-    trap 'printf "%s" "$UI_SHOW"; kill "$pid" 2>/dev/null; rm -f "$tmp_out" 2>/dev/null; trap - INT TERM; return 130' INT TERM
+    trap 'printf "%s" "$UI_SHOW"; kill "$pid" 2>/dev/null; command rm -f "$tmp_out" "$tmp_status"; trap - INT TERM; return 130' INT TERM
 
     printf '%s' "$UI_HIDE"
-    local i=0 f color
-    while kill -0 "$pid" 2>/dev/null; do
-        for f in $frames; do
-            if ! kill -0 "$pid" 2>/dev/null; then
-                break
-            fi
-            case $((i % 4)) in
-                0) color="$UI_CYAN" ;;
-                1) color="$UI_ACCENT" ;;
-                2) color="$UI_PURPLE" ;;
-                3) color="$UI_OK" ;;
-            esac
-            printf '\r%s  %s%s%s %s%s%s' "$UI_CLR" "$color" "$f" "$UI_RESET" "$UI_MUTED" "$label" "$UI_RESET"
-            i=$((i + 1))
-            sleep 0.05 2>/dev/null || sleep 1
-        done
-    done
-
-    wait "$pid" 2>/dev/null
-    cmd_status=$?
+    ui_spin_frames "$label" "$pid"
+    if [ -n "${ZSH_VERSION:-}" ]; then
+        wait "$pid" 2>/dev/null
+    fi
+    cmd_status=$(cat "$tmp_status" 2>/dev/null)
+    case "$cmd_status" in
+        ''|*[!0-9]*) cmd_status=1 ;;
+    esac
     trap - INT TERM
     printf '%s' "$UI_SHOW"
-    rm -f "$tmp_out" 2>/dev/null
+    command rm -f "$tmp_out" "$tmp_status"
 
     if [ "$cmd_status" -eq 0 ]; then
         ui_step_ok "$label"
@@ -338,6 +397,59 @@ ui_spin() {
         ui_step_err "$label"
         return "$cmd_status"
     fi
+}
+
+# ui_spin_start <label>
+# Spins next to the label while the caller keeps working in the foreground,
+# so the work can set shell variables. Close it with ui_spin_stop. Ctrl-C in
+# between stops the spinner and returns from the caller.
+ui_spin_start() {
+    UI_SPIN_LABEL="$1"
+    UI_SPIN_PID=""
+    if [ "${GCR_ANIM:-0}" != 1 ] || ! ui_interactive; then
+        ui_step "$1"
+        return 0
+    fi
+    printf '%s' "$UI_HIDE"
+    if [ -n "${ZSH_VERSION:-}" ]; then
+        eval 'ui_spin_frames "$UI_SPIN_LABEL" &!'
+        UI_SPIN_PID=$!
+    else
+        ui_spin_frames "$UI_SPIN_LABEL" &
+        UI_SPIN_PID=$!
+        disown "$UI_SPIN_PID" 2>/dev/null
+    fi
+    trap 'ui_spin_kill; printf "\r%s%s" "$UI_CLR" "$UI_SHOW"; trap - INT TERM; return 130' INT TERM
+}
+
+ui_spin_kill() {
+    local tries=0
+    if [ -z "${UI_SPIN_PID:-}" ]; then
+        return 0
+    fi
+    kill "$UI_SPIN_PID" 2>/dev/null
+    while [ "$tries" -lt 20 ] && kill -0 "$UI_SPIN_PID" 2>/dev/null; do
+        sleep 0.01 2>/dev/null || break
+        tries=$((tries + 1))
+    done
+    UI_SPIN_PID=""
+}
+
+# ui_spin_stop <ok|err|clear> [label]
+# ok and err close the line like ui_step_ok / ui_step_err, clear wipes the
+# line so the caller can print its own result in its place.
+ui_spin_stop() {
+    local state="${1:-ok}" label="${2:-$UI_SPIN_LABEL}"
+    if [ -n "${UI_SPIN_PID:-}" ]; then
+        ui_spin_kill
+        trap - INT TERM
+        printf '%s' "$UI_SHOW"
+    fi
+    case "$state" in
+        ok)  ui_step_ok "$label" ;;
+        err) ui_step_err "$label" ;;
+        *)   printf '\r%s' "$UI_CLR" ;;
+    esac
 }
 
 # ui_badge <type: ok|warn|err|info|purple|muted> <text>
@@ -589,18 +701,39 @@ ui_ask() {
     fi
 }
 
-# ui_confirm <question> [y|n], returns 0 for yes
+# ui_confirm <question> [y|n], returns 0 for yes.
+# In a terminal a single keypress answers: y, n, enter for the default, escape
+# or q for no. The answer is echoed so the transcript reads back naturally.
+# Without a terminal a whole line is read instead.
 ui_confirm() {
-    local default=${2:-y} answer
+    local default=${2:-y} answer=""
     printf '  %s?%s %s%s%s ' "$UI_WARN" "$UI_RESET" "$UI_BOLD" "$1" "$UI_RESET"
     if [ "$default" = y ]; then
         printf '%s[%s%sY%s%s/n]%s ' "$UI_MUTED" "$UI_RESET" "$UI_ACCENT$UI_BOLD" "$UI_RESET" "$UI_MUTED" "$UI_RESET"
     else
         printf '%s[y/%s%sN%s%s]%s ' "$UI_MUTED" "$UI_RESET" "$UI_ACCENT$UI_BOLD" "$UI_RESET" "$UI_MUTED" "$UI_RESET"
     fi
-    IFS= read -r answer
-    if [ -z "$answer" ]; then
-        answer="$default"
+
+    if ui_interactive; then
+        ui_keys_open
+        while ui_read_key; do
+            case "$UI_KEY" in
+                y|Y) answer=y; break ;;
+                n|N|q|Q|"$UI_ESC"|"$UI_INT") answer=n; break ;;
+                ""|" "|"$UI_CR"|"$UI_LF") answer="$default"; break ;;
+            esac
+        done
+        ui_keys_close
+        if [ "$answer" = y ]; then
+            printf '%syes%s\n' "$UI_ACCENT" "$UI_RESET"
+        else
+            printf '%sno%s\n' "$UI_MUTED" "$UI_RESET"
+        fi
+    else
+        IFS= read -r answer
+        if [ -z "$answer" ]; then
+            answer="$default"
+        fi
     fi
     case "$answer" in
         y|Y|yes|YES) return 0 ;;
@@ -613,130 +746,689 @@ ask_yes_no() {
     ui_confirm "$1" "${2:-y}"
 }
 
-ui_read_key() {
-    local key rest
+# ui_keys_open / ui_keys_close
+# While a menu or prompt reads single keys, Ctrl-C is delivered as a key
+# instead of a signal, so cancelling never leaves a half drawn screen or a
+# hidden cursor behind. zsh reads keys itself; bash reads raw bytes with dd,
+# because its read builtin switches signals back on. The terminal settings
+# are restored on close.
+ui_keys_open() {
+    UI_TTY_STATE=$(stty -g < /dev/tty 2>/dev/null || true)
     if [ -n "${ZSH_VERSION:-}" ]; then
-        key=""
-        read -s -k 1 key < /dev/tty 2>/dev/null || return 1
-        if [ "$key" = "$UI_ESC" ]; then
-            rest=""
-            read -s -k 3 -t 1 rest < /dev/tty 2>/dev/null
-            key="$key$rest"
-        fi
+        stty -isig < /dev/tty 2>/dev/null || true
     else
-        IFS= read -rsn1 key < /dev/tty 2>/dev/null || return 1
-        if [ "$key" = "$UI_ESC" ]; then
-            IFS= read -rsn3 -t 1 rest < /dev/tty 2>/dev/null
-            key="$key$rest"
+        stty -icanon -echo -isig min 1 time 0 < /dev/tty 2>/dev/null || true
+    fi
+}
+
+ui_keys_close() {
+    if [ -n "${UI_TTY_STATE:-}" ]; then
+        stty "$UI_TTY_STATE" < /dev/tty 2>/dev/null || true
+    fi
+    UI_TTY_STATE=""
+}
+
+# ui_read_byte -> UI_BYTE, 1 when nothing arrived within the key wait.
+ui_read_byte() {
+    UI_BYTE=""
+    if [ -n "${ZSH_VERSION:-}" ]; then
+        read -s -k 1 -t "$UI_KEY_WAIT" UI_BYTE < /dev/tty 2>/dev/null
+        return
+    fi
+    stty min 0 time "$UI_KEY_WAIT_DS" < /dev/tty 2>/dev/null || true
+    UI_BYTE=$(dd bs=1 count=1 2>/dev/null < /dev/tty)
+    stty min 1 time 0 < /dev/tty 2>/dev/null || true
+    [ -n "$UI_BYTE" ]
+}
+
+# ui_read_key -> UI_KEY, one key from the terminal.
+# An escape sequence is collected byte by byte up to its final letter, so an
+# arrow key is handled at once and a bare escape only waits the key wait.
+ui_read_key() {
+    local key n=0 code more=0
+    UI_KEY=""
+    if [ -n "${ZSH_VERSION:-}" ]; then
+        read -s -k 1 key < /dev/tty 2>/dev/null || return 1
+    else
+        key=$(dd bs=1 count=1 2>/dev/null < /dev/tty) || return 1
+        # A multibyte character arrives one byte at a time; fetch the rest.
+        if [ -n "$key" ]; then
+            code=$(LC_ALL=C printf '%d' "'$key" 2>/dev/null)
+            case "$code" in
+                -*) code=$((code + 256)) ;;
+            esac
+            case "$code" in
+                ''|*[!0-9]*) code=0 ;;
+            esac
+            if [ "$code" -ge 240 ]; then
+                more=3
+            elif [ "$code" -ge 224 ]; then
+                more=2
+            elif [ "$code" -ge 192 ]; then
+                more=1
+            fi
+            if [ "$more" -gt 0 ]; then
+                key="$key$(dd bs=1 count="$more" 2>/dev/null < /dev/tty)"
+            fi
         fi
+    fi
+    if [ "$key" = "$UI_ESC" ]; then
+        while [ "$n" -lt 8 ] && ui_read_byte; do
+            key="$key$UI_BYTE"
+            n=$((n + 1))
+            case "$UI_BYTE" in
+                [A-Za-z~]) break ;;
+            esac
+        done
     fi
     UI_KEY="$key"
 }
 
-# ------------------------------------------------------------------- menu ---
+# -------------------------------------------------------------------- menu ---
+#
+# ui_menu   <title> <subtitle> <name|description>...   pick one entry
+# ui_choose <title> <subtitle> <name|description>...   pick any number
+#
+# Both draw a keyboard driven list: arrows or j/k move, digits jump, / filters
+# by typing, enter confirms, q or escape cancels. ui_choose also toggles the
+# entry under the cursor with space (tab while filtering) and every visible
+# entry with a. Long lists scroll. Without a terminal the entries are numbered
+# and read from a plain prompt instead.
+#
+# ui_menu sets UI_CHOICE to the 1 based index of the entry, 0 when cancelled,
+# and UI_CHOICE_NAME to its name. ui_choose sets UI_PICKS to the chosen indices
+# separated by spaces, UI_PICK_NAMES to their names and UI_PICK_COUNT;
+# ui_picked <index> tells whether one entry was chosen. Both return 1 when
+# cancelled.
+#
+# A cancelled menu erases itself completely. A confirmed one leaves its
+# heading and a summary line behind, UI_MENU_FOOTPRINT lines in total, which
+# ui_menu_erase removes when a caller steps back to an earlier menu.
 
-ui_menu_draw() {
-    local selected=$1 i=1 item name desc
-    shift
-    local count=$#
-
-    # Dynamic column width calculation for perfect alignment
-    local max_w=10
-    for item in "$@"; do
-        name=${item%%|*}
-        if [ "${#name}" -gt "$max_w" ]; then
-            max_w=${#name}
-        fi
-    done
-    if [ "$max_w" -gt 28 ]; then
-        max_w=28
-    fi
-
-    for item in "$@"; do
-        name=${item%%|*}
-        desc=${item#*|}
-        if [ "$i" -eq "$selected" ]; then
-            printf '  %s%s%s %s%2s%s %s%s%s %s%-'${max_w}'s%s  %s%s%s\n' \
-                "$UI_ACCENT" "$UI_G_POINTER" "$UI_RESET" \
-                "$UI_BOLD$UI_ACCENT" "$i" "$UI_RESET" \
-                "$UI_ACCENT" "$UI_G_RADIO_ON" "$UI_RESET" \
-                "$UI_BOLD" "$name" "$UI_RESET" \
-                "$UI_RESET" "$desc" "$UI_RESET"
-        else
-            printf '     %s%2s%s %s%s%s %s%-'${max_w}'s%s  %s%s%s\n' \
-                "$UI_MUTED" "$i" "$UI_RESET" \
-                "$UI_MUTED" "$UI_G_RADIO_OFF" "$UI_RESET" \
-                "$UI_RESET" "$name" "$UI_RESET" \
-                "$UI_MUTED" "$desc" "$UI_RESET"
-        fi
-        i=$((i + 1))
-    done
-
-    local pick_hint="1-${count}"
-    if [ "$count" -gt 9 ]; then
-        pick_hint="1-${count}"
-    fi
-    printf '\n  %s↑/↓ move%s %s·%s %s%s pick%s %s·%s %senter confirm%s %s·%s %sq quit%s\n' \
-        "$UI_MUTED" "$UI_RESET" \
-        "$UI_MUTED" "$UI_RESET" \
-        "$UI_MUTED" "$pick_hint" "$UI_RESET" \
-        "$UI_MUTED" "$UI_RESET" \
-        "$UI_MUTED" "$UI_RESET" \
-        "$UI_MUTED" "$UI_RESET" \
-        "$UI_MUTED" "$UI_RESET"
+ui_menu() {
+    UI_MENU_MODE=single
+    ui_menu_run "$@"
 }
 
-ui_menu_confirm_flash() {
-    local selected=$1 i=1 item name desc
-    shift
-    local max_w=10
-    for item in "$@"; do
-        name=${item%%|*}
-        if [ "${#name}" -gt "$max_w" ]; then max_w=${#name}; fi
-    done
-    if [ "$max_w" -gt 28 ]; then max_w=28; fi
-
-    for item in "$@"; do
-        name=${item%%|*}
-        desc=${item#*|}
-        if [ "$i" -eq "$selected" ]; then
-            printf '  %s%s%s %s%2s%s %s%s%s %s%-'${max_w}'s%s  %s%s%s\n' \
-                "$UI_OK" "$UI_G_POINTER" "$UI_RESET" \
-                "$UI_BOLD$UI_OK" "$i" "$UI_RESET" \
-                "$UI_OK$UI_BOLD" "$UI_G_OK" "$UI_RESET" \
-                "$UI_BOLD$UI_OK" "$name" "$UI_RESET" \
-                "$UI_OK" "$desc" "$UI_RESET"
-        else
-            printf '     %s%2s%s %s%s%s %s%-'${max_w}'s%s  %s%s%s\n' \
-                "$UI_MUTED" "$i" "$UI_RESET" \
-                "$UI_MUTED" "$UI_G_RADIO_OFF" "$UI_RESET" \
-                "$UI_MUTED" "$name" "$UI_RESET" \
-                "$UI_MUTED" "$desc" "$UI_RESET"
-        fi
-        i=$((i + 1))
-    done
-    printf '\n%s\n' "$UI_CLR"
+ui_choose() {
+    UI_MENU_MODE=multi
+    ui_menu_run "$@"
 }
 
-ui_menu_plain() {
-    local i=1 item name desc answer
-    local max_w=10
-    for item in "$@"; do
-        name=${item%%|*}
-        if [ "${#name}" -gt "$max_w" ]; then max_w=${#name}; fi
-    done
-    if [ "$max_w" -gt 28 ]; then max_w=28; fi
+# ui_picked <index>: true when ui_choose picked that entry.
+ui_picked() {
+    case " $UI_PICKS " in
+        *" $1 "*) return 0 ;;
+    esac
+    return 1
+}
 
+# ui_menu_erase <lines>
+ui_menu_erase() {
+    if [ "${1:-0}" -gt 0 ] && ui_interactive; then
+        printf '\r%s' "${UI_ESC}[${1}A${UI_CLR_BELOW}"
+    fi
+}
+
+ui_menu_run() {
+    local title="$1" subtitle="$2" rows key
+    shift 2
+    UI_CHOICE=0
+    UI_CHOICE_NAME=""
+    UI_PICKS=""
+    UI_PICK_NAMES=""
+    UI_PICK_COUNT=0
+    UI_MENU_FOOTPRINT=0
+
+    ui_heading "$title" "$subtitle"
+    if [ "$#" -eq 0 ]; then
+        ui_note "nothing to choose from"
+        ui_gap
+        return 1
+    fi
+
+    if ! ui_interactive; then
+        if [ "$UI_MENU_MODE" = multi ]; then
+            ui_choose_plain "$@"
+        else
+            ui_menu_plain "$@"
+        fi
+        ui_menu_summary "$@"
+        [ "$UI_CHOICE" -gt 0 ]
+        return
+    fi
+
+    if [ -n "${ZSH_VERSION:-}" ]; then
+        setopt localoptions shwordsplit
+    fi
+
+    ui_menu_measure "$@"
+    UI_COLS=$(ui_cols)
+    rows=$(ui_rows)
+    UI_MENU_HEIGHT=$((rows - 9))
+    if [ "$UI_MENU_HEIGHT" -lt 3 ]; then
+        UI_MENU_HEIGHT=3
+    fi
+    if [ "$UI_MENU_HEIGHT" -gt "$UI_MENU_COUNT" ]; then
+        UI_MENU_HEIGHT=$UI_MENU_COUNT
+    fi
+    UI_MENU_QUERY=""
+    UI_MENU_QUERY_LC=""
+    UI_MENU_FILTERING=0
+    UI_MENU_PICKED=" "
+    UI_MENU_POS=1
+    UI_MENU_TOP=1
+    UI_MENU_FLASH=0
+    UI_MENU_LINES=0
+    UI_MENU_DONE=0
+    ui_menu_filter
+
+    ui_keys_open
+    printf '%s' "$UI_HIDE"
+    ui_menu_frame "$@"
+
+    while [ "$UI_MENU_DONE" = 0 ]; do
+        if ! ui_read_key || [ "$UI_KEY" = "$UI_INT" ]; then
+            UI_MENU_DONE=2
+            break
+        fi
+        key=$UI_KEY
+        if [ "$UI_MENU_FILTERING" = 1 ]; then
+            case "$key" in
+                "$UI_ESC")
+                    UI_MENU_QUERY=""
+                    UI_MENU_QUERY_LC=""
+                    UI_MENU_FILTERING=0
+                    ui_menu_filter
+                    UI_MENU_POS=1
+                    ;;
+                "$UI_DEL"|"$UI_BS")
+                    if [ -z "$UI_MENU_QUERY" ]; then
+                        UI_MENU_FILTERING=0
+                    else
+                        UI_MENU_QUERY=${UI_MENU_QUERY%?}
+                        ui_menu_query_lc
+                        ui_menu_filter
+                        UI_MENU_POS=1
+                    fi
+                    ;;
+                ""|"$UI_CR"|"$UI_LF") UI_MENU_DONE=1 ;;
+                "$UI_TAB") ui_menu_toggle ;;
+                "${UI_ESC}[A"|"${UI_ESC}OA") UI_MENU_POS=$((UI_MENU_POS - 1)) ;;
+                "${UI_ESC}[B"|"${UI_ESC}OB") UI_MENU_POS=$((UI_MENU_POS + 1)) ;;
+                "${UI_ESC}[H"|"${UI_ESC}[1~") UI_MENU_POS=1 ;;
+                "${UI_ESC}[F"|"${UI_ESC}[4~") UI_MENU_POS=$UI_MENU_VCOUNT ;;
+                "$UI_ESC"*|[[:cntrl:]]) ;;
+                *)
+                    UI_MENU_QUERY="${UI_MENU_QUERY}${key}"
+                    ui_menu_query_lc
+                    ui_menu_filter
+                    UI_MENU_POS=1
+                    ;;
+            esac
+        else
+            case "$key" in
+                "${UI_ESC}[A"|"${UI_ESC}OA"|k) UI_MENU_POS=$((UI_MENU_POS - 1)) ;;
+                "${UI_ESC}[B"|"${UI_ESC}OB"|j) UI_MENU_POS=$((UI_MENU_POS + 1)) ;;
+                "${UI_ESC}[H"|"${UI_ESC}[1~"|g) UI_MENU_POS=1 ;;
+                "${UI_ESC}[F"|"${UI_ESC}[4~"|G) UI_MENU_POS=$UI_MENU_VCOUNT ;;
+                /) UI_MENU_FILTERING=1 ;;
+                " "|"$UI_TAB")
+                    if [ "$UI_MENU_MODE" = multi ]; then
+                        ui_menu_toggle
+                    else
+                        UI_MENU_DONE=1
+                    fi
+                    ;;
+                a|A)
+                    if [ "$UI_MENU_MODE" = multi ]; then
+                        ui_menu_toggle_all
+                    fi
+                    ;;
+                [1-9]) ui_menu_digit "$key" "$@" ;;
+                ""|"$UI_CR"|"$UI_LF") UI_MENU_DONE=1 ;;
+                q|Q|"$UI_ESC")
+                    UI_MENU_DONE=2
+                    break
+                    ;;
+            esac
+        fi
+        if [ "$UI_MENU_DONE" = 1 ] && [ "$UI_MENU_MODE" = single ] && [ "$UI_MENU_VCOUNT" -eq 0 ]; then
+            UI_MENU_DONE=0
+        fi
+        ui_menu_clamp
+        if [ "$UI_MENU_DONE" = 0 ]; then
+            ui_menu_redraw "$@"
+        fi
+    done
+
+    if [ "$UI_MENU_DONE" = 2 ]; then
+        ui_menu_abort
+        ui_keys_close
+        return 1
+    fi
+
+    if [ "$UI_MENU_MODE" = multi ]; then
+        ui_menu_collect
+    else
+        ui_menu_at "$UI_MENU_POS"
+        UI_CHOICE=$UI_MENU_IDX
+    fi
+    if [ "${GCR_ANIM:-0}" = 1 ]; then
+        UI_MENU_FLASH=1
+        ui_menu_redraw "$@"
+        sleep 0.08 2>/dev/null || true
+    fi
+    printf '\r%s' "${UI_ESC}[${UI_MENU_LINES}A${UI_CLR_BELOW}${UI_SHOW}"
+    ui_keys_close
+    ui_menu_summary "$@"
+    UI_MENU_FOOTPRINT=5
+    return 0
+}
+
+# Erase the frame and the heading, leaving the screen as it was before the menu.
+ui_menu_abort() {
+    printf '\r%s' "${UI_ESC}[${UI_MENU_LINES}A${UI_CLR_BELOW}${UI_ESC}[3A${UI_CLR_BELOW}${UI_SHOW}"
+}
+
+# Column width of the names and the lowercase haystack used by the filter.
+ui_menu_measure() {
+    local item name hay=""
+    UI_MENU_COUNT=$#
+    UI_MENU_NAMEW=10
     for item in "$@"; do
         name=${item%%|*}
-        desc=${item#*|}
-        printf '  %s[%2s]%s %s%-'${max_w}'s%s  %s%s%s\n' \
+        if [ "${#name}" -gt "$UI_MENU_NAMEW" ]; then
+            UI_MENU_NAMEW=${#name}
+        fi
+        hay="${hay}${item}${UI_LF}"
+    done
+    if [ "$UI_MENU_NAMEW" -gt 28 ]; then
+        UI_MENU_NAMEW=28
+    fi
+    UI_MENU_HAY=$(printf '%s' "$hay" | tr '[:upper:]|' '[:lower:] ')
+}
+
+ui_menu_query_lc() {
+    UI_MENU_QUERY_LC=$(printf '%s' "$UI_MENU_QUERY" | tr '[:upper:]' '[:lower:]')
+}
+
+# Recompute the visible entries: every word of the query must appear in the
+# entry, case insensitively.
+ui_menu_filter() {
+    local i=0 hay word ok globbing=1
+    UI_MENU_VISIBLE=" "
+    UI_MENU_VCOUNT=0
+    if [ -z "$UI_MENU_QUERY_LC" ]; then
+        while [ "$i" -lt "$UI_MENU_COUNT" ]; do
+            i=$((i + 1))
+            UI_MENU_VISIBLE="${UI_MENU_VISIBLE}${i} "
+        done
+        UI_MENU_VCOUNT=$UI_MENU_COUNT
+        return 0
+    fi
+    case "$-" in
+        *f*) globbing=0 ;;
+    esac
+    set -f
+    while IFS= read -r hay; do
+        i=$((i + 1))
+        ok=1
+        for word in $UI_MENU_QUERY_LC; do
+            case "$hay" in
+                *"$word"*) ;;
+                *) ok=0; break ;;
+            esac
+        done
+        if [ "$ok" = 1 ]; then
+            UI_MENU_VISIBLE="${UI_MENU_VISIBLE}${i} "
+            UI_MENU_VCOUNT=$((UI_MENU_VCOUNT + 1))
+        fi
+    done <<EOF
+$UI_MENU_HAY
+EOF
+    if [ "$globbing" = 1 ]; then
+        set +f
+    fi
+}
+
+# ui_menu_at <position> -> UI_MENU_IDX, the entry index at a visible position.
+ui_menu_at() {
+    local pos=0 idx
+    UI_MENU_IDX=0
+    for idx in $UI_MENU_VISIBLE; do
+        pos=$((pos + 1))
+        if [ "$pos" -eq "$1" ]; then
+            UI_MENU_IDX=$idx
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Keep the cursor inside the list, wrapping at both ends, and scroll the
+# window so the cursor stays in view.
+ui_menu_clamp() {
+    if [ "$UI_MENU_VCOUNT" -eq 0 ]; then
+        UI_MENU_POS=1
+        UI_MENU_TOP=1
+        return 0
+    fi
+    if [ "$UI_MENU_POS" -lt 1 ]; then
+        UI_MENU_POS=$UI_MENU_VCOUNT
+    fi
+    if [ "$UI_MENU_POS" -gt "$UI_MENU_VCOUNT" ]; then
+        UI_MENU_POS=1
+    fi
+    if [ "$UI_MENU_POS" -lt "$UI_MENU_TOP" ]; then
+        UI_MENU_TOP=$UI_MENU_POS
+    fi
+    if [ "$UI_MENU_POS" -gt $((UI_MENU_TOP + UI_MENU_HEIGHT - 1)) ]; then
+        UI_MENU_TOP=$((UI_MENU_POS - UI_MENU_HEIGHT + 1))
+    fi
+    if [ "$UI_MENU_TOP" -gt $((UI_MENU_VCOUNT - UI_MENU_HEIGHT + 1)) ]; then
+        UI_MENU_TOP=$((UI_MENU_VCOUNT - UI_MENU_HEIGHT + 1))
+    fi
+    if [ "$UI_MENU_TOP" -lt 1 ]; then
+        UI_MENU_TOP=1
+    fi
+}
+
+ui_menu_toggle() {
+    ui_menu_at "$UI_MENU_POS" || return 0
+    case "$UI_MENU_PICKED" in
+        *" $UI_MENU_IDX "*) UI_MENU_PICKED=${UI_MENU_PICKED/ $UI_MENU_IDX / } ;;
+        *) UI_MENU_PICKED="${UI_MENU_PICKED}${UI_MENU_IDX} " ;;
+    esac
+}
+
+# Pick every visible entry, or clear them all when they are already picked.
+ui_menu_toggle_all() {
+    local idx all=1
+    for idx in $UI_MENU_VISIBLE; do
+        case "$UI_MENU_PICKED" in
+            *" $idx "*) ;;
+            *) all=0; break ;;
+        esac
+    done
+    for idx in $UI_MENU_VISIBLE; do
+        case "$UI_MENU_PICKED" in
+            *" $idx "*)
+                if [ "$all" = 1 ]; then
+                    UI_MENU_PICKED=${UI_MENU_PICKED/ $idx / }
+                fi
+                ;;
+            *)
+                if [ "$all" = 0 ]; then
+                    UI_MENU_PICKED="${UI_MENU_PICKED}${idx} "
+                fi
+                ;;
+        esac
+    done
+}
+
+# UI_PICKS in list order from the picked set. UI_CHOICE marks the confirmation.
+ui_menu_collect() {
+    local i=0
+    UI_PICKS=""
+    UI_PICK_COUNT=0
+    UI_CHOICE=1
+    while [ "$i" -lt "$UI_MENU_COUNT" ]; do
+        i=$((i + 1))
+        case "$UI_MENU_PICKED" in
+            *" $i "*)
+                UI_PICKS="${UI_PICKS:+$UI_PICKS }$i"
+                UI_PICK_COUNT=$((UI_PICK_COUNT + 1))
+                ;;
+        esac
+    done
+}
+
+# ui_menu_digit <digit> <items...>
+# A digit jumps to that entry. With more than nine entries the first digit
+# may be followed by a second one, or by enter to take it as it is. ui_menu
+# confirms the entry, ui_choose only moves the cursor to it.
+ui_menu_digit() {
+    local key=$1 target=0
+    shift
+    if [ "$UI_MENU_COUNT" -le 9 ] || [ "$key" -gt $((UI_MENU_COUNT / 10)) ]; then
+        target=$key
+    else
+        UI_MENU_POS=$key
+        ui_menu_clamp
+        ui_menu_redraw "$@"
+        ui_read_key || return 0
+        case "$UI_KEY" in
+            "$UI_INT")
+                UI_MENU_DONE=2
+                return 0
+                ;;
+            [0-9])
+                if [ "${key}${UI_KEY}" -le "$UI_MENU_COUNT" ]; then
+                    target="${key}${UI_KEY}"
+                else
+                    return 0
+                fi
+                ;;
+            ""|" "|"$UI_CR"|"$UI_LF") target=$key ;;
+            *) return 0 ;;
+        esac
+    fi
+    if [ "$target" -lt 1 ] || [ "$target" -gt "$UI_MENU_COUNT" ]; then
+        return 0
+    fi
+    UI_MENU_POS=$target
+    if [ "$UI_MENU_MODE" = single ]; then
+        UI_MENU_DONE=1
+    fi
+}
+
+# ui_hint <key|action>... -> UI_HINT, one muted line of key bindings.
+ui_hint() {
+    local pair sep=""
+    UI_HINT="  "
+    for pair in "$@"; do
+        UI_HINT="${UI_HINT}${sep}${UI_MUTED}${UI_BOLD}${pair%%|*}${UI_RESET} ${UI_MUTED}${pair#*|}${UI_RESET}"
+        sep=" ${UI_MUTED}${UI_G_DOT}${UI_RESET} "
+    done
+}
+
+ui_menu_hint() {
+    local move="${UI_G_UP}/${UI_G_DOWN}|move"
+    if [ "$UI_MENU_FILTERING" = 1 ]; then
+        if [ "$UI_MENU_MODE" = multi ]; then
+            ui_hint "type|to filter" "$move" "tab|toggle" "enter|confirm" "esc|clear"
+        else
+            ui_hint "type|to filter" "$move" "enter|confirm" "esc|clear"
+        fi
+    elif [ "$UI_MENU_MODE" = multi ]; then
+        ui_hint "$move" "space|toggle" "a|all" "/|filter" "enter|confirm" "q|quit"
+    else
+        ui_hint "$move" "1-${UI_MENU_COUNT}|pick" "/|filter" "enter|confirm" "q|quit"
+    fi
+}
+
+# ui_menu_row <index> <position> <name> <description> -> UI_ROW
+ui_menu_row() {
+    local idx=$1 pos=$2 name=$3 desc=$4
+    local pointer="  " on=0 cur=0 mark
+    local c_pointer="" c_num="$UI_MUTED" c_mark="$UI_MUTED" c_name="" c_desc="$UI_MUTED"
+
+    if [ "$pos" -eq "$UI_MENU_POS" ]; then
+        cur=1
+    fi
+    if [ "$UI_MENU_MODE" = multi ]; then
+        case "$UI_MENU_PICKED" in
+            *" $idx "*) on=1 ;;
+        esac
+        if [ "$on" = 1 ]; then
+            mark=$UI_G_CHECK_ON
+        else
+            mark=$UI_G_CHECK_OFF
+        fi
+    else
+        on=$cur
+        if [ "$on" = 1 ]; then
+            mark=$UI_G_RADIO_ON
+        else
+            mark=$UI_G_RADIO_OFF
+        fi
+    fi
+
+    if [ "$cur" = 1 ] && [ "$UI_MENU_FLASH" = 1 ]; then
+        pointer="$UI_OK$UI_G_POINTER "
+        c_num="$UI_BOLD$UI_OK"
+        c_mark="$UI_BOLD$UI_OK"
+        c_name="$UI_BOLD$UI_OK"
+        c_desc="$UI_OK"
+        mark=$UI_G_OK
+    elif [ "$cur" = 1 ]; then
+        pointer="$UI_ACCENT$UI_G_POINTER "
+        c_num="$UI_BOLD$UI_ACCENT"
+        c_mark="$UI_ACCENT"
+        c_name="$UI_BOLD"
+        c_desc=""
+    elif [ "$on" = 1 ]; then
+        c_mark="$UI_ACCENT"
+    fi
+
+    printf -v UI_ROW "  %s%s %s%2s%s %s%s%s %s%-${UI_MENU_NAMEW}s%s  %s%s%s" \
+        "$pointer" "$UI_RESET" \
+        "$c_num" "$idx" "$UI_RESET" \
+        "$c_mark" "$mark" "$UI_RESET" \
+        "$c_name" "$name" "$UI_RESET" \
+        "$c_desc" "$desc" "$UI_RESET"
+}
+
+# ui_menu_frame <items...>: build the whole frame and write it in one go.
+ui_menu_frame() {
+    local buf="" lines=0 i=0 pos=0 last item name desc descw
+
+    if [ "$UI_MENU_FILTERING" = 1 ]; then
+        buf="${buf}  ${UI_ACCENT}/${UI_RESET} ${UI_BOLD}${UI_MENU_QUERY}${UI_RESET}${UI_REVERSE} ${UI_RESET}${UI_CLR}${UI_LF}"
+        lines=$((lines + 1))
+    fi
+    if [ "$UI_MENU_TOP" -gt 1 ]; then
+        buf="${buf}     ${UI_MUTED}${UI_G_UP} $((UI_MENU_TOP - 1)) more${UI_RESET}${UI_CLR}${UI_LF}"
+        lines=$((lines + 1))
+    fi
+
+    last=$((UI_MENU_TOP + UI_MENU_HEIGHT - 1))
+    descw=$((UI_COLS - UI_MENU_NAMEW - 13))
+    for item in "$@"; do
+        i=$((i + 1))
+        case "$UI_MENU_VISIBLE" in
+            *" $i "*) ;;
+            *) continue ;;
+        esac
+        pos=$((pos + 1))
+        if [ "$pos" -lt "$UI_MENU_TOP" ] || [ "$pos" -gt "$last" ]; then
+            continue
+        fi
+        name=${item%%|*}
+        desc=""
+        case "$item" in
+            *"|"*) desc=${item#*|} ;;
+        esac
+        ui_fit "$desc" "$descw"
+        ui_menu_row "$i" "$pos" "$name" "$UI_FIT"
+        buf="${buf}${UI_ROW}${UI_CLR}${UI_LF}"
+        lines=$((lines + 1))
+    done
+
+    if [ "$UI_MENU_VCOUNT" -eq 0 ]; then
+        buf="${buf}     ${UI_MUTED}no match${UI_RESET}${UI_CLR}${UI_LF}"
+        lines=$((lines + 1))
+    elif [ "$last" -lt "$UI_MENU_VCOUNT" ]; then
+        buf="${buf}     ${UI_MUTED}${UI_G_DOWN} $((UI_MENU_VCOUNT - last)) more${UI_RESET}${UI_CLR}${UI_LF}"
+        lines=$((lines + 1))
+    fi
+
+    ui_menu_hint
+    buf="${buf}${UI_CLR}${UI_LF}${UI_HINT}${UI_CLR}${UI_LF}"
+    lines=$((lines + 2))
+
+    printf '%s%s' "$buf" "$UI_CLR_BELOW"
+    UI_MENU_LINES=$lines
+}
+
+ui_menu_redraw() {
+    printf '\r%s' "${UI_ESC}[${UI_MENU_LINES}A"
+    ui_menu_frame "$@"
+}
+
+# The line a confirmed menu leaves behind.
+ui_menu_summary() {
+    local i=0 item names="" sep=""
+    if [ "$UI_MENU_MODE" = multi ]; then
+        if [ "$UI_CHOICE" -lt 1 ]; then
+            ui_note "cancelled"
+            ui_gap
+            return 0
+        fi
+        UI_PICK_NAMES=""
+        for item in "$@"; do
+            i=$((i + 1))
+            case " $UI_PICKS " in
+                *" $i "*)
+                    names="${names}${sep}${item%%|*}"
+                    sep=", "
+                    UI_PICK_NAMES="${UI_PICK_NAMES:+$UI_PICK_NAMES }${item%%|*}"
+                    ;;
+            esac
+        done
+        if [ "$UI_PICK_COUNT" -eq 0 ]; then
+            printf '  %s%s%s %snothing selected%s\n\n' "$UI_MUTED" "$UI_G_DOT" "$UI_RESET" "$UI_MUTED" "$UI_RESET"
+        else
+            printf '  %s%s%s %s%s%s  %s%s selected%s\n\n' \
+                "$UI_OK" "$UI_G_OK" "$UI_RESET" \
+                "$UI_BOLD" "$names" "$UI_RESET" \
+                "$UI_MUTED" "$UI_PICK_COUNT" "$UI_RESET"
+        fi
+        return 0
+    fi
+
+    if [ "$UI_CHOICE" -lt 1 ]; then
+        ui_note "cancelled"
+        ui_gap
+        return 0
+    fi
+    for item in "$@"; do
+        i=$((i + 1))
+        if [ "$i" -eq "$UI_CHOICE" ]; then
+            UI_CHOICE_NAME=${item%%|*}
+            printf '  %s%s%s %s%s%s  %s%s%s %s%s%s\n\n' \
+                "$UI_OK" "$UI_G_OK" "$UI_RESET" \
+                "$UI_BOLD" "$UI_CHOICE_NAME" "$UI_RESET" \
+                "$UI_MUTED" "$UI_G_ARROW" "$UI_RESET" \
+                "$UI_MUTED" "${item#*|}" "$UI_RESET"
+            return 0
+        fi
+    done
+}
+
+# Plain numbered fallbacks for shells without a terminal.
+ui_menu_plain_list() {
+    local i=0 item name desc
+    ui_menu_measure "$@"
+    for item in "$@"; do
+        i=$((i + 1))
+        name=${item%%|*}
+        desc=""
+        case "$item" in
+            *"|"*) desc=${item#*|} ;;
+        esac
+        printf "  %s[%2s]%s %s%-${UI_MENU_NAMEW}s%s  %s%s%s\n" \
             "$UI_ACCENT" "$i" "$UI_RESET" \
             "$UI_BOLD" "$name" "$UI_RESET" \
             "$UI_MUTED" "$desc" "$UI_RESET"
-        i=$((i + 1))
     done
     printf '\n'
+}
+
+ui_menu_plain() {
+    local answer
+    ui_menu_plain_list "$@"
     printf '  %s%s%s Your choice (1-%s): ' "$UI_ACCENT" "$UI_G_POINTER" "$UI_RESET" "$#"
     IFS= read -r answer
     case "$answer" in
@@ -748,133 +1440,46 @@ ui_menu_plain() {
     fi
 }
 
-# ui_menu <title> <subtitle> <name|description> ...
-# Sets UI_CHOICE to the 1 based index, or 0 when the menu was cancelled.
-ui_menu() {
-    local title="$1" subtitle="$2" selected=1 count lines
-    shift 2
-    count=$#
+ui_choose_plain() {
+    local answer word i
+    if [ -n "${ZSH_VERSION:-}" ]; then
+        setopt localoptions shwordsplit
+    fi
+    ui_menu_plain_list "$@"
+    printf '  %s%s%s Your choice (numbers separated by spaces, a for all, empty to cancel): ' "$UI_ACCENT" "$UI_G_POINTER" "$UI_RESET"
+    IFS= read -r answer
+    UI_PICKS=""
+    UI_PICK_COUNT=0
     UI_CHOICE=0
-    UI_CHOICE_NAME=""
-
-    ui_heading "$title" "$subtitle"
-
-    if ! ui_interactive; then
-        ui_menu_plain "$@"
-        ui_menu_resolve "$@"
+    if [ -z "$answer" ]; then
         return 0
     fi
-
-    lines=$((count + 2))
-    ui_menu_draw "$selected" "$@"
-    printf '%s' "$UI_HIDE"
-
-    while :; do
-        if ! ui_read_key; then
-            UI_CHOICE=0
-            break
-        fi
-        case "$UI_KEY" in
-            "${UI_ESC}[A"|"${UI_ESC}OA"|k)
-                selected=$((selected - 1))
-                ;;
-            "${UI_ESC}[B"|"${UI_ESC}OB"|j)
-                selected=$((selected + 1))
-                ;;
-            "${UI_ESC}[H"|"${UI_ESC}[1~"|g)
-                selected=1
-                ;;
-            "${UI_ESC}[F"|"${UI_ESC}[4~"|G)
-                selected="$count"
-                ;;
-            [1-9])
-                if [ "$count" -le 9 ]; then
-                    if [ "$UI_KEY" -le "$count" ]; then
-                        selected="$UI_KEY"
-                        UI_CHOICE="$selected"
-                        break
-                    fi
-                else
-                    local max_tens=$((count / 10))
-                    if [ "$UI_KEY" -le "$max_tens" ]; then
-                        selected="$UI_KEY"
-                        printf '%s' "${UI_ESC}[${lines}A"
-                        ui_menu_draw "$selected" "$@"
-                        if ui_read_key && [ -n "$UI_KEY" ]; then
-                            case "$UI_KEY" in
-                                [0-9])
-                                    local combined="${selected}${UI_KEY}"
-                                    if [ "$combined" -ge 1 ] && [ "$combined" -le "$count" ]; then
-                                        selected="$combined"
-                                        UI_CHOICE="$selected"
-                                        break
-                                    fi
-                                    ;;
-                                ""|" "|"$UI_CR"|"$UI_LF")
-                                    UI_CHOICE="$selected"
-                                    break
-                                    ;;
-                                *)
-                                    continue
-                                    ;;
-                            esac
-                        fi
-                    elif [ "$UI_KEY" -le "$count" ]; then
-                        selected="$UI_KEY"
-                        UI_CHOICE="$selected"
-                        break
-                    fi
+    UI_CHOICE=1
+    case "$answer" in
+        a|A|all)
+            i=0
+            while [ "$i" -lt "$#" ]; do
+                i=$((i + 1))
+                UI_PICKS="${UI_PICKS:+$UI_PICKS }$i"
+            done
+            ;;
+        *)
+            for word in $(printf '%s' "$answer" | tr ',;' '  '); do
+                case "$word" in
+                    ''|*[!0-9]*) continue ;;
+                esac
+                if [ "$word" -ge 1 ] && [ "$word" -le "$#" ]; then
+                    case " $UI_PICKS " in
+                        *" $word "*) ;;
+                        *) UI_PICKS="${UI_PICKS:+$UI_PICKS }$word" ;;
+                    esac
                 fi
-                ;;
-            ""|" "|"$UI_CR"|"$UI_LF")
-                UI_CHOICE="$selected"
-                break
-                ;;
-            q|Q|"$UI_ESC")
-                UI_CHOICE=0
-                break
-                ;;
-        esac
-
-        if [ "$selected" -lt 1 ]; then
-            selected="$count"
-        fi
-        if [ "$selected" -gt "$count" ]; then
-            selected=1
-        fi
-        printf '%s' "${UI_ESC}[${lines}A"
-        ui_menu_draw "$selected" "$@"
-    done
-
-    if [ "${GCR_ANIM:-0}" = 1 ] && [ "$UI_CHOICE" -gt 0 ]; then
-        printf '%s' "${UI_ESC}[${lines}A"
-        ui_menu_confirm_flash "$UI_CHOICE" "$@"
-        sleep 0.08 2>/dev/null || true
+            done
+            ;;
+    esac
+    if [ -n "$UI_PICKS" ]; then
+        UI_PICK_COUNT=$(printf '%s\n' "$UI_PICKS" | wc -w | tr -d ' ')
     fi
-
-    printf '%s%s%s' "${UI_ESC}[${lines}A" "$UI_CLR_BELOW" "$UI_SHOW"
-    ui_menu_resolve "$@"
-}
-
-ui_menu_resolve() {
-    local i=1 item
-    if [ "$UI_CHOICE" -lt 1 ]; then
-        ui_note "cancelled"
-        ui_gap
-        return 0
-    fi
-    for item in "$@"; do
-        if [ "$i" -eq "$UI_CHOICE" ]; then
-            UI_CHOICE_NAME=${item%%|*}
-            printf '  %s%s%s %s%s%s  %s%s%s %s%s%s\n\n' \
-                "$UI_OK" "$UI_G_OK" "$UI_RESET" \
-                "$UI_BOLD" "$UI_CHOICE_NAME" "$UI_RESET" \
-                "$UI_MUTED" "$UI_G_ARROW" "$UI_RESET" \
-                "$UI_MUTED" "${item#*|}" "$UI_RESET"
-            return 0
-        fi
-        i=$((i + 1))
-    done
 }
 
 # ----------------------------------------------------- legacy print helpers ---

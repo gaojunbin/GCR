@@ -158,91 +158,11 @@ if [[ "$SHELL" == *"zsh" ]];then
     )
 fi
 
-_ohmytool_category() {
-    local cat="$1" item name desc
-    shift
-    printf '  %s%s%s\n' "$UI_BOLD$UI_ACCENT" "$cat" "$UI_RESET"
-    for item in "$@"; do
-        name=${item%%|*}
-        desc=${item#*|}
-        ui_item "$name" "$desc" 28
-    done
-    ui_gap
-}
-
-_ohmytool_list(){
-    ui_heading "ohmytool" "server management & toolkits catalog"
-
-    ui_note "One-click installation and environment setup. Run any command directly or run ohmytool for the interactive menu."
-    ui_gap
-
-    _ohmytool_category "AI Coding Agents" \
-        "install_aicoding|Install or update Claude Code, Codex, Cursor CLI, Grok Build, Antigravity"
-
-    _ohmytool_category "Basic Tools & Setup" \
-        "new_vps_help|Quick start guide & recommended sequence for new servers" \
-        "install_base|Essential command-line tools (autojump, fzf, trzsz)"
-
-    _ohmytool_category "Development Tools" \
-        "install_spacevim|Enhanced Vim editor" \
-        "install_discard_vim|Remote editing with VS Code / Sublime" \
-        "install_autojump|Smart directory navigation" \
-        "install_fzf|Command-line fuzzy finder" \
-        "install_htop_wo_sudo|Process monitor without sudo" \
-        "install_joshuto|Modern terminal file browser"
-
-    _ohmytool_category "Infrastructure" \
-        "install_docker|Docker & docker-compose (Ubuntu)" \
-        "install_nginxproxy|Nginx Proxy Manager web interface" \
-        "install_frp|Intranet penetration tool"
-
-    _ohmytool_category "Network & Proxy" \
-        "install_vpn|Clash VPN (Linux only)" \
-        "install_buildvpn|VPN for overseas servers" \
-        "install_xui|X-UI VPN panel" \
-        "install_xrayr|XrayR VPN solution"
-
-    _ohmytool_category "File Management" \
-        "install_trzsz|Simple file transfer (trz / tsz)" \
-        "install_tssh|SSH client with trzsz support" \
-        "install_safe_rm|Safe deletion with trash bin"
-
-    _ohmytool_category "Web Applications" \
-        "install_homeweb|Personal homepage" \
-        "install_newtab|Browser new tab page" \
-        "install_deepl|DeepL translation service" \
-        "install_chatgpt|ChatGPT web interface"
-
-    _ohmytool_category "Storage & Media" \
-        "install_cloudreve|Private cloud storage" \
-        "install_qbittorrent|BitTorrent client" \
-        "install_jellyfin|Media streaming server" \
-        "install_image|Lsky-pro image hosting"
-
-    _ohmytool_category "Productivity & Monitoring" \
-        "install_overleaf|LaTeX collaboration platform" \
-        "install_copypaste|Text sharing service" \
-        "install_webmonitor|Website monitoring" \
-        "install_serverstatus|Server status monitoring" \
-        "install_vncdocker|VNC remote desktop"
-
-    _ohmytool_category "Research & Admin" \
-        "install_PBShelper|PBS job management helper" \
-        "install_server-administration|Server administration toolkit" \
-        "install_colorls|Colorful ls (requires Ruby)"
-
-    ui_gap
-    ui_note "Tip: Run 'ohmytool' for interactive menu, or type any function name above directly."
-    ui_gap
-}
-
-ohmytool(){
-    if [ "${1:-}" = "-l" ] || [ "${1:-}" = "--list" ] || ! ui_interactive; then
-        _ohmytool_list
-        return 0
-    fi
-
-    ui_menu "ohmytool" "server management & tools catalog" \
+# The tool catalog. Every entry is name|description and the name is the
+# function to run, so the same lists feed the printed catalog, the category
+# menus and the searchable list of everything.
+_ohmytool_categories() {
+    printf '%s\n' \
         "aicoding|AI Coding Agents (Claude, Codex, Cursor, Grok, Antigravity)" \
         "base|Essential Tools (base tools, new server guide)" \
         "dev|Development Tools (SpaceVim, discard-vim, fzf, autojump, joshuto)" \
@@ -252,131 +172,171 @@ ohmytool(){
         "web|Web Applications (HomeWeb, NewTab, DeepL, ChatGPT)" \
         "media|Storage & Media (Cloudreve, qBittorrent, Jellyfin, Image)" \
         "productivity|Productivity (Overleaf, CopyPaste, ServerStatus)" \
-        "system|System Admin (htop, PBShelper, server-administration)" \
-        "all|View full catalog (all tools)"
-    case "$UI_CHOICE" in
-        1) install_aicoding ;;
-        2)
-            ui_menu "Essential Tools" "base setup" \
-                "install_base|Essential command-line tools (autojump, fzf, trzsz)" \
-                "new_vps_help|Recommended sequence for new servers"
-            case "$UI_CHOICE" in
-                1) install_base ;;
-                2) new_vps_help ;;
-            esac
-            ;;
-        3)
-            ui_menu "Development Tools" "editors & navigation" \
-                "install_spacevim|Enhanced Vim editor" \
-                "install_discard_vim|Remote editing with VS Code/Sublime" \
-                "install_autojump|Smart directory navigation" \
-                "install_fzf|Command-line fuzzy finder" \
-                "install_htop_wo_sudo|Process monitor without sudo" \
-                "install_joshuto|Modern terminal file browser"
-            case "$UI_CHOICE" in
-                1) install_spacevim ;;
-                2) install_discard_vim ;;
-                3) install_autojump ;;
-                4) install_fzf ;;
-                5) install_htop_wo_sudo ;;
-                6) install_joshuto ;;
-            esac
-            ;;
-        4)
-            ui_menu "Infrastructure" "container & network" \
-                "install_docker|Docker & docker-compose (Ubuntu)" \
-                "install_nginxproxy|Nginx Proxy Manager web UI" \
-                "install_frp|Fast reverse proxy / intranet penetration"
-            case "$UI_CHOICE" in
-                1) install_docker ;;
-                2) install_nginxproxy ;;
-                3) install_frp ;;
-            esac
-            ;;
-        5)
-            ui_menu "Network & Proxy" "vpn & proxy tools" \
-                "install_vpn|Clash VPN (Linux only)" \
-                "install_buildvpn|VPN for overseas servers" \
-                "install_xui|X-UI VPN panel" \
-                "install_xrayr|XrayR VPN solution"
-            case "$UI_CHOICE" in
-                1) install_vpn ;;
-                2) install_buildvpn ;;
-                3) install_xui ;;
-                4) install_xrayr ;;
-            esac
-            ;;
-        6)
-            ui_menu "File Management" "transfer & utilities" \
-                "install_trzsz|Simple file transfer (trz / tsz)" \
-                "install_tssh|SSH client with trzsz support" \
-                "install_joshuto|Modern terminal file browser" \
-                "install_safe_rm|Safe file deletion with trash bin"
-            case "$UI_CHOICE" in
-                1) install_trzsz ;;
-                2) install_tssh ;;
-                3) install_joshuto ;;
-                4) install_safe_rm ;;
-            esac
-            ;;
-        7)
-            ui_menu "Web Applications" "self-hosted web apps" \
-                "install_homeweb|Personal homepage" \
-                "install_newtab|Browser new tab page" \
-                "install_deepl|DeepL translation web service" \
-                "install_chatgpt|ChatGPT web interface"
-            case "$UI_CHOICE" in
-                1) install_homeweb ;;
-                2) install_newtab ;;
-                3) install_deepl ;;
-                4) install_chatgpt ;;
-            esac
-            ;;
-        8)
-            ui_menu "Storage & Media" "storage & streaming" \
-                "install_cloudreve|Private cloud drive" \
-                "install_qbittorrent|BitTorrent download client" \
-                "install_jellyfin|Media streaming server" \
-                "install_image|Lsky-pro image hosting"
-            case "$UI_CHOICE" in
-                1) install_cloudreve ;;
-                2) install_qbittorrent ;;
-                3) install_jellyfin ;;
-                4) install_image ;;
-            esac
-            ;;
-        9)
-            ui_menu "Productivity & Monitoring" "tools & status" \
-                "install_overleaf|LaTeX collaboration platform" \
-                "install_copypaste|Text sharing service" \
-                "install_webmonitor|Website uptime monitoring" \
-                "install_serverstatus|Server status monitoring" \
-                "install_vncdocker|VNC remote desktop"
-            case "$UI_CHOICE" in
-                1) install_overleaf ;;
-                2) install_copypaste ;;
-                3) install_webmonitor ;;
-                4) install_serverstatus ;;
-                5) install_vncdocker ;;
-            esac
-            ;;
-        10)
-            ui_menu "System & Research" "admin tools" \
-                "install_htop_wo_sudo|htop monitor without sudo" \
-                "install_PBShelper|PBS cluster job management helper" \
-                "install_server-administration|Server admin toolkit" \
-                "install_colorls|Colorls with Ruby"
-            case "$UI_CHOICE" in
-                1) install_htop_wo_sudo ;;
-                2) install_PBShelper ;;
-                3) install_server-administration ;;
-                4) install_colorls ;;
-            esac
-            ;;
-        11)
-            _ohmytool_list
-            ;;
+        "system|System Admin (htop, PBShelper, server-administration)"
+}
+
+_ohmytool_title() {
+    case "$1" in
+        aicoding)     printf 'AI Coding Agents' ;;
+        base)         printf 'Essential Tools' ;;
+        dev)          printf 'Development Tools' ;;
+        infra)        printf 'Infrastructure' ;;
+        vpn)          printf 'Network & Proxy' ;;
+        files)        printf 'File Management' ;;
+        web)          printf 'Web Applications' ;;
+        media)        printf 'Storage & Media' ;;
+        productivity) printf 'Productivity & Monitoring' ;;
+        system)       printf 'System & Research' ;;
+        *)            printf '%s' "$1" ;;
     esac
+}
+
+_ohmytool_items() {
+    case "$1" in
+        aicoding) printf '%s\n' \
+            "install_aicoding|Install or update Claude Code, Codex, Cursor CLI, Grok Build, Antigravity" ;;
+        base) printf '%s\n' \
+            "install_base|Essential command-line tools (autojump, fzf, trzsz)" \
+            "new_vps_help|Recommended sequence for new servers" ;;
+        dev) printf '%s\n' \
+            "install_spacevim|Enhanced Vim editor" \
+            "install_discard_vim|Remote editing with VS Code / Sublime" \
+            "install_autojump|Smart directory navigation" \
+            "install_fzf|Command-line fuzzy finder" \
+            "install_htop_wo_sudo|Process monitor without sudo" \
+            "install_joshuto|Modern terminal file browser" ;;
+        infra) printf '%s\n' \
+            "install_docker|Docker & docker-compose (Ubuntu)" \
+            "install_nginxproxy|Nginx Proxy Manager web UI" \
+            "install_frp|Fast reverse proxy / intranet penetration" ;;
+        vpn) printf '%s\n' \
+            "install_vpn|Clash VPN (Linux only)" \
+            "install_buildvpn|VPN for overseas servers" \
+            "install_xui|X-UI VPN panel" \
+            "install_xrayr|XrayR VPN solution" ;;
+        files) printf '%s\n' \
+            "install_trzsz|Simple file transfer (trz / tsz)" \
+            "install_tssh|SSH client with trzsz support" \
+            "install_joshuto|Modern terminal file browser" \
+            "install_safe_rm|Safe deletion with trash bin" ;;
+        web) printf '%s\n' \
+            "install_homeweb|Personal homepage" \
+            "install_newtab|Browser new tab page" \
+            "install_deepl|DeepL translation service" \
+            "install_chatgpt|ChatGPT web interface" ;;
+        media) printf '%s\n' \
+            "install_cloudreve|Private cloud storage" \
+            "install_qbittorrent|BitTorrent client" \
+            "install_jellyfin|Media streaming server" \
+            "install_image|Lsky-pro image hosting" ;;
+        productivity) printf '%s\n' \
+            "install_overleaf|LaTeX collaboration platform" \
+            "install_copypaste|Text sharing service" \
+            "install_webmonitor|Website uptime monitoring" \
+            "install_serverstatus|Server status monitoring" \
+            "install_vncdocker|VNC remote desktop" ;;
+        system) printf '%s\n' \
+            "install_htop_wo_sudo|htop monitor without sudo" \
+            "install_PBShelper|PBS cluster job management helper" \
+            "install_server-administration|Server admin toolkit" \
+            "install_colorls|Colorful ls (requires Ruby)" ;;
+    esac
+}
+
+# _ohmytool_collect <category|all> -> OHMYTOOL_ITEMS, an array of the entries.
+# all gathers every category, listing a tool only once.
+_ohmytool_collect() {
+    local cat line name seen=" "
+    OHMYTOOL_ITEMS=()
+    if [ "$1" = all ]; then
+        while IFS= read -r cat; do
+            cat=${cat%%|*}
+            while IFS= read -r line; do
+                name=${line%%|*}
+                case "$seen" in
+                    *" $name "*) continue ;;
+                esac
+                seen="${seen}${name} "
+                OHMYTOOL_ITEMS+=("$line")
+            done <<< "$(_ohmytool_items "$cat")"
+        done <<< "$(_ohmytool_categories)"
+        return 0
+    fi
+    while IFS= read -r line; do
+        if [ -n "$line" ]; then
+            OHMYTOOL_ITEMS+=("$line")
+        fi
+    done <<< "$(_ohmytool_items "$1")"
+}
+
+_ohmytool_list(){
+    local cat item
+    ui_heading "ohmytool" "server management & toolkits catalog"
+
+    ui_note "One-click installation and environment setup. Run any command directly or run ohmytool for the interactive menu."
+    ui_gap
+
+    while IFS= read -r cat; do
+        cat=${cat%%|*}
+        printf '  %s%s%s\n' "$UI_BOLD$UI_ACCENT" "$(_ohmytool_title "$cat")" "$UI_RESET"
+        _ohmytool_collect "$cat"
+        for item in "${OHMYTOOL_ITEMS[@]}"; do
+            ui_item "${item%%|*}" "${item#*|}" 28
+        done
+        ui_gap
+    done <<< "$(_ohmytool_categories)"
+
+    ui_note "Tip: Run 'ohmytool' for interactive menu, or type any function name above directly."
+    ui_gap
+}
+
+# _ohmytool_pick <category|all>: the second level menu, then the tool itself.
+# A category with a single tool skips straight to it. Returns 1 when the menu
+# was cancelled so ohmytool can step back to the categories.
+_ohmytool_pick() {
+    local title subtitle item
+    _ohmytool_collect "$1"
+    if [ "${#OHMYTOOL_ITEMS[@]}" -eq 1 ]; then
+        for item in "${OHMYTOOL_ITEMS[@]}"; do
+            "${item%%|*}"
+        done
+        return 0
+    fi
+    if [ "$1" = all ]; then
+        title="ohmytool ${UI_G_POINT} all tools"
+        subtitle="type / to search"
+    else
+        title="ohmytool ${UI_G_POINT} $(_ohmytool_title "$1")"
+        subtitle=""
+    fi
+    ui_menu "$title" "$subtitle" "${OHMYTOOL_ITEMS[@]}" || return 1
+    "$UI_CHOICE_NAME"
+}
+
+ohmytool(){
+    local footprint items line
+    if [ "${1:-}" = "-l" ] || [ "${1:-}" = "--list" ] || ! ui_interactive; then
+        _ohmytool_list
+        return 0
+    fi
+
+    items=()
+    while IFS= read -r line; do
+        items+=("$line")
+    done <<< "$(_ohmytool_categories)"
+    items+=("all|Every tool in one searchable list")
+
+    # Cancelling a category menu comes back here: the trail of the category
+    # menu is erased and it is drawn again in place.
+    while :; do
+        ui_menu "ohmytool" "server management & tools catalog" "${items[@]}" || return 1
+        footprint=$UI_MENU_FOOTPRINT
+        _ohmytool_pick "$UI_CHOICE_NAME"
+        if [ "$UI_CHOICE" -gt 0 ]; then
+            return 0
+        fi
+        ui_menu_erase "$footprint"
+    done
 }
 
 # Reminde you what to install when you get a new server.
@@ -436,20 +396,20 @@ new_vps_help(){
 
 # Install some base tools.
 install_base(){
-    print_section "Installing Base Tools"
-
-    print_text "white" "Essential command-line tools to enhance your terminal experience."
-    printf "\n"
-
-    if ask_yes_no "Install autojump (smart directory navigation)?" "y"; then
+    ui_choose "install_base" "essential command-line tools" \
+        "autojump|Smart directory navigation" \
+        "fzf|Command-line fuzzy finder" \
+        "trzsz|File transfer with trz / tsz" || return 1
+    if [ "$UI_PICK_COUNT" -eq 0 ]; then
+        return 0
+    fi
+    if ui_picked 1; then
         install_autojump
     fi
-
-    if ask_yes_no "Install fzf (fuzzy finder)?" "y"; then
+    if ui_picked 2; then
         install_fzf
     fi
-
-    if ask_yes_no "Install trzsz (file transfer tool)?" "y"; then
+    if ui_picked 3; then
         install_trzsz
     fi
 
@@ -1817,9 +1777,8 @@ aicoding_status() {
     fi
 }
 
-# aicoding_row <index> <tool>: show install and update status in one line.
+# aicoding_row <index>: one status line from the globals aicoding_status set.
 aicoding_row() {
-    aicoding_status "$2" || return 1
     case "$AICODING_STATE" in
         missing)
             printf '  %s%2s%s  %-18s %s  %snot installed%s\n' \
@@ -1934,25 +1893,30 @@ aicoding_update() {
 }
 
 # Install or update AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI.
+# Every tool is checked behind a spinner, then the ones that can be installed
+# or updated are offered in a multi-select list.
 install_aicoding() {
-    local tool i actionable_count unknown_count actionable states picks picked completed failed
+    local tool i=0 unknown_count=0 completed=0 failed=0 tools items action
     ui_heading "install_aicoding" "AI coding agents"
 
-    ui_spin "Querying vendor release channels and local installations..." "sleep 0.25"
-    ui_gap
-    i=0
-    actionable_count=0
-    unknown_count=0
-    actionable=" "
-    states=" "
+    # tools holds action:tool pairs in the order of the choose list.
+    tools=()
+    items=()
     for tool in claude codex cursor grok antigravity; do
         i=$((i + 1))
-        aicoding_row "$i" "$tool" || continue
-        states="${states}${i}:${AICODING_STATE} "
+        aicoding_info "$tool" || continue
+        ui_spin_start "Checking ${AICODING_NAME}"
+        aicoding_status "$tool"
+        ui_spin_stop clear
+        aicoding_row "$i"
         case "$AICODING_STATE" in
-            missing|update)
-                actionable="${actionable}${i} "
-                actionable_count=$((actionable_count + 1))
+            missing)
+                tools+=("install:$tool")
+                items+=("${AICODING_NAME}|install")
+                ;;
+            update)
+                tools+=("update:$tool")
+                items+=("${AICODING_NAME}|update ${AICODING_CURRENT} ${UI_G_ARROW} ${AICODING_LATEST}")
                 ;;
             unknown)
                 unknown_count=$((unknown_count + 1))
@@ -1961,7 +1925,7 @@ install_aicoding() {
     done
     ui_gap
 
-    if [ "$actionable_count" = 0 ]; then
+    if [ "${#tools[@]}" -eq 0 ]; then
         if [ "$unknown_count" = 0 ]; then
             ui_ok "everything is installed and up to date"
         else
@@ -1972,63 +1936,39 @@ install_aicoding() {
         return 0
     fi
 
-    ui_note "pick by number, several at once like 1 3, a for every install/update available"
-    ui_ask "Install / update"
-    picks=" $(printf '%s' "$UI_ANSWER" | tr '[:upper:],;' '[:lower:]  ') "
-    case "$picks" in
-        *" a "*|*" all "*)
-            picks="$actionable"
-            ;;
-    esac
+    ui_choose "Install / update" "pick what to run" "${items[@]}" || return 1
+    if [ "$UI_PICK_COUNT" -eq 0 ]; then
+        return 0
+    fi
 
     i=0
-    picked=0
-    completed=0
-    failed=0
-    for tool in claude codex cursor grok antigravity; do
+    for action in "${tools[@]}"; do
         i=$((i + 1))
-        case "$picks" in
-            *" $i "*) ;;
-            *) continue ;;
-        esac
-        picked=$((picked + 1))
-        case "$states" in
-            *" ${i}:missing "*)
+        ui_picked "$i" || continue
+        tool=${action#*:}
+        case "${action%%:*}" in
+            install)
                 if aicoding_install "$tool"; then
                     completed=$((completed + 1))
                 else
                     failed=$((failed + 1))
                 fi
                 ;;
-            *" ${i}:update "*)
+            *)
                 if aicoding_update "$tool"; then
                     completed=$((completed + 1))
                 else
                     failed=$((failed + 1))
                 fi
                 ;;
-            *" ${i}:unknown "*)
-                aicoding_info "$tool" || continue
-                ui_warn "${AICODING_NAME} is installed, but its update could not be checked"
-                ;;
-            *)
-                aicoding_info "$tool" || continue
-                ui_note "${AICODING_NAME} is already up to date"
-                ;;
         esac
     done
 
-    if [ "$picked" = 0 ]; then
-        ui_note "nothing selected"
-    else
-        if [ "$completed" -gt 0 ]; then
-            ui_note "launchers: cc, cx, cursor, google, grok work now, the plain commands after a new shell"
-        fi
-        if [ "$failed" -gt 0 ]; then
-            ui_warn "${failed} install/update operation(s) failed"
-        elif [ "$completed" = 0 ]; then
-            ui_note "nothing needed to be installed or updated"
-        fi
+    if [ "$completed" -gt 0 ]; then
+        ui_note "launchers: cc, cx, cursor, google, grok work now, the plain commands after a new shell"
+    fi
+    if [ "$failed" -gt 0 ]; then
+        ui_warn "${failed} install/update operation(s) failed"
     fi
     ui_gap
 }

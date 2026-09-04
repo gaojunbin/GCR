@@ -1,40 +1,7 @@
-2026-09-05  终端 UI 动态视觉与动效反馈增强
+2026-09-05  交互体验升级：搜索过滤、多选、返回上一级
 
-- GCR Logo 流光扫光动效 (ui_logo_shine)：在终端横幅与信息展示时呈现平滑光束横扫动效；
-- 动态彩色盲文加载指示器 (ui_spin)：多色平滑过渡（Cyan → Accent → Purple → Emerald），在下载与状态检测时提供丝滑动态反馈；
-- 交互菜单确认微动效 (ui_menu_confirm_flash)：菜单项回车选中时提供毫秒级翡翠绿勾选反馈；
-- 原地平滑进度指示 (ui_progress_anim) 与安装器加载动效升级。
-
-2026-09-05  终端 UI 与交互体验全面升级
-
-全新 TrueColor (24-bit) 与 256 色现代调色板，自动适配高保真终端色彩；
-交互菜单重构：动态列宽自适应对齐、活跃项标识（❯ ◉ / ◯）、支持快捷数字与 g/G 快速跳转；
-新增 ohmyshell 交互式命令中枢，集中呼出 mytool、mygit、myenv、install_ai 等工具；
-新增 ohmytool 分类交互菜单与分类速查，一键进入 AI 编程、基础设施、网络等分类安装；
-安装器 install_gcr.sh 全面美化：流光渐变 Logo、现代交互式目标选择与卡片式完成面板。
-
-2026-09-05  AI 编程快捷命令
-
-cc、cx、cursor、google、grok 现在默认以各工具的 YOLO 模式启动，
-跳过工具调用审批；cx 同时关闭 Codex 沙箱。
-
-2026-09-04  AI 编程工具
-
-install_aicoding 现在会同时检测安装状态与官方最新版本，
-可选择安装或更新 Claude Code / Codex / Cursor CLI / Grok Build / Antigravity CLI。
-
-新增快捷命令 cc、cx、cursor、google、grok，
-工具未安装时会询问并直接安装。
-
-新增 cx_init：交互式填写 Codex 的接入端点和 API Key，
-生成 ~/.codex/config.toml 与 auth.json。
-
-2026-09-01  界面改版
-
-安装脚本与终端交互界面全部重做，风格统一。
-
-菜单（mytool / mypip / myenv / mygpu / mypermission / mygit 等）
-支持上下键选择，数字键仍可直接选中，按 q 退出。
-
-新的安装命令：
-curl -fsSL https://raw.githubusercontent.com/gaojunbin/GCR/master/install_gcr.sh | sh
+菜单新增 / 键即输即搜过滤，长列表自动滚动，方向键不再有一秒延迟；
+新增多选菜单（空格勾选、a 全选），install_aicoding、install_base、pipbase 改为一次勾选批量执行；
+子菜单按 q / Esc 回到上一级并原地重绘，Ctrl-C 随时干净退出；
+gitch、denv、cenv、download 改为列表选择，不再手动输入名称；
+myupdate 修复：后台任务提示与 safe-rm 报错不再刷屏，更新后询问是否重启 shell，仅显示最新一条更新说明。
