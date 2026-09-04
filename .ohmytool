@@ -1870,21 +1870,21 @@ install_aicoding() {
         esac
         picked=$((picked + 1))
         case "$states" in
-            *" $i:missing "*)
+            *" ${i}:missing "*)
                 if aicoding_install "$tool"; then
                     completed=$((completed + 1))
                 else
                     failed=$((failed + 1))
                 fi
                 ;;
-            *" $i:update "*)
+            *" ${i}:update "*)
                 if aicoding_update "$tool"; then
                     completed=$((completed + 1))
                 else
                     failed=$((failed + 1))
                 fi
                 ;;
-            *" $i:unknown "*)
+            *" ${i}:unknown "*)
                 aicoding_info "$tool" || continue
                 ui_warn "${AICODING_NAME} is installed, but its update could not be checked"
                 ;;
