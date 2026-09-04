@@ -350,7 +350,6 @@ ohmyshell(){
         ui_item "mypip" "Python pip package management" 16
         ui_item "mygpu" "GPU and CUDA utilities" 16
         ui_item "mypermission" "Permission and password management" 16
-        ui_item "install_ai" "AI coding agents (Claude, Codex, Cursor...)" 16
         ui_item "myupdate" "Update GCR Toolkit from GitHub" 16
         ui_gap
         return 0
@@ -367,7 +366,6 @@ ohmyshell(){
             "mypip|Python pip package management" \
             "mygpu|GPU and CUDA utilities" \
             "mypermission|Permission and password management" \
-            "install_ai|AI coding agents (Claude, Codex, Cursor...)" \
             "myupdate|Update GCR Toolkit from GitHub" || return 1
         footprint=$UI_MENU_FOOTPRINT
         case "$UI_CHOICE" in
@@ -377,8 +375,7 @@ ohmyshell(){
             4) mypip ;;
             5) mygpu ;;
             6) mypermission ;;
-            7) install_aicoding ;;
-            8) myupdate ;;
+            7) myupdate ;;
         esac
         if [ "$UI_CHOICE" -gt 0 ]; then
             return 0
