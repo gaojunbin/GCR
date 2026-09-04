@@ -313,5 +313,5 @@ Users only need to memorize one-level functions to access all gcr functions!
 |           |              |        install_safe_rm        |                        safe delete                         |             |                         Recommend!!                          |
 |           |              |      install_discard_vim      |                discard vim and embrace code                |             |                         Recommend!!                          |
 |           |              |        install_joshuto        |                                                            |             |                                                              |
-|           |              |       install_aicoding        | AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI |             |               Shows what is installed, then asks what to install               |
+|           |              |       install_aicoding        | AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI |             | Checks installs and vendor updates, then asks what to install or update |
 

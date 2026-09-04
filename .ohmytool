@@ -76,7 +76,7 @@
 # |
 # --- install_joshuto - Install joshuto.
 # |
-# --- install_aicoding - Install AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI.
+# --- install_aicoding - Install and update AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI.
 # |
 # ==============  Outline end ==============
 
@@ -160,7 +160,7 @@ if [[ "$SHELL" == *"zsh" ]];then
         ["install_safe_rm"]="Install safe-rm."
         ["install_discard_vim"]="Install discard-vim to enable use vscode or sublime to edit file."
         ["install_joshuto"]="Install joshuto for better file browsing."
-        ["install_aicoding"]="Install AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI."
+        ["install_aicoding"]="Install and update AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI."
     )
 fi
 
@@ -211,7 +211,7 @@ ohmytool(){
     printf "\n"
     print_text "cyan" "AI Coding Agents:" "false"
     printf "\n"
-    print_menu_option "*" "install_aicoding" "Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI"
+    print_menu_option "*" "install_aicoding" "Install/update Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI"
 
     printf "\n"
     print_text "cyan" "Web Applications:" "false"
@@ -1139,6 +1139,7 @@ install_image(){
 # TODO: install samtools
 install_samtools(){
     # TODO
+    :
 }
 
 # Install PBShelper
@@ -1394,7 +1395,8 @@ install_joshuto(){
 # google, grok) in .ohmyshell. Every installer is the vendor's per-user script:
 # no sudo, the binary lands in ~/.local/bin (Grok Build uses ~/.grok/bin).
 
-# aicoding_info <tool> -> AICODING_NAME, AICODING_CMD, AICODING_URL, AICODING_INSTALL
+# aicoding_info <tool> -> AICODING_NAME, AICODING_CMD, AICODING_URL,
+# AICODING_INSTALL, AICODING_UPDATE_ARGS
 aicoding_info() {
     case "$1" in
         claude)
@@ -1402,12 +1404,14 @@ aicoding_info() {
             AICODING_CMD="claude"
             AICODING_URL="https://code.claude.com/docs/en/setup"
             AICODING_INSTALL="curl -fsSL https://claude.ai/install.sh | bash"
+            AICODING_UPDATE_ARGS="update"
             ;;
         codex)
             AICODING_NAME="Codex"
             AICODING_CMD="codex"
             AICODING_URL="https://github.com/openai/codex"
             AICODING_INSTALL="curl -fsSL https://chatgpt.com/codex/install.sh | sh"
+            AICODING_UPDATE_ARGS="update"
             ;;
         cursor)
             # cursor-agent, not agent: the Grok Build installer links an agent too.
@@ -1415,18 +1419,21 @@ aicoding_info() {
             AICODING_CMD="cursor-agent"
             AICODING_URL="https://cursor.com/docs/cli/installation"
             AICODING_INSTALL="curl https://cursor.com/install -fsS | bash"
+            AICODING_UPDATE_ARGS="update"
             ;;
         grok)
             AICODING_NAME="Grok Build"
             AICODING_CMD="grok"
             AICODING_URL="https://docs.x.ai/build/overview"
             AICODING_INSTALL="curl -fsSL https://x.ai/cli/install.sh | bash"
+            AICODING_UPDATE_ARGS="update"
             ;;
         antigravity)
             AICODING_NAME="Antigravity CLI"
             AICODING_CMD="agy"
             AICODING_URL="https://antigravity.google/docs/cli/install/"
             AICODING_INSTALL="curl -fsSL https://antigravity.google/cli/install.sh | bash"
+            AICODING_UPDATE_ARGS="update"
             ;;
         *)
             ui_err "unknown AI coding tool: $1"
@@ -1465,22 +1472,263 @@ aicoding_bin() {
     return 1
 }
 
-# aicoding_row <index> <tool>: one status line, 1 when the tool is missing.
-aicoding_row() {
-    local version
-    aicoding_info "$2" || return 1
-    if aicoding_bin "$2"; then
-        version=$("$AICODING_BIN" --version </dev/null 2>/dev/null | head -n 1)
-        printf '  %s%2s%s  %-16s %s%s%s %s%s%s\n' \
-            "$UI_DIM" "$1" "$UI_RESET" "$AICODING_NAME" \
-            "$UI_OK" "$UI_G_OK" "$UI_RESET" \
-            "$UI_DIM" "${version:-$AICODING_BIN}" "$UI_RESET"
+# Fetch a small piece of release metadata without letting an unavailable server
+# hold the menu open indefinitely. curl is already required by every installer;
+# wget keeps version checks useful on a minimal system that only has wget.
+aicoding_fetch() {
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL --connect-timeout 5 --max-time 15 "$1"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q -T 15 -O - "$1"
+    else
+        return 1
+    fi
+}
+
+# Keep only the comparable version token from output such as
+# "codex-cli 0.153.2" or "grok 1.0.13 (...) [stable]".
+aicoding_normalize_version() {
+    printf '%s\n' "$1" | sed -n \
+        's/^[^0-9]*\([0-9][0-9A-Za-z._+-]*\).*$/\1/p' | head -n 1
+}
+
+# aicoding_current_version <tool> -> AICODING_CURRENT. The binary is resolved
+# again so this also works immediately after an installer replaces it.
+aicoding_current_version() {
+    local output
+    AICODING_CURRENT=""
+    aicoding_bin "$1" || return 1
+    output=$("$AICODING_BIN" --version </dev/null 2>&1 || true)
+    AICODING_CURRENT=$(aicoding_normalize_version "$output")
+    [ -n "$AICODING_CURRENT" ]
+}
+
+# aicoding_latest_version <tool> -> AICODING_LATEST. These are the same
+# first-party release pointers used by the vendor installers/updaters. Parsing
+# is intentionally POSIX-tool-only; jq is not required on a fresh machine.
+aicoding_latest_version() {
+    local payload latest os arch platform installer release_base channel
+    AICODING_LATEST=""
+
+    case "$1" in
+        claude)
+            channel=$(sed -n \
+                's/.*"autoUpdatesChannel"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+                "$HOME/.claude/settings.json" 2>/dev/null | head -n 1 || true)
+            case "$channel" in
+                stable|latest) ;;
+                *) channel="latest" ;;
+            esac
+            latest=$(aicoding_fetch \
+                "https://downloads.claude.ai/claude-code-releases/${channel}" 2>/dev/null || true)
+            ;;
+        codex)
+            payload=$(aicoding_fetch \
+                "https://releases.openai.com/codex/channels/latest" 2>/dev/null || true)
+            latest=$(printf '%s\n' "$payload" | sed -n \
+                's/.*"tag_name"[[:space:]]*:[[:space:]]*"rust-v\([^"]*\)".*/\1/p' | head -n 1)
+            if [ -z "$latest" ]; then
+                payload=$(aicoding_fetch \
+                    "https://api.github.com/repos/openai/codex/releases/latest" 2>/dev/null || true)
+                latest=$(printf '%s\n' "$payload" | sed -n \
+                    's/.*"tag_name"[[:space:]]*:[[:space:]]*"rust-v\([^"]*\)".*/\1/p' | head -n 1)
+            fi
+            ;;
+        cursor)
+            payload=$(aicoding_fetch "https://cursor.com/install" 2>/dev/null || true)
+            latest=$(printf '%s\n' "$payload" | sed -n \
+                's|.*downloads\.cursor\.com/[^/]*/\([^/"]*\)/.*|\1|p' | head -n 1)
+            ;;
+        grok)
+            # Grok exposes a non-mutating, channel-aware machine-readable check.
+            if aicoding_bin grok >/dev/null 2>&1; then
+                payload=$("$AICODING_BIN" update --check --json </dev/null 2>/dev/null || true)
+                latest=$(printf '%s\n' "$payload" | sed -n \
+                    's/.*"latestVersion"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
+            fi
+            # Older Grok builds did not have --check; use their configured
+            # channel pointer, with stable as the default.
+            if [ -z "$latest" ]; then
+                channel=$(sed -n \
+                    's/^[[:space:]]*channel[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' \
+                    "$HOME/.grok/config.toml" 2>/dev/null | head -n 1 || true)
+                case "$channel" in
+                    stable|alpha|enterprise) ;;
+                    *) channel="stable" ;;
+                esac
+                latest=$(aicoding_fetch "https://x.ai/cli/${channel}" 2>/dev/null || true)
+                if [ -z "$latest" ]; then
+                    latest=$(aicoding_fetch \
+                        "https://storage.googleapis.com/grok-build-public-artifacts/cli/${channel}" \
+                        2>/dev/null || true)
+                fi
+            fi
+            ;;
+        antigravity)
+            case "$(uname -s)" in
+                Darwin) os="darwin" ;;
+                Linux) os="linux" ;;
+                *) return 1 ;;
+            esac
+            case "$(uname -m)" in
+                x86_64|amd64) arch="amd64" ;;
+                arm64|aarch64) arch="arm64" ;;
+                *) return 1 ;;
+            esac
+            if [ "$os" = "linux" ] && \
+                { [ -f /lib/libc.musl-x86_64.so.1 ] || \
+                  [ -f /lib/libc.musl-aarch64.so.1 ] || \
+                  { command -v ldd >/dev/null 2>&1 && ldd /bin/ls 2>&1 | grep -q musl; }; }; then
+                platform="linux_${arch}_musl"
+            else
+                platform="${os}_${arch}"
+            fi
+            installer=$(aicoding_fetch "https://antigravity.google/cli/install.sh" 2>/dev/null || true)
+            release_base=$(printf '%s\n' "$installer" | sed -n \
+                's/^DOWNLOAD_BASE_URL="\([^"]*\)".*/\1/p' | head -n 1)
+            release_base=${release_base:-https://antigravity-cli-auto-updater-974169037036.us-central1.run.app}
+            payload=$(aicoding_fetch \
+                "${release_base}/manifests/${platform}.json" \
+                2>/dev/null || true)
+            latest=$(printf '%s\n' "$payload" | sed -n \
+                's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+
+    AICODING_LATEST=$(aicoding_normalize_version "$latest")
+    [ -n "$AICODING_LATEST" ]
+}
+
+# True when candidate $1 is newer than installed $2. Numeric release segments
+# and semver prerelease identifiers are compared without relying on GNU sort -V,
+# which is not available in the default macOS toolchain. Cursor's date plus
+# opaque build hash is the exception: the vendor pointer decides the newest hash.
+aicoding_version_is_newer() {
+    local candidate installed candidate_base installed_base
+    candidate=${1#v}
+    candidate=${candidate#rust-v}
+    installed=${2#v}
+    installed=${installed#rust-v}
+    candidate_base=${candidate%%-*}
+    installed_base=${installed%%-*}
+
+    awk -v candidate="$candidate" -v installed="$installed" \
+        -v candidate_base="$candidate_base" -v installed_base="$installed_base" '
+        BEGIN {
+            candidate_count = split(candidate_base, candidate_part, ".")
+            installed_count = split(installed_base, installed_part, ".")
+            count = candidate_count > installed_count ? candidate_count : installed_count
+            for (i = 1; i <= count; i++) {
+                candidate_number = candidate_part[i] + 0
+                installed_number = installed_part[i] + 0
+                if (candidate_number > installed_number) exit 0
+                if (candidate_number < installed_number) exit 1
+            }
+            if (candidate == installed) exit 1
+
+            candidate_prerelease = index(candidate, "-") > 0
+            installed_prerelease = index(installed, "-") > 0
+            if (!candidate_prerelease && installed_prerelease) exit 0
+            if (candidate_prerelease && !installed_prerelease) exit 1
+
+            # Cursor versions use YYYY.MM.DD plus an opaque build hash. There is
+            # no meaningful ordering between hashes on the same date.
+            if (candidate_count == 3 && length(candidate_part[1]) == 4 &&
+                candidate_part[1] + 0 >= 2000) exit 0
+
+            candidate_suffix = substr(candidate, index(candidate, "-") + 1)
+            installed_suffix = substr(installed, index(installed, "-") + 1)
+            candidate_suffix_count = split(candidate_suffix, candidate_suffix_part, ".")
+            installed_suffix_count = split(installed_suffix, installed_suffix_part, ".")
+            suffix_count = candidate_suffix_count > installed_suffix_count ? candidate_suffix_count : installed_suffix_count
+            for (i = 1; i <= suffix_count; i++) {
+                candidate_id = candidate_suffix_part[i]
+                installed_id = installed_suffix_part[i]
+                if (candidate_id == installed_id) continue
+                if (candidate_id == "") exit 1
+                if (installed_id == "") exit 0
+
+                candidate_numeric = candidate_id ~ /^[0-9]+$/
+                installed_numeric = installed_id ~ /^[0-9]+$/
+                if (candidate_numeric && installed_numeric) {
+                    if (candidate_id + 0 > installed_id + 0) exit 0
+                    exit 1
+                }
+                # Semver numeric identifiers have lower precedence than text.
+                if (candidate_numeric && !installed_numeric) exit 1
+                if (!candidate_numeric && installed_numeric) exit 0
+                if ("_" candidate_id > "_" installed_id) exit 0
+                exit 1
+            }
+            exit 1
+        }
+    '
+}
+
+# aicoding_status <tool> -> AICODING_STATE and version globals.
+# States: missing, update, current, ahead, unknown.
+aicoding_status() {
+    AICODING_STATE="missing"
+    AICODING_CURRENT=""
+    AICODING_LATEST=""
+    aicoding_info "$1" || return 1
+    if ! aicoding_bin "$1"; then
         return 0
     fi
-    printf '  %s%2s%s  %-16s %s%s%s %snot installed%s\n' \
-        "$UI_DIM" "$1" "$UI_RESET" "$AICODING_NAME" \
-        "$UI_ERR" "$UI_G_ERR" "$UI_RESET" "$UI_DIM" "$UI_RESET"
-    return 1
+    AICODING_STATE="unknown"
+    if ! aicoding_current_version "$1"; then
+        return 0
+    fi
+    if ! aicoding_latest_version "$1"; then
+        return 0
+    fi
+    if [ "$AICODING_CURRENT" = "$AICODING_LATEST" ]; then
+        AICODING_STATE="current"
+    elif aicoding_version_is_newer "$AICODING_LATEST" "$AICODING_CURRENT"; then
+        AICODING_STATE="update"
+    else
+        AICODING_STATE="ahead"
+    fi
+}
+
+# aicoding_row <index> <tool>: show install and update status in one line.
+aicoding_row() {
+    aicoding_status "$2" || return 1
+    case "$AICODING_STATE" in
+        missing)
+            printf '  %s%2s%s  %-16s %s%s%s %snot installed%s\n' \
+                "$UI_DIM" "$1" "$UI_RESET" "$AICODING_NAME" \
+                "$UI_ERR" "$UI_G_ERR" "$UI_RESET" "$UI_DIM" "$UI_RESET"
+            ;;
+        update)
+            printf '  %s%2s%s  %-16s %s%s%s %s%s %s %s%s %supdate available%s\n' \
+                "$UI_DIM" "$1" "$UI_RESET" "$AICODING_NAME" \
+                "$UI_WARN" "$UI_G_WARN" "$UI_RESET" \
+                "$UI_DIM" "$AICODING_CURRENT" "$UI_G_ARROW" "$AICODING_LATEST" \
+                "$UI_RESET" "$UI_WARN" "$UI_RESET"
+            ;;
+        current)
+            printf '  %s%2s%s  %-16s %s%s%s %s%s (latest)%s\n' \
+                "$UI_DIM" "$1" "$UI_RESET" "$AICODING_NAME" \
+                "$UI_OK" "$UI_G_OK" "$UI_RESET" \
+                "$UI_DIM" "$AICODING_CURRENT" "$UI_RESET"
+            ;;
+        ahead)
+            printf '  %s%2s%s  %-16s %s%s%s %s%s (newer than %s)%s\n' \
+                "$UI_DIM" "$1" "$UI_RESET" "$AICODING_NAME" \
+                "$UI_OK" "$UI_G_OK" "$UI_RESET" \
+                "$UI_DIM" "$AICODING_CURRENT" "$AICODING_LATEST" "$UI_RESET"
+            ;;
+        *)
+            printf '  %s%2s%s  %-16s %s%s%s %s%s (update check unavailable)%s\n' \
+                "$UI_DIM" "$1" "$UI_RESET" "$AICODING_NAME" \
+                "$UI_WARN" "$UI_G_WARN" "$UI_RESET" \
+                "$UI_DIM" "${AICODING_CURRENT:-installed}" "$UI_RESET"
+            ;;
+    esac
 }
 
 # aicoding_install <tool>: run the vendor installer, then check for the binary.
@@ -1509,39 +1757,111 @@ aicoding_install() {
     ui_gap
 }
 
-# Install AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI.
+# aicoding_update <tool>: use the CLI's first-party updater, then verify which
+# version the active binary reports. No update is run during the check phase.
+aicoding_update() {
+    local before expected after update_bin update_help
+    aicoding_info "$1" || return 1
+    if ! aicoding_bin "$1"; then
+        ui_err "${AICODING_NAME} is not installed"
+        return 1
+    fi
+    update_bin="$AICODING_BIN"
+    aicoding_current_version "$1" || true
+    before="$AICODING_CURRENT"
+    update_help=$("$update_bin" --help </dev/null 2>&1 || true)
+    if ! printf '%s\n' "$update_help" | \
+        command grep -E '^[[:space:]]*update([^[:alnum:]_]|$)' >/dev/null; then
+        ui_err "${AICODING_NAME} ${before:+${before} }does not expose a safe update command"
+        ui_note "update it from ${AICODING_URL}"
+        ui_gap
+        return 1
+    fi
+    aicoding_latest_version "$1" || true
+    expected="$AICODING_LATEST"
+
+    ui_heading "update ${AICODING_NAME}" "$AICODING_URL"
+    ui_command "${update_bin} ${AICODING_UPDATE_ARGS}"
+    ui_gap
+    if ! "$update_bin" "$AICODING_UPDATE_ARGS"; then
+        ui_gap
+        ui_err "${AICODING_NAME} update failed, see ${AICODING_URL}"
+        ui_gap
+        return 1
+    fi
+    ui_gap
+
+    if ! aicoding_current_version "$1"; then
+        ui_warn "update finished, but ${AICODING_NAME} version could not be verified"
+        ui_gap
+        return 0
+    fi
+    after="$AICODING_CURRENT"
+    if [ -n "$before" ] && [ "$after" != "$before" ]; then
+        ui_ok "${AICODING_NAME} updated: ${before} ${UI_G_ARROW} ${after}"
+    elif [ -n "$expected" ] && [ "$after" = "$expected" ]; then
+        ui_ok "${AICODING_NAME} is up to date (${after})"
+    elif [ -n "$expected" ] && aicoding_version_is_newer "$expected" "$after"; then
+        ui_warn "updater finished, but the active binary still reports ${after} (latest ${expected})"
+        ui_note "check PATH precedence: ${AICODING_BIN}"
+    else
+        ui_ok "${AICODING_NAME} update finished (${after})"
+    fi
+    ui_gap
+}
+
+# Install or update AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI.
 install_aicoding() {
-    local tool i missing picks all picked
+    local tool i actionable_count unknown_count actionable states picks picked completed failed
     ui_heading "install_aicoding" "AI coding agents"
 
+    ui_note "checking installed versions and vendor release channels..."
+    ui_gap
     i=0
-    missing=0
+    actionable_count=0
+    unknown_count=0
+    actionable=" "
+    states=" "
     for tool in claude codex cursor grok antigravity; do
         i=$((i + 1))
-        aicoding_row "$i" "$tool" || missing=$((missing + 1))
+        aicoding_row "$i" "$tool" || continue
+        states="${states}${i}:${AICODING_STATE} "
+        case "$AICODING_STATE" in
+            missing|update)
+                actionable="${actionable}${i} "
+                actionable_count=$((actionable_count + 1))
+                ;;
+            unknown)
+                unknown_count=$((unknown_count + 1))
+                ;;
+        esac
     done
     ui_gap
 
-    if [ "$missing" = 0 ]; then
-        ui_ok "everything is installed"
+    if [ "$actionable_count" = 0 ]; then
+        if [ "$unknown_count" = 0 ]; then
+            ui_ok "everything is installed and up to date"
+        else
+            ui_warn "everything is installed; ${unknown_count} update check(s) could not be completed"
+        fi
         ui_note "launchers: cc, cx, cursor, google, grok"
         ui_gap
         return 0
     fi
 
-    ui_note "pick by number, several at once like 1 3, a for every missing tool"
-    ui_ask "Install"
-    picks=" $(printf '%s' "$UI_ANSWER" | tr ',' ' ') "
-    all=0
+    ui_note "pick by number, several at once like 1 3, a for every install/update available"
+    ui_ask "Install / update"
+    picks=" $(printf '%s' "$UI_ANSWER" | tr '[:upper:],;' '[:lower:]  ') "
     case "$picks" in
         *" a "*|*" all "*)
-            all=1
-            picks=" 1 2 3 4 5 "
+            picks="$actionable"
             ;;
     esac
 
     i=0
     picked=0
+    completed=0
+    failed=0
     for tool in claude codex cursor grok antigravity; do
         i=$((i + 1))
         case "$picks" in
@@ -1549,19 +1869,43 @@ install_aicoding() {
             *) continue ;;
         esac
         picked=$((picked + 1))
-        if aicoding_bin "$tool"; then
-            if [ "$all" = 0 ]; then
-                ui_note "${AICODING_NAME} is already installed"
-            fi
-            continue
-        fi
-        aicoding_install "$tool"
+        case "$states" in
+            *" $i:missing "*)
+                if aicoding_install "$tool"; then
+                    completed=$((completed + 1))
+                else
+                    failed=$((failed + 1))
+                fi
+                ;;
+            *" $i:update "*)
+                if aicoding_update "$tool"; then
+                    completed=$((completed + 1))
+                else
+                    failed=$((failed + 1))
+                fi
+                ;;
+            *" $i:unknown "*)
+                aicoding_info "$tool" || continue
+                ui_warn "${AICODING_NAME} is installed, but its update could not be checked"
+                ;;
+            *)
+                aicoding_info "$tool" || continue
+                ui_note "${AICODING_NAME} is already up to date"
+                ;;
+        esac
     done
 
     if [ "$picked" = 0 ]; then
         ui_note "nothing selected"
     else
-        ui_note "launchers: cc, cx, cursor, google, grok work now, the plain commands after a new shell"
+        if [ "$completed" -gt 0 ]; then
+            ui_note "launchers: cc, cx, cursor, google, grok work now, the plain commands after a new shell"
+        fi
+        if [ "$failed" -gt 0 ]; then
+            ui_warn "${failed} install/update operation(s) failed"
+        elif [ "$completed" = 0 ]; then
+            ui_note "nothing needed to be installed or updated"
+        fi
     fi
     ui_gap
 }

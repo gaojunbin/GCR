@@ -315,5 +315,5 @@ GCR基于oh-my-zsh实现，定制化了ohmyzsh的部分功能，包括终端显�
 |           |              |        install_safe_rm        |          安全删除          |        |                           推荐！！                           |
 |           |              |      install_discard_vim      |     丢弃vim，拥抱code      |        |                           推荐！！                           |
 |           |              |        install_joshuto        |     支持l查看文件系统      |        |                                                              |
-|           |              |       install_aicoding        | 一键安装 AI 编程工具：Claude Code、Codex、Cursor CLI、Grok Build、Antigravity CLI |        |                   先展示已安装情况，再选择要装的                   |
+|           |              |       install_aicoding        | 一键管理 AI 编程工具：Claude Code、Codex、Cursor CLI、Grok Build、Antigravity CLI |        |             检测安装及新版，再选择要安装或更新的工具             |
 

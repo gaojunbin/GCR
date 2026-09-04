@@ -1,7 +1,7 @@
 2026-09-04  AI 编程工具
 
-新增 install_aicoding：检测并一键安装
-Claude Code / Codex / Cursor CLI / Grok Build / Antigravity CLI。
+install_aicoding 现在会同时检测安装状态与官方最新版本，
+可选择安装或更新 Claude Code / Codex / Cursor CLI / Grok Build / Antigravity CLI。
 
 新增快捷命令 cc、cx、cursor、google、grok，
 工具未安装时会询问并直接安装。
