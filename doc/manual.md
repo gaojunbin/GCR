@@ -276,6 +276,12 @@ GCR基于oh-my-zsh实现，定制化了ohmyzsh的部分功能，包括终端显�
 |           |              |           startvpn            |         终端走代理         | 不需要 |                        需要开启clash                         |
 |           |              |            stopvpn            |        终端不走代理        | 不需要 |                                                              |
 |           |              |           dockeradd           |   加入用户到docker用户组   | 不需要 |                         需要root权限                         |
+|           |              |              cc               |      启动 Claude Code      |  可选  |                     未安装时询问并直接安装                     |
+|           |              |              cx               | 启动 Codex（跳过审批与沙箱） |  可选  |                                                              |
+|           |              |            cx_init            | 交互式生成 Codex 的接入端点与 API Key 配置 | 不需要 |             写入 ~/.codex/config.toml 与 auth.json             |
+|           |              |            cursor             |     启动 Cursor CLI 代理     |  可选  |                                                              |
+|           |              |            google             |     启动 Antigravity CLI     |  可选  |                                                              |
+|           |              |             grok              |       启动 Grok Build        |  可选  |                                                              |
 |           |              |                               |                            |        |                                                              |
 | ohmytool  |              |                               |                            |        |                                                              |
 |           |    (暂无)    |         new_vps_help          |             -              |        |                                                              |
@@ -309,4 +315,5 @@ GCR基于oh-my-zsh实现，定制化了ohmyzsh的部分功能，包括终端显�
 |           |              |        install_safe_rm        |          安全删除          |        |                           推荐！！                           |
 |           |              |      install_discard_vim      |     丢弃vim，拥抱code      |        |                           推荐！！                           |
 |           |              |        install_joshuto        |     支持l查看文件系统      |        |                                                              |
+|           |              |       install_aicoding        | 一键安装 AI 编程工具：Claude Code、Codex、Cursor CLI、Grok Build、Antigravity CLI |        |                   先展示已安装情况，再选择要装的                   |
 

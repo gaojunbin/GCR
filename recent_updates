@@ -1,3 +1,14 @@
+2026-09-04  AI 编程工具
+
+新增 install_aicoding：检测并一键安装
+Claude Code / Codex / Cursor CLI / Grok Build / Antigravity CLI。
+
+新增快捷命令 cc、cx、cursor、google、grok，
+工具未安装时会询问并直接安装。
+
+新增 cx_init：交互式填写 Codex 的接入端点和 API Key，
+生成 ~/.codex/config.toml 与 auth.json。
+
 2026-09-01  界面改版
 
 安装脚本与终端交互界面全部重做，风格统一。

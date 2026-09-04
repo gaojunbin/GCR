@@ -18,6 +18,8 @@
 # |
 # --- mygit - Git tools.
 # |
+# --- AI coding launchers - cc, cx, cx_init, cursor, google, grok.
+# |
 # --- Others
 # ========Outline end============
 
@@ -971,6 +973,109 @@ mygit(){
     esac
 }
 # <<< mygit end <<<
+
+# >>> AI coding >>>
+# Launchers for the agents that install_aicoding (.ohmytool) manages. When the
+# tool is missing the launcher offers to install it, then starts it.
+# 1. cc     - Claude Code
+# 2. cx     - Codex without approvals and sandbox, cx_init writes its config
+# 3. cursor - Cursor CLI agent
+# 4. google - Antigravity CLI
+# 5. grok   - Grok Build
+
+# The vendor installers put their binaries here.
+case ":$PATH:" in
+    *":$HOME/.local/bin:"*) ;;
+    *)
+        if [ -d "$HOME/.local/bin" ]; then
+            export PATH="$HOME/.local/bin:$PATH"
+        fi
+        ;;
+esac
+
+# aicoding_launch <tool> [args...]
+aicoding_launch(){
+    local tool=$1
+    shift
+    aicoding_info "$tool" || return 1
+    if ! aicoding_bin "$tool"; then
+        ui_gap
+        ui_warn "${AICODING_NAME} is not installed"
+        if ! ui_confirm "Install it now?"; then
+            ui_note "install it later with install_aicoding"
+            ui_gap
+            return 1
+        fi
+        aicoding_install "$tool" || return 1
+    fi
+    "$AICODING_BIN" "$@"
+}
+
+cc(){ aicoding_launch claude "$@"; }
+cx(){ aicoding_launch codex --dangerously-bypass-approvals-and-sandbox "$@"; }
+cursor(){ aicoding_launch cursor "$@"; }
+google(){ aicoding_launch antigravity "$@"; }
+grok(){ aicoding_launch grok "$@"; }
+
+# cx_init: write the Codex config for a custom OpenAI compatible endpoint. Only
+# the endpoint and the API key are asked, the rest is fixed. Files go to
+# ~/.codex (CODEX_HOME when set): config.toml and auth.json.
+cx_init(){
+    local dir=${CODEX_HOME:-$HOME/.codex} endpoint key
+    ui_heading "cx_init" "Codex endpoint and API key"
+
+    ui_ask "API endpoint" "https://ai.junbingao.com/v1"
+    endpoint=$UI_ANSWER
+    if [ -z "$endpoint" ]; then
+        ui_err "no endpoint given"
+        return 1
+    fi
+
+    printf '  %s%s%s API key %s(hidden)%s: ' "$UI_ACCENT" "$UI_G_POINT" "$UI_RESET" "$UI_DIM" "$UI_RESET"
+    IFS= read -rs key
+    printf '\n'
+    if [ -z "$key" ]; then
+        ui_err "no API key given"
+        return 1
+    fi
+
+    if [ -f "$dir/config.toml" ] || [ -f "$dir/auth.json" ]; then
+        if ! ui_confirm "Overwrite config.toml and auth.json in ${dir}?" n; then
+            ui_note "nothing changed"
+            ui_gap
+            return 0
+        fi
+    fi
+
+    mkdir -p "$dir"
+    endpoint=$(printf '%s' "$endpoint" | sed 's/[\\"]/\\&/g')
+    key=$(printf '%s' "$key" | sed 's/[\\"]/\\&/g')
+    cat > "$dir/config.toml" <<TOML
+model = "gpt-5.6-sol"
+
+model_provider = "JUNBINAI"
+model_reasoning_effort = "ultra"
+disable_response_storage = true
+personality = "pragmatic"
+preferred_auth_method = "apikey"
+approvals_reviewer = "user"
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+
+[model_providers.JUNBINAI]
+name = "JUNBINAI"
+base_url = "${endpoint}"
+wire_api = "responses"
+requires_openai_auth = true
+TOML
+    printf '{\n  "OPENAI_API_KEY": "%s"\n}\n' "$key" > "$dir/auth.json"
+    chmod 600 "$dir/auth.json"
+
+    ui_ok "wrote ${dir}/config.toml"
+    ui_ok "wrote ${dir}/auth.json"
+    ui_gap
+}
+# <<< AI coding end <<<
 
 # >>> Others >>>
 # update bash/zsh profile

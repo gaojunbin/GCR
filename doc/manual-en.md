@@ -274,6 +274,12 @@ Users only need to memorize one-level functions to access all gcr functions!
 |           |              |           startvpn            |                      VPN for terminal                      |     No      |                        rely on clash                         |
 |           |              |            stopvpn            |                   close VPN for terminal                   |     No      |                                                              |
 |           |              |           dockeradd           |               Add user to docker user group                |     No      |                     need root permission                     |
+|           |              |              cc               |                     Launch Claude Code                     |   Option    |          Offers to install the tool when it is missing          |
+|           |              |              cx               |      Launch Codex with approvals and sandbox bypassed      |   Option    |                                                              |
+|           |              |            cx_init            |     Write the Codex config for a custom endpoint and key   |     No      |              ~/.codex/config.toml and auth.json              |
+|           |              |            cursor             |                Launch the Cursor CLI agent                 |   Option    |                                                              |
+|           |              |            google             |                 Launch the Antigravity CLI                 |   Option    |                                                              |
+|           |              |             grok              |                     Launch Grok Build                      |   Option    |                                                              |
 |           |              |                               |                                                            |             |                                                              |
 | ohmytool  |              |                               |                                                            |             |                                                              |
 |           |  (None yet)  |         new_vps_help          |                             -                              |             |                                                              |
@@ -307,4 +313,5 @@ Users only need to memorize one-level functions to access all gcr functions!
 |           |              |        install_safe_rm        |                        safe delete                         |             |                         Recommend!!                          |
 |           |              |      install_discard_vim      |                discard vim and embrace code                |             |                         Recommend!!                          |
 |           |              |        install_joshuto        |                                                            |             |                                                              |
+|           |              |       install_aicoding        | AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI |             |               Shows what is installed, then asks what to install               |
 
