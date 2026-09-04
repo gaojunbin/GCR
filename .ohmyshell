@@ -23,16 +23,33 @@
 # --- Others
 # ========Outline end============
 
-# lazy load, zsh only: the prompt expansion below is a zsh feature
-if [ -n "${ZSH_VERSION:-}" ] && [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+# Resolve the installation without changing HOME or following configuration symlinks.
+if [ -n "${ZSH_VERSION:-}" ]; then
+    eval 'GCR_SOURCE_FILE=${(%):-%x}'
+else
+    GCR_SOURCE_FILE=${BASH_SOURCE[0]}
 fi
+: "${GCR_INSTALL_ROOT:=$(cd "$(dirname "$GCR_SOURCE_FILE")" && pwd)}"
+if [ -f "$GCR_INSTALL_ROOT/lib/core.sh" ]; then
+    . "$GCR_INSTALL_ROOT/lib/core.sh"
+elif [ -f "$GCR_INSTALL_ROOT/.gcr/lib/core.sh" ]; then
+    . "$GCR_INSTALL_ROOT/.gcr/lib/core.sh"
+else
+    printf '%s\n' 'GCR runtime modules are missing; rerun the GCR installer.' >&2
+    return 1
+fi
+gcr_init || return
+. "$GCR_INSTALL_ROOT/.ohmyprint" || return
+. "$GCR_LIB_DIR/catalog.sh" || return
+gcr_lazy_tools
 
-source ~/.ohmyprint
+if [ -n "${ZSH_VERSION:-}" ] && [ "$GCR_LOAD_THEME" = true ] && [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+    source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
 
 # shell type [~/.bashrc or ~/.zshrc]
 # support tabby shell working directory reporting
-if [[ "$SHELL" == *"zsh" ]];then
+if [ -n "${ZSH_VERSION:-}" ]; then
     declare -A manual_ohmyshell=(
         ["myupdate"]="support update GCR Toolkit from GitHub Repo."
         ["mytool"]="Some basic tools for common using."
@@ -42,208 +59,13 @@ if [[ "$SHELL" == *"zsh" ]];then
         ["mypermission"]="some functions for permission, passward, etc."
         ["mygit"]="Git tools"
     )
-    shell_file=~/.zshrc
+    shell_file="$GCR_INSTALL_ROOT/.zshrc"
     precmd () { echo -n "\x1b]1337;CurrentDir=$(pwd)\x07"; }
-elif [[ "$SHELL" == *"bash" ]];then
-    shell_file=~/.bashrc
+elif [ -n "${BASH_VERSION:-}" ]; then
+    shell_file="$GCR_INSTALL_ROOT/.bashrc"
     export PS1="$PS1\[\e]1337;CurrentDir="'$(pwd)\a\]'
 else
     ui_err "unsupported shell: $SHELL"
-fi
-
-# 1. check update
-# GCR update time lock
-GCR_update_file=$HOME/.gcr.update.lock
-GCR_plugin_update_file=$HOME/.gcr.plugin.update.lock
-
-# Only the newest entry of recent_updates is shown: entries start with a date
-# line, reading stops at the second one.
-show_update_info(){
-    local updates line seen=0 gap=0
-    updates=$(curl -fsSL https://raw.githubusercontent.com/gaojunbin/GCR/master/recent_updates 2>/dev/null)
-    if [ -z "$updates" ]; then
-        return 0
-    fi
-
-    ui_heading "Latest update" "github.com/gaojunbin/GCR"
-    printf '%s\n' "$updates" | while IFS= read -r line; do
-        case "$line" in
-            202[0-9]-*)
-                if [ "$seen" = 1 ]; then
-                    break
-                fi
-                seen=1
-                printf '  %s%s %s%s\n' "$UI_ACCENT" "$UI_G_INFO" "$UI_BOLD" "$line$UI_RESET"
-                ;;
-            '')
-                gap=1
-                ;;
-            *)
-                if [ "$gap" = 1 ]; then
-                    ui_gap
-                    gap=0
-                fi
-                printf '    %s%s%s\n' "$UI_MUTED" "$line" "$UI_RESET"
-                ;;
-        esac
-    done
-    ui_gap
-}
-
-gcr_need_update(){
-    if [ "$(uname -s)" = Darwin ];then
-        remote_ohmyshell_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell | md5)
-        remote_ohmytool_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool | md5)
-        remote_ohmyzsh_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh | md5)
-        remote_p9k_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh | md5)
-        remote_vimrc_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc | md5)
-        remote_ohmyprint_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint | md5)
-
-        local_ohmyshell_MD5=$(md5 -q ~/.ohmyshell)
-        local_ohmytool_MD5=$(md5 -q ~/.ohmytool)
-        local_ohmyzsh_MD5=$(md5 -q ~/.ohmyzsh)
-        local_p9k_MD5=$(md5 -q ~/.p9k.zsh)
-        local_vimrc_MD5=$(md5 -q ~/.vimrc)
-        local_ohmyprint_MD5=$(md5 -q ~/.ohmyprint)
-
-    elif [ "$(uname -s)" = Linux ];then
-        remote_ohmyshell_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell | md5sum | awk '{print $1}')
-        remote_ohmytool_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool | md5sum | awk '{print $1}')
-        remote_ohmyzsh_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh | md5sum | awk '{print $1}')
-        remote_p9k_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh | md5sum | awk '{print $1}')
-        remote_vimrc_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc | md5sum | awk '{print $1}')
-        remote_ohmyprint_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint | md5sum | awk '{print $1}')
-
-        local_ohmyshell_MD5=$(md5sum ~/.ohmyshell | awk '{print $1}')
-        local_ohmytool_MD5=$(md5sum ~/.ohmytool | awk '{print $1}')
-        local_ohmyzsh_MD5=$(md5sum ~/.ohmyzsh | awk '{print $1}')
-        local_p9k_MD5=$(md5sum ~/.p9k.zsh | awk '{print $1}')
-        local_vimrc_MD5=$(md5sum ~/.vimrc | awk '{print $1}')
-        local_ohmyprint_MD5=$(md5sum ~/.ohmyprint | awk '{print $1}')
-    fi
-        
-    if [ "${remote_ohmyshell_MD5}" != "${local_ohmyshell_MD5}" ] || \
-       [ "${remote_ohmytool_MD5}" != "${local_ohmytool_MD5}" ] || \
-       [ "${remote_ohmyzsh_MD5}" != "${local_ohmyzsh_MD5}" ] || \
-       [ "${remote_p9k_MD5}" != "${local_p9k_MD5}" ] || \
-       [ "${remote_vimrc_MD5}" != "${local_vimrc_MD5}" ] || \
-       [ "${remote_ohmyprint_MD5}" != "${local_ohmyprint_MD5}" ]; then
-        
-        return 0
-    else
-        return 1
-    fi
-}
-
-# myupdate [--no-restart]
-# Downloads the current GCR files from GitHub. The new files only take effect
-# in a fresh shell: re-sourcing the profile inside a function would turn its
-# declarations into locals, so the shell is replaced instead, after asking.
-# --no-restart, used by the login time check, only leaves a note.
-myupdate(){
-    local base=https://raw.githubusercontent.com/gaojunbin/GCR/master
-    local tmp=${TMPDIR:-/tmp}/gcr-update.$$
-    local failed=0 file
-
-    ui_heading "Updating GCR" "github.com/gaojunbin/GCR"
-    for file in .ohmyshell .ohmytool .ohmyzsh .p9k.zsh .vimrc .ohmyprint; do
-        if ! ui_spin "$file" "curl -fsSL '$base/$file' -o '$tmp' && command mv '$tmp' '$HOME/$file'"; then
-            failed=1
-        fi
-    done
-    command rm -f "$tmp"
-
-    if [ "$failed" = 1 ]; then
-        ui_gap
-        ui_err "some files could not be downloaded, GCR was left as it was"
-        ui_gap
-        return 1
-    fi
-
-    date +%s > $GCR_update_file
-    ui_gap
-    ui_ok "GCR is up to date"
-    show_update_info
-
-    if [ "${1:-}" = "--no-restart" ] || ! ui_interactive; then
-        ui_note "restart your shell to load it"
-        ui_gap
-        return 0
-    fi
-    if ! ui_confirm "Restart the shell now to load it?"; then
-        ui_note "it loads with your next shell"
-        ui_gap
-        return 0
-    fi
-    ui_gap
-    if [ -n "${ZSH_VERSION:-}" ]; then
-        exec zsh -l
-    else
-        exec bash -l
-    fi
-}
-
-myupdateplug(){
-    # update_joshuto
-    # update_PBShelper
-    # update_tssh
-    # update_safe_rm
-    # date +%s > $GCR_plugin_update_file
-    :
-}
-
-find_gcr_update(){
-    if gcr_need_update; then
-        # only auto update when AUTO_GCR_UPDATE is explicitly set to true
-        if [ "${AUTO_GCR_UPDATE}" = "true" ]; then
-            myupdate --no-restart
-        else
-            show_update_info
-            printf '  %s%s%s A new version is available, run %smyupdate%s to upgrade\n\n' \
-                "$UI_ACCENT" "$UI_G_UP" "$UI_RESET" "$UI_BOLD" "$UI_RESET"
-            date +%s > $GCR_update_file
-        fi
-    fi
-}
-
-# if CHECK_GCR_UPDATE is not false, check update every login
-if [ "${CHECK_GCR_UPDATE:-}" != "false" ]; then
-    find_gcr_update
-fi
-
-# ==================Auto Check Update per day (GCR & GCR plugin)==================
-if [ -f "$GCR_update_file" ]; then
-    last_timestamp=$(cat $GCR_update_file)
-    current_timestamp=$(date +%s)
-
-    if [[ "$last_timestamp" =~ ^[0-9]+$ ]]; then
-        diff=$((current_timestamp - last_timestamp))
-        # 1 days (86400s)
-        if [ $diff -ge 86400 ]; then
-            find_gcr_update
-        fi
-    else
-        find_gcr_update
-    fi
-else
-    find_gcr_update
-fi
-
-if [ -f "$GCR_plugin_update_file" ]; then
-    last_timestamp=$(cat $GCR_plugin_update_file)
-    current_timestamp=$(date +%s)
-
-    if [[ "$last_timestamp" =~ ^[0-9]+$ ]]; then
-        diff=$((current_timestamp - last_timestamp))
-        # 1 days (86400s)
-        if [ $diff -ge 86400 ]; then
-            myupdateplug
-        fi
-    else
-        myupdateplug
-    fi
-else
-    myupdateplug
 fi
 
 show_GCR_info(){
@@ -278,31 +100,32 @@ show_GCR_info(){
 
 export PATH=$HOME:$PATH
 
-source ~/.ohmyzsh
-source ~/.p9k.zsh
-source ~/.ohmytool
+if [ -n "${ZSH_VERSION:-}" ] && [ "$GCR_LOAD_THEME" = true ]; then
+    source "$GCR_INSTALL_ROOT/.ohmyzsh"
+    source "$GCR_INSTALL_ROOT/.p9k.zsh"
+fi
 
-# welcome message, after .ohmytool so its manual is known
+# Optional startup information.
 if [ "${SHOW_GCR_INFO:-}" = "true" ]; then
     show_GCR_info
 fi
 
 # support server-administration
-if [ -d ~/.server-administration ];then
-    source ~/.server-administration/init.sh
+if [ -d "$GCR_INSTALL_ROOT/.server-administration" ];then
+    source "$GCR_INSTALL_ROOT/.server-administration/init.sh"
 fi
 
 # support PBShelper
-if [ -d ~/.PBShelper ];then
-    source ~/.PBShelper/init.sh
+if [ -d "$GCR_INSTALL_ROOT/.PBShelper" ];then
+    source "$GCR_INSTALL_ROOT/.PBShelper/init.sh"
 fi
 
 # support safe-rm
-if [ -f ~/.safe-rm ];then
+if [ -f "$GCR_INSTALL_ROOT/.safe-rm" ];then
 
-    trash_dir=${SAFE_RM_TRASH:="$HOME/.Trash"}
-    alias rm='~/.safe-rm'
-    alias del='~/.safe-rm -rf'
+    trash_dir=${SAFE_RM_TRASH:="$GCR_INSTALL_ROOT/.Trash"}
+    alias rm='"$GCR_INSTALL_ROOT/.safe-rm"'
+    alias del='"$GCR_INSTALL_ROOT/.safe-rm" -rf'
     alias delf='/bin/rm -rf'
 
     empty_trash() {
@@ -324,7 +147,7 @@ if [ -f ~/.safe-rm ];then
         esac
         ui_gap
     }
-else
+elif [ "$SHOW_GCR_INFO" = true ]; then
     printf '  %s%s%s rm is unprotected, run %sinstall_safe_rm%s and restart your shell\n\n' \
         "$UI_WARN" "$UI_G_WARN" "$UI_RESET" "$UI_BOLD" "$UI_RESET"
 fi
@@ -333,11 +156,10 @@ fi
 if [ -n "$SSH_CONNECTION" ]; then
     # remote server
     # support discard-vim
-    if [ -f ~/.rmate ];then
-        alias code='~/.rmate -p $RmatePort'
+    if [ -f "$GCR_INSTALL_ROOT/.rmate" ];then
+        alias code='"$GCR_INSTALL_ROOT/.rmate" -p "$RmatePort"'
     fi
-else
-    # open with vs code (local)
+elif [ "$(uname -s)" = Darwin ]; then
     alias code='open -a "Visual Studio Code"'
 fi
 
@@ -357,7 +179,7 @@ ohmyshell(){
 
     # Cancelling a submenu comes back here: the hub erases its own trail and
     # draws itself again in place. Once a tool has run, the hub is done.
-    local footprint
+    local footprint cmd_status
     while :; do
         ui_menu "ohmyshell" "GCR interactive command hub" \
             "mytool|Common tools for daily tasks" \
@@ -377,8 +199,9 @@ ohmyshell(){
             6) mypermission ;;
             7) myupdate ;;
         esac
+        cmd_status=$?
         if [ "$UI_CHOICE" -gt 0 ]; then
-            return 0
+            return "$cmd_status"
         fi
         ui_menu_erase "$footprint"
     done
@@ -595,12 +418,13 @@ download_googledrive(){
 # test vps
 vpstest(){
     ui_heading "vpstest" "benchmark this machine with NodeBench"
-    bash <(curl -sL https://raw.githubusercontent.com/LloydAsp/NodeBench/main/NodeBench.sh)
+    . "$GCR_LIB_DIR/install.sh" || return
+    gcr_run_installer "https://raw.githubusercontent.com/LloydAsp/NodeBench/main/NodeBench.sh" bash
 }
 
 # Integrate all tool commands
 mytool(){
-    local footprint
+    local footprint cmd_status
     while :; do
         ui_menu "mytool" "common tools for daily tasks" \
             "jp|Open Jupyter Lab" \
@@ -622,8 +446,9 @@ mytool(){
             7) download_googledrive ;;
             8) vpstest ;;
         esac
+        cmd_status=$?
         if [ "$UI_CHOICE" -gt 0 ]; then
-            return 0
+            return "$cmd_status"
         fi
         ui_menu_erase "$footprint"
     done
@@ -719,7 +544,7 @@ pipu(){
 
 # Integrate all tool commands
 mypip(){
-    local footprint
+    local footprint cmd_status
     while :; do
         ui_menu "mypip" "python package management" \
             "pipset|Configure the pip source" \
@@ -735,8 +560,9 @@ mypip(){
             4) pipi ;;
             5) pipu ;;
         esac
+        cmd_status=$?
         if [ "$UI_CHOICE" -gt 0 ]; then
-            return 0
+            return "$cmd_status"
         fi
         ui_menu_erase "$footprint"
     done
@@ -750,117 +576,16 @@ mypip(){
 # 3. cenv - Create new environments
 # 4. denv - Delete an installed environment
 
-# conda_envs -> CONDA_ENVS, one name|location entry per environment, the
-# active one marked. Returns 1 when conda has nothing to list.
-conda_envs() {
-    local line name location
-    CONDA_ENVS=()
-    while IFS= read -r line; do
-        case "$line" in
-            ''|'#'*) continue ;;
-        esac
-        name=$(printf '%s\n' "$line" | awk '{print $1}')
-        if [ -z "$name" ]; then
-            continue
-        fi
-        if [[ "$line" == *"*"* ]]; then
-            location=$(printf '%s\n' "$line" | awk '{for(i=3;i<=NF;i++) printf "%s ", $i}')
-            CONDA_ENVS+=("$name|active   ${location}")
-        else
-            location=$(printf '%s\n' "$line" | awk '{for(i=2;i<=NF;i++) printf "%s ", $i}')
-            CONDA_ENVS+=("$name|${location}")
-        fi
-    done <<< "$(conda env list 2>/dev/null | tail -n +3)"
-    if [ "${#CONDA_ENVS[@]}" -eq 0 ]; then
-        ui_warn "no conda environments found"
-        return 1
-    fi
-}
-
-# conda activate
-env() {
-    local count
-    if [ -n "$1" ]; then
-        conda activate "$1"
-        return
-    fi
-    conda_envs || return 1
-    count=$((${#CONDA_ENVS[@]} + 1))
-
-    ui_menu "env" "conda environments" "${CONDA_ENVS[@]}" \
-        "deactivate|Leave the current environment" || return 1
-
-    if [ "$UI_CHOICE" = "$count" ]; then
-        conda deactivate
-        ui_ok "environment deactivated"
-    else
-        conda activate "$UI_CHOICE_NAME"
-        ui_ok "activated ${UI_CHOICE_NAME}"
-    fi
-    ui_gap
-}
-
-# list conda envs
+# Environment helpers load only when used.
+conda_envs() { . "$GCR_LIB_DIR/environment.sh" && conda_envs "$@"; }
+env() { . "$GCR_LIB_DIR/environment.sh" && env "$@"; }
+cenv() { . "$GCR_LIB_DIR/environment.sh" && cenv "$@"; }
+denv() { . "$GCR_LIB_DIR/environment.sh" && denv "$@"; }
 alias lenv='conda info -e'
-
-# create conda env
-cenv(){
-    local name from py
-    ui_heading "cenv" "create a conda environment"
-    ui_ask "Name"
-    name=$UI_ANSWER
-    if [ -z "$name" ]; then
-        ui_err "no name given"
-        return 1
-    fi
-
-    from=""
-    if conda_envs; then
-        ui_menu "cenv" "start from" \
-            "fresh|A new environment with its own python" \
-            "${CONDA_ENVS[@]}" || return 1
-        if [ "$UI_CHOICE" -gt 1 ]; then
-            from=$UI_CHOICE_NAME
-        fi
-    fi
-
-    if [ -n "$from" ]; then
-        ui_command "conda create --name ${name} --clone ${from}"
-        ui_gap
-        conda create --name ${name} --clone ${from}
-        return
-    fi
-
-    ui_ask "Python version" "3.7"
-    py=$UI_ANSWER
-    ui_gap
-    ui_command "conda create --name ${name} python=${py} ipykernel -y"
-    ui_gap
-    conda create --name ${name} python=${py} ipykernel -y
-    ui_command "python -m ipykernel install --user --name ${name}"
-    python -m ipykernel install --user --name ${name}
-}
-
-# delete conda env
-denv(){
-    local name
-    conda_envs || return 1
-    ui_menu "denv" "delete a conda environment" "${CONDA_ENVS[@]}" || return 1
-    name=$UI_CHOICE_NAME
-
-    if ui_confirm "Delete ${name} and everything in it?" n; then
-        ui_command "conda remove -n ${name} --all"
-        ui_gap
-        conda remove -n ${name} --all
-    else
-        ui_note "${name} was left alone"
-        ui_gap
-    fi
-}
 
 # Integrate all conda commands
 myenv(){
-    local footprint
+    local footprint cmd_status
     while :; do
         ui_menu "myenv" "conda environment management" \
             "env|Activate an environment" \
@@ -874,8 +599,9 @@ myenv(){
             3) cenv ;;
             4) denv ;;
         esac
+        cmd_status=$?
         if [ "$UI_CHOICE" -gt 0 ]; then
-            return 0
+            return "$cmd_status"
         fi
         ui_menu_erase "$footprint"
     done
@@ -909,7 +635,7 @@ pid(){
 
 # Integrate all GPU commands
 mygpu(){
-    local footprint
+    local footprint cmd_status
     while :; do
         ui_menu "mygpu" "gpu and cuda utilities" \
             "gpu|GPU status through gpustat" \
@@ -923,8 +649,9 @@ mygpu(){
             3) pid ;;
             4) gpus ;;
         esac
+        cmd_status=$?
         if [ "$UI_CHOICE" -gt 0 ]; then
-            return 0
+            return "$cmd_status"
         fi
         ui_menu_erase "$footprint"
     done
@@ -1007,7 +734,7 @@ mychown(){
 
 # Integrate all Permission commands
 mypermission(){
-    local footprint
+    local footprint cmd_status
     while :; do
         ui_menu "mypermission" "permission and password management" \
             "mychmod|Change directory permissions" \
@@ -1019,8 +746,9 @@ mypermission(){
             2) mychown ;;
             3) passwd ;;
         esac
+        cmd_status=$?
         if [ "$UI_CHOICE" -gt 0 ]; then
-            return 0
+            return "$cmd_status"
         fi
         ui_menu_erase "$footprint"
     done
@@ -1070,7 +798,7 @@ alias gitst='git status'
 
 # Integrate all Git commands
 mygit(){
-    local footprint
+    local footprint cmd_status
     while :; do
         ui_menu "mygit" "git workflow shortcuts" \
             "gita|git add" \
@@ -1098,8 +826,9 @@ mygit(){
             10) gitst ;;
             11) gitb ;;
         esac
+        cmd_status=$?
         if [ "$UI_CHOICE" -gt 0 ]; then
-            return 0
+            return "$cmd_status"
         fi
         ui_menu_erase "$footprint"
     done
@@ -1130,6 +859,7 @@ esac
 aicoding_launch(){
     local tool=$1
     shift
+    gcr_load_tools || return
     aicoding_info "$tool" || return 1
     if ! aicoding_bin "$tool"; then
         ui_gap
@@ -1214,9 +944,9 @@ TOML
 # update bash/zsh profile
 alias sc="source ${shell_file}"
 # list directory
-if [[ -f ~/.ruby/bin/colorls ]] || [[ -f /usr/local/bin/colorls ]];then
-    if [[ -f ~/.ruby/bin/colorls ]];then
-        export PATH=~/.ruby/bin:$PATH
+if [[ -f "$GCR_INSTALL_ROOT/.ruby/bin/colorls" ]] || [[ -f /usr/local/bin/colorls ]];then
+    if [[ -f "$GCR_INSTALL_ROOT/.ruby/bin/colorls" ]];then
+        export PATH="$GCR_INSTALL_ROOT/.ruby/bin:$PATH"
     fi
     alias ls='colorls --sd'
     alias la='colorls --sd --all'
@@ -1232,8 +962,8 @@ fi
 if command -v joshuto >/dev/null 2>&1; then
     alias l='joshuto'
 fi
-if [[ -f $HOME/.joshuto/target/release/joshuto ]]; then
-    alias l='$HOME/.joshuto/target/release/joshuto'
+if [[ -f "$GCR_INSTALL_ROOT/.joshuto/target/release/joshuto" ]]; then
+    alias l='"$GCR_INSTALL_ROOT/.joshuto/target/release/joshuto"'
 fi
 
 # clear terminal
@@ -1339,3 +1069,6 @@ dockeradd(){
 }
 
 # <<< Others end <<<
+
+# Cached notices and background checks never block the first prompt.
+gcr_startup_check

@@ -349,11 +349,10 @@ ui_spin_frames() {
 ui_spin() {
     local label="$1"
     shift
-    local cmd="$*"
 
     if [ "${GCR_ANIM:-0}" != 1 ] || ! ui_interactive; then
         ui_step "$label"
-        if eval "$cmd" >/dev/null 2>&1; then
+        if "$@" >/dev/null 2>&1; then
             ui_step_ok "$label"
             return 0
         else
@@ -369,7 +368,7 @@ ui_spin() {
     local tmp_out tmp_status pid cmd_status
     tmp_out=$(mktemp 2>/dev/null || printf '%s' "${TMPDIR:-/tmp}/gcr_spin_$$")
     tmp_status="$tmp_out.status"
-    { ( eval "$cmd" ) >"$tmp_out" 2>&1; printf '%s' "$?" >"$tmp_status"; } &
+    { ( "$@" ) >"$tmp_out" 2>&1; printf '%s' "$?" >"$tmp_status"; } &
     pid=$!
     if [ -z "${ZSH_VERSION:-}" ]; then
         disown "$pid" 2>/dev/null
@@ -813,13 +812,18 @@ ui_read_key() {
         fi
     fi
     if [ "$key" = "$UI_ESC" ]; then
-        while [ "$n" -lt 8 ] && ui_read_byte; do
+        if ui_read_byte; then
             key="$key$UI_BYTE"
-            n=$((n + 1))
             case "$UI_BYTE" in
-                [A-Za-z~]) break ;;
+                '['|O)
+                    while [ "$n" -lt 8 ] && ui_read_byte; do
+                        key="$key$UI_BYTE"
+                        n=$((n + 1))
+                        case "$UI_BYTE" in [A-Za-z~]) break ;; esac
+                    done
+                    ;;
             esac
-        done
+        fi
     fi
     UI_KEY="$key"
 }

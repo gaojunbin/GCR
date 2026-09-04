@@ -19,7 +19,10 @@
 DISABLE_AUTO_UPDATE="true"
 
 # Path to your oh-my-zsh installation.
-export ZSH=$HOME/.oh-my-zsh
+export ZSH="${GCR_INSTALL_ROOT:-$HOME}/.oh-my-zsh"
+if [ -d "${GCR_INSTALL_ROOT:-$HOME}/oh-my-zsh" ]; then
+    export ZSH="${GCR_INSTALL_ROOT:-$HOME}/oh-my-zsh"
+fi
 
 # Set name of the theme to load
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes for more details
@@ -41,4 +44,4 @@ else
     plugins=(git extract autojump zsh-syntax-highlighting zsh-autosuggestions zsh-myincr aliases docker docker-compose gitignore sudo)
 fi
 
-source $ZSH/oh-my-zsh.sh
+source "$ZSH/oh-my-zsh.sh"
