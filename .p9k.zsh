@@ -25,6 +25,20 @@
   # restarting zsh. Edit ~/.p10k.zsh and type `source ~/.p10k.zsh`.
   unset -m '(POWERLEVEL9K_*|DEFAULT_USER)~POWERLEVEL9K_GITSTATUS_DIR'
 
+  # This local-only probe never downloads. With no daemon, use the normal Git
+  # prompt backend until the user runs gcr_repair_prompt.
+  local gcr_gitstatus_dir=${POWERLEVEL9K_GITSTATUS_DIR:-${ZSH:-$HOME/.oh-my-zsh}/custom/themes/powerlevel10k/gitstatus}
+  local gcr_gitstatus_cache=${GITSTATUS_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/gitstatus}
+  local -a gcr_gitstatus_candidates=("$gcr_gitstatus_dir"/usrbin/gitstatusd*(N) "$gcr_gitstatus_cache"/gitstatusd*(N))
+  if [[ -z ${GITSTATUS_DAEMON:-} ]] && (( ! $#gcr_gitstatus_candidates )); then
+    typeset -g POWERLEVEL9K_DISABLE_GITSTATUS=true
+  elif ! (
+    builtin source "$gcr_gitstatus_dir/install" -n -d "$gcr_gitstatus_dir" \
+      -s "${(L)$(command uname -s)}" -m "${(L)$(command uname -m)}"
+  ) >/dev/null 2>&1; then
+    typeset -g POWERLEVEL9K_DISABLE_GITSTATUS=true
+  fi
+
   # Zsh >= 5.1 is required.
   [[ $ZSH_VERSION == (5.<1->*|<6->.*) ]] || return
 

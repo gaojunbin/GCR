@@ -17,6 +17,9 @@
 
 # Uncomment the following line if you want to disable oh-my-zsh auto update.
 DISABLE_AUTO_UPDATE="true"
+zstyle ':omz:update' mode disabled
+GITSTATUS_AUTO_INSTALL=0
+GCR_GITSTATUS_OFFLINE=1
 
 # Path to your oh-my-zsh installation.
 export ZSH=$HOME/.oh-my-zsh

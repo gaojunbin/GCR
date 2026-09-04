@@ -118,7 +118,7 @@ start_docker_compose() {
 
 # ================================ Manual and Main Functions ================================
 
-if [[ "$SHELL" == *"zsh" ]];then
+if [ -n "${ZSH_VERSION:-}" ];then
     declare -A manual_ohmytool=(
         ["new_vps_help"]="Reminde you what to install when you get a new server."
         ["install_base"]="Install some base tools."

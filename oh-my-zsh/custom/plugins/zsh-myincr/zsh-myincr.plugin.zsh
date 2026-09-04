@@ -3,13 +3,16 @@
 # ==========================
 # by y.fujii <y-fujii at mimosa-pudica.net>, public domain
 
-autoload -U compinit
+# Oh My Zsh has already initialized completion. Standalone use still works.
+if (( ! $+functions[compdef] )); then
+    autoload -Uz compinit
+    compinit
+fi
 zle -N self-insert self-insert-incr
 zle -N vi-cmd-mode-incr
 zle -N vi-backward-delete-char-incr
 zle -N backward-delete-char-incr
 zle -N expand-or-complete-prefix-incr
-compinit
 
 bindkey -M viins '^[' vi-cmd-mode-incr
 bindkey -M viins '^h' vi-backward-delete-char-incr

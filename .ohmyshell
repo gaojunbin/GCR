@@ -23,6 +23,11 @@
 # --- Others
 # ========Outline end============
 
+# Never download a prompt dependency while starting a shell. This is also set
+# before the instant prompt, whose cached preinit can run before Oh My Zsh.
+GITSTATUS_AUTO_INSTALL=0
+GCR_GITSTATUS_OFFLINE=1
+
 # lazy load, zsh only: the prompt expansion below is a zsh feature
 if [ -n "${ZSH_VERSION:-}" ] && [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
@@ -32,7 +37,7 @@ source ~/.ohmyprint
 
 # shell type [~/.bashrc or ~/.zshrc]
 # support tabby shell working directory reporting
-if [[ "$SHELL" == *"zsh" ]];then
+if [ -n "${ZSH_VERSION:-}" ];then
     declare -A manual_ohmyshell=(
         ["myupdate"]="support update GCR Toolkit from GitHub Repo."
         ["mytool"]="Some basic tools for common using."
@@ -44,207 +49,292 @@ if [[ "$SHELL" == *"zsh" ]];then
     )
     shell_file=~/.zshrc
     precmd () { echo -n "\x1b]1337;CurrentDir=$(pwd)\x07"; }
-elif [[ "$SHELL" == *"bash" ]];then
+elif [ -n "${BASH_VERSION:-}" ];then
     shell_file=~/.bashrc
     export PS1="$PS1\[\e]1337;CurrentDir="'$(pwd)\a\]'
 else
     ui_err "unsupported shell: $SHELL"
 fi
 
-# 1. check update
-# GCR update time lock
-GCR_update_file=$HOME/.gcr.update.lock
-GCR_plugin_update_file=$HOME/.gcr.plugin.update.lock
+# Update checks never wait on the network during shell initialization.
+GCR_CACHE_DIR=${GCR_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/gcr}
+GCR_UPDATE_BASE_URL=${GCR_UPDATE_BASE_URL:-https://raw.githubusercontent.com/gaojunbin/GCR/master}
+GCR_UPDATE_FILES=(
+    .ohmyshell .ohmytool .ohmyzsh .p9k.zsh .vimrc .ohmyprint
+    oh-my-zsh/custom/plugins/zsh-myincr/zsh-myincr.plugin.zsh
+    oh-my-zsh/custom/themes/powerlevel10k/gitstatus/gitstatus.plugin.zsh
+    oh-my-zsh/custom/themes/powerlevel10k/gitstatus/install
+)
 
-# Only the newest entry of recent_updates is shown: entries start with a date
-# line, reading stops at the second one.
-show_update_info(){
-    local updates line seen=0 gap=0
-    updates=$(curl -fsSL https://raw.githubusercontent.com/gaojunbin/GCR/master/recent_updates 2>/dev/null)
-    if [ -z "$updates" ]; then
-        return 0
+# Map the fixed list of repository paths to their installed paths.
+gcr_installed_path() {
+    case "$1" in
+        oh-my-zsh/*) GCR_INSTALLED_PATH="$HOME/.${1}" ;;
+        *) GCR_INSTALLED_PATH="$HOME/$1" ;;
+    esac
+}
+
+gcr_now() {
+    if [ -n "${ZSH_VERSION:-}" ]; then
+        zmodload zsh/datetime
+        GCR_NOW=$EPOCHSECONDS
+    else
+        GCR_NOW=$(date +%s)
     fi
+}
 
-    ui_heading "Latest update" "github.com/gaojunbin/GCR"
-    printf '%s\n' "$updates" | while IFS= read -r line; do
-        case "$line" in
-            202[0-9]-*)
-                if [ "$seen" = 1 ]; then
-                    break
-                fi
-                seen=1
-                printf '  %s%s %s%s\n' "$UI_ACCENT" "$UI_G_INFO" "$UI_BOLD" "$line$UI_RESET"
-                ;;
-            '')
-                gap=1
-                ;;
-            *)
-                if [ "$gap" = 1 ]; then
-                    ui_gap
-                    gap=0
-                fi
-                printf '    %s%s%s\n' "$UI_MUTED" "$line" "$UI_RESET"
-                ;;
+gcr_fetch() {
+    command curl -q -fsSL --connect-timeout 2 --max-time 10 --retry 0 "$1" -o "$2"
+}
+
+# Download once into a private directory; auto-update reuses these same files.
+# No separate release manifest or publishing step is required.
+gcr_fetch_release() {
+    local directory=$1 file parent
+    for file in "${GCR_UPDATE_FILES[@]}"; do
+        parent=${file%/*}
+        [ "$parent" != "$file" ] || parent=.
+        command mkdir -p "$directory/$parent" || return 1
+        gcr_fetch "$GCR_UPDATE_BASE_URL/$file" "$directory/$file" || return 1
+        [ -s "$directory/$file" ] || return 1
+        case "$file" in
+            .vimrc) ;;
+            *) command zsh -fn "$directory/$file" || return 1 ;;
         esac
     done
-    ui_gap
 }
 
-gcr_need_update(){
-    if [ "$(uname -s)" = Darwin ];then
-        remote_ohmyshell_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell | md5)
-        remote_ohmytool_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool | md5)
-        remote_ohmyzsh_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh | md5)
-        remote_p9k_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh | md5)
-        remote_vimrc_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc | md5)
-        remote_ohmyprint_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint | md5)
-
-        local_ohmyshell_MD5=$(md5 -q ~/.ohmyshell)
-        local_ohmytool_MD5=$(md5 -q ~/.ohmytool)
-        local_ohmyzsh_MD5=$(md5 -q ~/.ohmyzsh)
-        local_p9k_MD5=$(md5 -q ~/.p9k.zsh)
-        local_vimrc_MD5=$(md5 -q ~/.vimrc)
-        local_ohmyprint_MD5=$(md5 -q ~/.ohmyprint)
-
-    elif [ "$(uname -s)" = Linux ];then
-        remote_ohmyshell_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyshell | md5sum | awk '{print $1}')
-        remote_ohmytool_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmytool | md5sum | awk '{print $1}')
-        remote_ohmyzsh_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyzsh | md5sum | awk '{print $1}')
-        remote_p9k_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.p9k.zsh | md5sum | awk '{print $1}')
-        remote_vimrc_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.vimrc | md5sum | awk '{print $1}')
-        remote_ohmyprint_MD5=$(curl -sL https://raw.githubusercontent.com/gaojunbin/GCR/master/.ohmyprint | md5sum | awk '{print $1}')
-
-        local_ohmyshell_MD5=$(md5sum ~/.ohmyshell | awk '{print $1}')
-        local_ohmytool_MD5=$(md5sum ~/.ohmytool | awk '{print $1}')
-        local_ohmyzsh_MD5=$(md5sum ~/.ohmyzsh | awk '{print $1}')
-        local_p9k_MD5=$(md5sum ~/.p9k.zsh | awk '{print $1}')
-        local_vimrc_MD5=$(md5sum ~/.vimrc | awk '{print $1}')
-        local_ohmyprint_MD5=$(md5sum ~/.ohmyprint | awk '{print $1}')
-    fi
-        
-    if [ "${remote_ohmyshell_MD5}" != "${local_ohmyshell_MD5}" ] || \
-       [ "${remote_ohmytool_MD5}" != "${local_ohmytool_MD5}" ] || \
-       [ "${remote_ohmyzsh_MD5}" != "${local_ohmyzsh_MD5}" ] || \
-       [ "${remote_p9k_MD5}" != "${local_p9k_MD5}" ] || \
-       [ "${remote_vimrc_MD5}" != "${local_vimrc_MD5}" ] || \
-       [ "${remote_ohmyprint_MD5}" != "${local_ohmyprint_MD5}" ]; then
-        
-        return 0
-    else
-        return 1
-    fi
+# Called only after every download succeeded; a network error cannot look like
+# a changed file. Comparison stays in the background, once per cache interval.
+gcr_need_update() {
+    local directory=$1 file
+    for file in "${GCR_UPDATE_FILES[@]}"; do
+        gcr_installed_path "$file"
+        command cmp -s "$directory/$file" "$GCR_INSTALLED_PATH" || return 0
+    done
+    return 1
 }
 
-# myupdate [--no-restart]
-# Downloads the current GCR files from GitHub. The new files only take effect
-# in a fresh shell: re-sourcing the profile inside a function would turn its
-# declarations into locals, so the shell is replaced instead, after asking.
-# --no-restart, used by the login time check, only leaves a note.
-myupdate(){
-    local base=https://raw.githubusercontent.com/gaojunbin/GCR/master
-    local tmp=${TMPDIR:-/tmp}/gcr-update.$$
-    local failed=0 file
+gcr_check_due() {
+    local checked outcome extra interval=86400
+    if { read -r checked outcome extra < "$GCR_CACHE_DIR/check"; } 2>/dev/null; then
+        case "$checked" in ''|*[!0-9]*) return 0 ;; esac
+        [ "${#checked}" -le 12 ] && [ -z "$extra" ] || return 0
+        case "$outcome" in
+            failed) interval=900 ;;
+            current|available|updated) ;;
+            *) return 0 ;;
+        esac
+        gcr_now
+        [ "$checked" -le "$GCR_NOW" ] && [ $((GCR_NOW - checked)) -lt "$interval" ] && return 1
+    fi
+    return 0
+}
 
-    ui_heading "Updating GCR" "github.com/gaojunbin/GCR"
-    for file in .ohmyshell .ohmytool .ohmyzsh .p9k.zsh .vimrc .ohmyprint; do
-        if ! ui_spin "$file" "curl -fsSL '$base/$file' -o '$tmp' && command mv '$tmp' '$HOME/$file'"; then
-            failed=1
+# Called only in a worker subshell; the EXIT trap releases the directory lock.
+# All network operations are bounded. An abandoned lock can be reclaimed after
+# ten minutes (e.g. after SIGKILL or a reboot). A second mkdir elects one reaper.
+gcr_acquire_update_lock() {
+    local started stale
+    command mkdir -p "$GCR_CACHE_DIR" || return 1
+    if ! command mkdir "$GCR_CACHE_DIR/update.lock" 2>/dev/null; then
+        { read -r started < "$GCR_CACHE_DIR/update.lock/started"; } 2>/dev/null || return 1
+        case "$started" in ''|*[!0-9]*) return 1 ;; esac
+        [ "${#started}" -le 12 ] || return 1
+        gcr_now
+        [ $((GCR_NOW - started)) -ge 600 ] || return 1
+        command mkdir "$GCR_CACHE_DIR/update.lock/reap" 2>/dev/null || return 1
+        stale=$(command mktemp -d "$GCR_CACHE_DIR/stale.XXXXXX") || return 1
+        command mv "$GCR_CACHE_DIR/update.lock" "$stale/lock" || return 1
+        command rm -rf "$stale"
+        command mkdir "$GCR_CACHE_DIR/update.lock" 2>/dev/null || return 1
+    fi
+    gcr_now
+    printf '%s\n' "$GCR_NOW" > "$GCR_CACHE_DIR/update.lock/started"
+}
+
+gcr_record_check() {
+    gcr_now
+    printf '%s %s\n' "$GCR_NOW" "$1" > "$GCR_CACHE_DIR/check.tmp" &&
+        command mv -f "$GCR_CACHE_DIR/check.tmp" "$GCR_CACHE_DIR/check"
+}
+
+# Download and verify the complete release before replacing any installed file.
+# Each replacement is atomic on the home filesystem; a failed replacement or
+# INT/TERM rolls back all touched files. Keep backups if rollback itself fails.
+gcr_install_release() (
+    local downloaded=$1 stage file target parent committed=0 keep=0
+    local touched=()
+    stage=$(command mktemp -d "$HOME/.gcr-update.XXXXXX") || return 1
+    gcr_release_cleanup() {
+        local file target
+        if [ "$committed" != 1 ]; then
+            for file in "${touched[@]}"; do
+                gcr_installed_path "$file"
+                target=$GCR_INSTALLED_PATH
+                if [ -e "$stage/old/$file" ] || [ -L "$stage/old/$file" ]; then
+                    command mv -f "$stage/old/$file" "$target" || keep=1
+                else
+                    command rm -f "$target" || keep=1
+                fi
+            done
+        fi
+        if [ "$keep" = 1 ]; then
+            printf 'GCR rollback incomplete; backups kept at %s\n' "$stage" >&2
+        else
+            command rm -rf "$stage"
+        fi
+    }
+    trap gcr_release_cleanup EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+    for file in "${GCR_UPDATE_FILES[@]}"; do
+        parent=${file%/*}
+        [ "$parent" != "$file" ] || parent=.
+        command mkdir -p "$stage/new/$parent" "$stage/old/$parent" || return 1
+        command cp "$downloaded/$file" "$stage/new/$file" || return 1
+    done
+    for file in "${GCR_UPDATE_FILES[@]}"; do
+        gcr_installed_path "$file"
+        target=$GCR_INSTALLED_PATH
+        [ ! -d "$target" ] || return 1
+        command mkdir -p "${target%/*}" || return 1
+        if [ -e "$target" ] || [ -L "$target" ]; then
+            command cp -Pp "$target" "$stage/old/$file" || return 1
         fi
     done
-    command rm -f "$tmp"
+    for file in "${GCR_UPDATE_FILES[@]}"; do
+        gcr_installed_path "$file"
+        touched+=("$file")
+        command mv -f "$stage/new/$file" "$GCR_INSTALLED_PATH" || return 1
+    done
+    committed=1
+)
 
-    if [ "$failed" = 1 ]; then
-        ui_gap
-        ui_err "some files could not be downloaded, GCR was left as it was"
-        ui_gap
+# Only cached release notes are printed; displaying a notice never uses network.
+show_update_info() {
+    local line seen=0
+    [ -s "$GCR_CACHE_DIR/recent_updates" ] || return 0
+    ui_heading "Latest update" "github.com/gaojunbin/GCR"
+    while IFS= read -r line; do
+        case "$line" in
+            20[0-9][0-9]-*)
+                [ "$seen" = 0 ] || break
+                seen=1 ;;
+        esac
+        printf '    %s\n' "$line"
+    done < "$GCR_CACHE_DIR/recent_updates"
+    ui_gap
+}
+
+gcr_cache_release_notes() {
+    if gcr_fetch "$GCR_UPDATE_BASE_URL/recent_updates" "$gcr_work/recent_updates"; then
+        command mv -f "$gcr_work/recent_updates" "$GCR_CACHE_DIR/recent_updates"
+    fi
+    return 0
+}
+
+find_gcr_update() (
+    local gcr_work result
+    gcr_acquire_update_lock || return 0
+    trap 'command rm -rf "$GCR_CACHE_DIR/update.lock"; [ -z "${gcr_work:-}" ] || command rm -rf "$gcr_work"' EXIT
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+    # Another shell may have completed the check while this worker was starting.
+    gcr_check_due || return 0
+    gcr_work=$(command mktemp -d "$GCR_CACHE_DIR/check.XXXXXX") || return 1
+    if ! gcr_fetch_release "$gcr_work/download"; then
+        gcr_record_check failed
         return 1
     fi
+    if gcr_need_update "$gcr_work/download"; then result=0; else result=$?; fi
+    if [ "$result" = 1 ]; then
+        command rm -f "$GCR_CACHE_DIR/available"
+        gcr_record_check current
+        return 0
+    fi
+    printf 'available\n' > "$GCR_CACHE_DIR/available" || return 1
+    if [ "${AUTO_GCR_UPDATE:-false}" = true ]; then
+        if ! gcr_install_release "$gcr_work/download"; then
+            gcr_record_check failed
+            return 1
+        fi
+        command rm -f "$GCR_CACHE_DIR/available"
+        gcr_record_check updated
+    else
+        gcr_record_check available
+    fi
+    gcr_cache_release_notes
+)
 
-    date +%s > $GCR_update_file
-    ui_gap
+# Kept as an explicit entry point; no plugin installers run during startup.
+myupdateplug() { :; }
+
+myupdate() {
+    ui_heading "Updating GCR" "github.com/gaojunbin/GCR"
+    if ! (
+        local gcr_work
+        gcr_acquire_update_lock || { ui_note "another GCR update is running; try again later"; exit 1; }
+        trap 'command rm -rf "$GCR_CACHE_DIR/update.lock"; [ -z "${gcr_work:-}" ] || command rm -rf "$gcr_work"' EXIT
+        trap 'exit 130' INT
+        trap 'exit 143' TERM
+        gcr_work=$(command mktemp -d "$GCR_CACHE_DIR/check.XXXXXX") || exit 1
+        if ! gcr_fetch_release "$gcr_work/download" ||
+           ! gcr_install_release "$gcr_work/download"; then
+            gcr_record_check failed
+            exit 1
+        fi
+        command rm -f "$GCR_CACHE_DIR/available"
+        gcr_record_check current
+        gcr_cache_release_notes
+    ); then
+        ui_err "update failed; downloaded files were not applied, or replacements were rolled back"
+        return 1
+    fi
     ui_ok "GCR is up to date"
     show_update_info
-
-    if [ "${1:-}" = "--no-restart" ] || ! ui_interactive; then
+    if [ "${1:-}" = --no-restart ] || ! ui_interactive; then
         ui_note "restart your shell to load it"
-        ui_gap
         return 0
     fi
-    if ! ui_confirm "Restart the shell now to load it?"; then
+    if ui_confirm "Restart the shell now to load it?"; then
+        if [ -n "${ZSH_VERSION:-}" ]; then exec zsh -l; else exec bash -l; fi
+    else
         ui_note "it loads with your next shell"
-        ui_gap
-        return 0
     fi
-    ui_gap
+}
+
+gcr_startup_update() {
+    case $- in *i*) ;; *) return 0 ;; esac
+    [ "${CHECK_GCR_UPDATE:-true}" != false ] || return 0
+    [ "${GCR_UPDATE_SCHEDULED:-0}" != 1 ] || return 0
+    GCR_UPDATE_SCHEDULED=1
+    if [ -s "$GCR_CACHE_DIR/available" ]; then
+        printf '  GCR: a new version is available; run myupdate to upgrade.\n'
+    fi
+    gcr_check_due || return 0
+    # Redirect every fd before launching: neither terminal output nor command
+    # substitution pipes may be held open by a slow background request.
     if [ -n "${ZSH_VERSION:-}" ]; then
-        exec zsh -l
+        setopt localoptions nomonitor nonotify
+        eval 'find_gcr_update </dev/null >/dev/null 2>&1 &!'
     else
-        exec bash -l
+        find_gcr_update </dev/null >/dev/null 2>&1 &
+        disown "$!" 2>/dev/null || true
     fi
 }
 
-myupdateplug(){
-    # update_joshuto
-    # update_PBShelper
-    # update_tssh
-    # update_safe_rm
-    # date +%s > $GCR_plugin_update_file
-    :
-}
-
-find_gcr_update(){
-    if gcr_need_update; then
-        # only auto update when AUTO_GCR_UPDATE is explicitly set to true
-        if [ "${AUTO_GCR_UPDATE}" = "true" ]; then
-            myupdate --no-restart
-        else
-            show_update_info
-            printf '  %s%s%s A new version is available, run %smyupdate%s to upgrade\n\n' \
-                "$UI_ACCENT" "$UI_G_UP" "$UI_RESET" "$UI_BOLD" "$UI_RESET"
-            date +%s > $GCR_update_file
-        fi
+# Explicit repair only. Normal startup never installs a prompt dependency.
+gcr_repair_prompt() {
+    local installer="$HOME/.oh-my-zsh/custom/themes/powerlevel10k/gitstatus/install"
+    [ -f "$installer" ] || { ui_err "Powerlevel10k is not installed"; return 1; }
+    if command sh "$installer"; then
+        ui_ok "prompt dependency installed; restart your shell"
+    else
+        ui_err "could not install gitstatusd; retry gcr_repair_prompt when the network is available"
+        return 1
     fi
 }
-
-# if CHECK_GCR_UPDATE is not false, check update every login
-if [ "${CHECK_GCR_UPDATE:-}" != "false" ]; then
-    find_gcr_update
-fi
-
-# ==================Auto Check Update per day (GCR & GCR plugin)==================
-if [ -f "$GCR_update_file" ]; then
-    last_timestamp=$(cat $GCR_update_file)
-    current_timestamp=$(date +%s)
-
-    if [[ "$last_timestamp" =~ ^[0-9]+$ ]]; then
-        diff=$((current_timestamp - last_timestamp))
-        # 1 days (86400s)
-        if [ $diff -ge 86400 ]; then
-            find_gcr_update
-        fi
-    else
-        find_gcr_update
-    fi
-else
-    find_gcr_update
-fi
-
-if [ -f "$GCR_plugin_update_file" ]; then
-    last_timestamp=$(cat $GCR_plugin_update_file)
-    current_timestamp=$(date +%s)
-
-    if [[ "$last_timestamp" =~ ^[0-9]+$ ]]; then
-        diff=$((current_timestamp - last_timestamp))
-        # 1 days (86400s)
-        if [ $diff -ge 86400 ]; then
-            myupdateplug
-        fi
-    else
-        myupdateplug
-    fi
-else
-    myupdateplug
-fi
 
 show_GCR_info(){
     ui_banner
@@ -278,8 +368,10 @@ show_GCR_info(){
 
 export PATH=$HOME:$PATH
 
-source ~/.ohmyzsh
-source ~/.p9k.zsh
+if [ -n "${ZSH_VERSION:-}" ]; then
+    source ~/.ohmyzsh
+    source ~/.p9k.zsh
+fi
 source ~/.ohmytool
 
 # welcome message, after .ohmytool so its manual is known
@@ -1339,3 +1431,6 @@ dockeradd(){
 }
 
 # <<< Others end <<<
+
+# Start maintenance only after all startup files have finished loading.
+gcr_startup_update

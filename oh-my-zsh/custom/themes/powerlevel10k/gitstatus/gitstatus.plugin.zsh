@@ -424,7 +424,7 @@ function _gitstatus_daemon"${1:-}"() {
       local gitstatus_plugin_dir=${(P)gitstatus_plugin_dir_var}
       builtin set -- -d $gitstatus_plugin_dir -s $uname_s -m $uname_m \
         -p "printf '\\001' >&$pipe_fd" -e $pipe_fd -- _gitstatus_set_daemon$fsuf
-      [[ ${GITSTATUS_AUTO_INSTALL:-1} == (|-|+)<1-> ]] || builtin set -- -n "$@"
+      [[ ${GCR_GITSTATUS_OFFLINE:-0} != 1 && ${GITSTATUS_AUTO_INSTALL:-0} == (|-|+)<1-> ]] || builtin set -- -n "$@"
       builtin source $gitstatus_plugin_dir/install     || return
       [[ -n $_gitstatus_zsh_daemon ]]                  || return
       [[ -n $_gitstatus_zsh_version ]]                 || return
@@ -446,7 +446,7 @@ function _gitstatus_daemon"${1:-}"() {
       fi
 
       (( ! _gitstatus_zsh_downloaded ))                || return
-      [[ ${GITSTATUS_AUTO_INSTALL:-1} == (|-|+)<1-> ]] || return
+      [[ ${GCR_GITSTATUS_OFFLINE:-0} != 1 && ${GITSTATUS_AUTO_INSTALL:-0} == (|-|+)<1-> ]] || return
       [[ $_gitstatus_zsh_daemon == \
          ${GITSTATUS_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/gitstatus}/* ]] || return
 

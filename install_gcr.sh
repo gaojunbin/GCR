@@ -685,7 +685,7 @@ fetch_from_mirror() {
     fi
 
     if ! run_step_status "Downloading GCR" \
-        'curl -fsSL "$GCR_MIRROR_URL" -o "$WORKDIR/gcr.tar.gz" && tar -xzf "$WORKDIR/gcr.tar.gz" -C "$WORKDIR"'; then
+        'curl -q -fsSL --connect-timeout 3 --max-time 60 --retry 0 "$GCR_MIRROR_URL" -o "$WORKDIR/gcr.tar.gz" && tar -xzf "$WORKDIR/gcr.tar.gz" -C "$WORKDIR"'; then
         rm -rf "$SRC"
         ui_note "$GCR_MIRROR_URL is unreachable, falling back to github.com"
         return 1
@@ -705,6 +705,14 @@ copy_configs() {
         mkdir -p "$HOME/.oh-my-zsh" &&
         cp -R "$SRC/oh-my-zsh/." "$HOME/.oh-my-zsh/"
     '
+}
+
+# Optional at install time; an offline install must still produce a usable shell.
+install_prompt_dependency() {
+    installer="$HOME/.oh-my-zsh/custom/themes/powerlevel10k/gitstatus/install"
+    if ! run_step_status "Preparing Git prompt" 'sh "$installer"'; then
+        ui_note "Git prompt helper unavailable; run gcr_repair_prompt later to retry"
+    fi
 }
 
 append_profile() {
@@ -880,6 +888,7 @@ main() {
     fetch_source
     copy_configs
     install_zsh
+    install_prompt_dependency
     write_zshrc
     finish
 }

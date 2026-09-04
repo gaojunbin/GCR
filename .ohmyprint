@@ -24,7 +24,8 @@ ui_interactive() {
 }
 
 ui_cols() {
-    local cols=$(tput cols 2>/dev/null)
+    local cols=${COLUMNS:-}
+    case "$cols" in ''|*[!0-9]*) cols=$(tput cols 2>/dev/null) ;; esac
     case "$cols" in
         ''|*[!0-9]*) cols=80 ;;
     esac
@@ -32,7 +33,8 @@ ui_cols() {
 }
 
 ui_rows() {
-    local rows=$(tput lines 2>/dev/null)
+    local rows=${LINES:-}
+    case "$rows" in ''|*[!0-9]*) rows=$(tput lines 2>/dev/null) ;; esac
     case "$rows" in
         ''|*[!0-9]*) rows=24 ;;
     esac
@@ -65,8 +67,8 @@ ui_init() {
         UI_COLOR=1
     fi
 
-    UI_ESC=$(printf '\033')
-    UI_CR=$(printf '\r')
+    printf -v UI_ESC '\033'
+    printf -v UI_CR '\r'
     UI_LF='
 '
 
@@ -139,10 +141,10 @@ ui_init() {
     UI_SHOW="${UI_ESC}[?25h"
     UI_CLR="${UI_ESC}[K"
     UI_CLR_BELOW="${UI_ESC}[J"
-    UI_DEL=$(printf '\177')
-    UI_BS=$(printf '\b')
-    UI_TAB=$(printf '\t')
-    UI_INT=$(printf '\003')
+    printf -v UI_DEL '\177'
+    printf -v UI_BS '\b'
+    printf -v UI_TAB '\t'
+    printf -v UI_INT '\003'
 
     # How long to wait for the rest of an escape sequence: an arrow key arrives
     # whole, a bare escape is reported after this. zsh reads with a timeout in
@@ -212,20 +214,26 @@ ui_init() {
         UI_G_ELLIPSIS="..."
     fi
 
-    UI_FRACSLEEP=0
-    if sleep 0.01 2>/dev/null; then
-        UI_FRACSLEEP=1
-    fi
-
+    # Fractional sleep support is checked only when an animation is requested.
+    unset UI_FRACSLEEP
     GCR_ANIM=0
-    if [ "$UI_TTY" = 1 ] && [ "$UI_FRACSLEEP" = 1 ] && [ "${GCR_NO_ANIM:-0}" != 1 ]; then
+    if [ "$UI_TTY" = 1 ] && [ "${GCR_NO_ANIM:-0}" != 1 ]; then
         GCR_ANIM=1
     fi
-
-    UI_COLS=$(ui_cols)
+    UI_COLS=${COLUMNS:-80}
+    case "$UI_COLS" in ''|*[!0-9]*) UI_COLS=80 ;; esac
 }
 
 ui_init
+
+ui_animate() {
+    [ "${GCR_ANIM:-0}" = 1 ] && [ "${GCR_NO_ANIM:-0}" != 1 ] && ui_interactive || return 1
+    if [ -z "${UI_FRACSLEEP+x}" ]; then
+        UI_FRACSLEEP=0
+        if command sleep 0.01 2>/dev/null; then UI_FRACSLEEP=1; fi
+    fi
+    [ "$UI_FRACSLEEP" = 1 ]
+}
 
 # ------------------------------------------------------------------ output ---
 
@@ -351,7 +359,7 @@ ui_spin() {
     shift
     local cmd="$*"
 
-    if [ "${GCR_ANIM:-0}" != 1 ] || ! ui_interactive; then
+    if ! ui_animate; then
         ui_step "$label"
         if eval "$cmd" >/dev/null 2>&1; then
             ui_step_ok "$label"
@@ -406,7 +414,7 @@ ui_spin() {
 ui_spin_start() {
     UI_SPIN_LABEL="$1"
     UI_SPIN_PID=""
-    if [ "${GCR_ANIM:-0}" != 1 ] || ! ui_interactive; then
+    if ! ui_animate; then
         ui_step "$1"
         return 0
     fi
@@ -550,7 +558,7 @@ ui_progress_anim() {
     i=0
     while [ "$i" -lt "$empty" ]; do bar_e="${bar_e}${UI_G_BAR_EMPTY}"; i=$((i + 1)); done
 
-    if [ "${GCR_ANIM:-0}" = 1 ] && ui_interactive; then
+    if ui_animate; then
         printf '\r%s  %s[%s%s%s%s] %s%3d%%%s (%d/%d)' \
             "$UI_CLR" \
             "$UI_MUTED" "$UI_ACCENT" "$bar_f" "$UI_MUTED" "$bar_e" \
@@ -625,7 +633,7 @@ ui_logo() {
 
 # ui_logo_shine: dynamic light sweep across the GCR logo
 ui_logo_shine() {
-    if [ "${GCR_ANIM:-0}" != 1 ] || ! ui_interactive; then
+    if ! ui_animate; then
         ui_logo
         return 0
     fi
@@ -1014,7 +1022,7 @@ ui_menu_run() {
         ui_menu_at "$UI_MENU_POS"
         UI_CHOICE=$UI_MENU_IDX
     fi
-    if [ "${GCR_ANIM:-0}" = 1 ]; then
+    if ui_animate; then
         UI_MENU_FLASH=1
         ui_menu_redraw "$@"
         sleep 0.08 2>/dev/null || true
