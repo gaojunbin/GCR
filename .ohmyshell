@@ -101,6 +101,7 @@ gcr_fetch_release() {
             .vimrc) ;;
             *) command zsh -fn "$directory/$file" || return 1 ;;
         esac
+        ui_step_ok "$file"
     done
 }
 
@@ -291,6 +292,7 @@ myupdate() {
         ui_err "update failed; downloaded files were not applied, or replacements were rolled back"
         return 1
     fi
+    ui_gap
     ui_ok "GCR is up to date"
     show_update_info
     if [ "${1:-}" = --no-restart ] || ! ui_interactive; then
