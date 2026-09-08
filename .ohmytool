@@ -78,6 +78,8 @@
 # |
 # --- install_aicoding - Install and update AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI.
 # |
+# --- install_herdr - Install Herdr, a terminal runtime for coding agents.
+# |
 # ==============  Outline end ==============
 
 # ================================ UI Helper Functions =====================================
@@ -155,6 +157,7 @@ if [ -n "${ZSH_VERSION:-}" ];then
         ["install_discard_vim"]="Install discard-vim to enable use vscode or sublime to edit file."
         ["install_joshuto"]="Install joshuto for better file browsing."
         ["install_aicoding"]="Install and update AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI."
+        ["install_herdr"]="Install Herdr, a terminal runtime for coding agents."
     )
 fi
 
@@ -163,7 +166,7 @@ fi
 # menus and the searchable list of everything.
 _ohmytool_categories() {
     printf '%s\n' \
-        "aicoding|AI Coding Agents (Claude, Codex, Cursor, Grok, Antigravity)" \
+        "aicoding|AI Coding Tools (agents and Herdr)" \
         "base|Essential Tools (base tools, new server guide)" \
         "dev|Development Tools (SpaceVim, discard-vim, fzf, autojump, joshuto)" \
         "infra|Infrastructure (Docker, Nginx Proxy Manager, FRP)" \
@@ -177,7 +180,7 @@ _ohmytool_categories() {
 
 _ohmytool_title() {
     case "$1" in
-        aicoding)     printf 'AI Coding Agents' ;;
+        aicoding)     printf 'AI Coding Tools' ;;
         base)         printf 'Essential Tools' ;;
         dev)          printf 'Development Tools' ;;
         infra)        printf 'Infrastructure' ;;
@@ -194,7 +197,8 @@ _ohmytool_title() {
 _ohmytool_items() {
     case "$1" in
         aicoding) printf '%s\n' \
-            "install_aicoding|Install or update Claude Code, Codex, Cursor CLI, Grok Build, Antigravity" ;;
+            "install_aicoding|Install or update Claude Code, Codex, Cursor CLI, Grok Build, Antigravity" \
+            "install_herdr|Install Herdr terminal runtime for coding agents" ;;
         base) printf '%s\n' \
             "install_base|Essential command-line tools (autojump, fzf, trzsz)" \
             "new_vps_help|Recommended sequence for new servers" ;;
@@ -1470,6 +1474,54 @@ install_joshuto(){
     printf "\n"
     print_text "yellow" "Please restart your terminal to use joshuto" "false"
     printf "\n"
+}
+
+# Install Herdr with its official per-user installer for Linux and macOS.
+install_herdr() {
+    local installer version install_dir="${HERDR_INSTALL_DIR:-$HOME/.local/bin}"
+    ui_heading "install_herdr" "https://github.com/herdrdev/herdr"
+    if ! command -v curl >/dev/null 2>&1; then
+        ui_err "curl is required to install Herdr"
+        return 1
+    fi
+
+    installer=$(mktemp "${TMPDIR:-/tmp}/gcr-herdr.XXXXXX") || {
+        ui_err "could not create a temporary Herdr installer"
+        return 1
+    }
+    ui_note "Downloading the official Herdr installer"
+    if ! command curl -fsSL --connect-timeout 10 --max-time 60 \
+        https://herdr.dev/install.sh -o "$installer" || [ ! -s "$installer" ]; then
+        command rm -f "$installer"
+        ui_err "could not download the Herdr installer"
+        return 1
+    fi
+    if ! HERDR_INSTALL_DIR="$install_dir" sh "$installer"; then
+        command rm -f "$installer"
+        ui_err "Herdr installation failed"
+        return 1
+    fi
+    command rm -f "$installer"
+
+    if [ ! -x "$install_dir/herdr" ]; then
+        ui_err "Herdr was not installed at $install_dir/herdr"
+        return 1
+    fi
+    if ! version=$("$install_dir/herdr" --version 2>&1); then
+        ui_err "Herdr could not run from $install_dir/herdr"
+        ui_note "$version"
+        return 1
+    fi
+    case ":$PATH:" in
+        *":$install_dir:"*) ;;
+        *)
+            export PATH="$install_dir:$PATH"
+            ui_note "$install_dir added to PATH for this session"
+            ;;
+    esac
+    ui_ok "$version installed at $install_dir/herdr"
+    ui_command "herdr"
+    ui_gap
 }
 
 # =================================== AI coding agents ==========================================
