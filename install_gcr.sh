@@ -6,6 +6,7 @@
 #
 # Optional environment variables:
 #   GCR_TARGET    ubuntu | ubuntu-nosudo | macos | hpc | nscc  -- picks the target, skips the menu
+#   GCR_SKIP_ZSH  1 to reuse existing zsh, 0 to install it; otherwise asks when zsh exists
 #   GCR_MIRROR_URL  source tarball to install from, empty to always clone from GitHub
 #   GCR_NO_ANIM   set to 1 to skip the logo animation
 #   NO_COLOR      set to any value to disable colors
@@ -20,6 +21,8 @@ GCR_MARKER="# [ Added By GCR ]"
 
 ESC=$(printf '\033')
 TARGET="${GCR_TARGET:-}"
+SKIP_ZSH="${GCR_SKIP_ZSH:-}"
+ZSH_COMMAND="zsh"
 SRC=""
 WORKDIR=""
 PROFILE_MARKED=0
@@ -474,11 +477,11 @@ ui_confirm() {
 
 target_name() {
     case "$1" in
-        1) TARGET_ID="ubuntu";        TARGET_LABEL="Ubuntu / Debian";        TARGET_HINT="installs zsh with apt, needs sudo" ;;
-        2) TARGET_ID="ubuntu-nosudo"; TARGET_LABEL="Ubuntu / Debian, no sudo"; TARGET_HINT="builds zsh $GCR_ZSH_VERSION into ~/zsh" ;;
+        1) TARGET_ID="ubuntu";        TARGET_LABEL="Ubuntu / Debian";        TARGET_HINT="optional zsh install with apt and sudo" ;;
+        2) TARGET_ID="ubuntu-nosudo"; TARGET_LABEL="Ubuntu / Debian, no sudo"; TARGET_HINT="optional zsh $GCR_ZSH_VERSION build into ~/zsh" ;;
         3) TARGET_ID="macos";         TARGET_LABEL="macOS";                  TARGET_HINT="zsh already ships with the system" ;;
-        4) TARGET_ID="hpc";           TARGET_LABEL="NUS HPC / Medicine HPC"; TARGET_HINT="builds zsh $GCR_ZSH_VERSION into ~/zsh" ;;
-        *) TARGET_ID="nscc";          TARGET_LABEL="NSCC";                   TARGET_HINT="builds zsh $GCR_ZSH_VERSION, keeps module support" ;;
+        4) TARGET_ID="hpc";           TARGET_LABEL="NUS HPC / Medicine HPC"; TARGET_HINT="optional zsh $GCR_ZSH_VERSION build into ~/zsh" ;;
+        *) TARGET_ID="nscc";          TARGET_LABEL="NSCC";                   TARGET_HINT="optional zsh build, keeps module support" ;;
     esac
 }
 
@@ -591,6 +594,35 @@ builds_from_source() {
     esac
 }
 
+choose_zsh_install() {
+    case "$SKIP_ZSH" in
+        ''|0|1) ;;
+        *) die "invalid GCR_SKIP_ZSH: $SKIP_ZSH" "use 1 to skip zsh installation or 0 to install it" ;;
+    esac
+
+    existing_zsh=$(command -v zsh || true)
+    if [ -z "$existing_zsh" ] && [ -x "$HOME/zsh/bin/zsh" ]; then
+        existing_zsh="$HOME/zsh/bin/zsh"
+        ZSH_COMMAND="~/zsh/bin/zsh"
+    fi
+
+    if [ -z "$SKIP_ZSH" ]; then
+        SKIP_ZSH=0
+        if [ "$TARGET" != macos ] && [ -n "$existing_zsh" ]; then
+            ui_note "existing zsh: $existing_zsh"
+            if ui_confirm "Use this zsh and skip zsh installation?"; then
+                SKIP_ZSH=1
+            fi
+            ui_gap
+        fi
+    fi
+
+    if [ "$SKIP_ZSH" = 1 ] && [ -z "$existing_zsh" ]; then
+        die "cannot skip zsh installation: no existing zsh was found" \
+            "add zsh to PATH, or rerun with GCR_SKIP_ZSH=0 to install it"
+    fi
+}
+
 # -------------------------------------------------------------- preflight ---
 
 os_description() {
@@ -644,7 +676,7 @@ preflight() {
 }
 
 preflight_build_tools() {
-    if ! builds_from_source; then
+    if [ "$SKIP_ZSH" = 1 ] || ! builds_from_source; then
         return 0
     fi
     if [ -x "$HOME/zsh/bin/zsh" ]; then
@@ -744,6 +776,11 @@ build_zsh() {
 }
 
 install_zsh() {
+    if [ "$SKIP_ZSH" = 1 ]; then
+        ui_ok "skipping zsh installation, using $existing_zsh"
+        return 0
+    fi
+
     case "$TARGET" in
         ubuntu)
             if [ "$(id -u)" != 0 ]; then
@@ -835,7 +872,9 @@ ZSHRC_EOF
 }
 
 finish() {
-    if builds_from_source; then
+    if [ "$SKIP_ZSH" = 1 ]; then
+        restart_command="exec $ZSH_COMMAND -l"
+    elif builds_from_source; then
         restart_command="exec ~/zsh/bin/zsh -l"
     else
         restart_command="exec zsh -l"
@@ -844,7 +883,11 @@ finish() {
     ui_gap
     printf '  %s╭─%s %s%sGCR is installed and ready!%s\n' "$C_MUTED" "$C_RESET" "$C_BOLD$C_OK" "" "$C_RESET"
     printf '  %s│%s\n' "$C_MUTED" "$C_RESET"
-    printf '  %s│%s  To start using GCR, restart your shell or run:\n' "$C_MUTED" "$C_RESET"
+    if [ "$SKIP_ZSH" = 1 ]; then
+        printf '  %s│%s  To start using GCR with your existing zsh, run:\n' "$C_MUTED" "$C_RESET"
+    else
+        printf '  %s│%s  To start using GCR, restart your shell or run:\n' "$C_MUTED" "$C_RESET"
+    fi
     printf '  %s│%s    %s%s%s\n' "$C_MUTED" "$C_RESET" "$C_BOLD$C_ACCENT" "$restart_command" "$C_RESET"
     printf '  %s│%s\n' "$C_MUTED" "$C_RESET"
     printf '  %s│%s  %sQuick start:%s\n' "$C_MUTED" "$C_RESET" "$C_BOLD" "$C_RESET"
@@ -884,6 +927,7 @@ main() {
     banner
     preflight
     choose_target
+    choose_zsh_install
     preflight_build_tools
     fetch_source
     copy_configs
