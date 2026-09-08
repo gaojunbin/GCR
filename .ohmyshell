@@ -1239,7 +1239,7 @@ aicoding_launch(){
 }
 
 cc(){ aicoding_launch claude --dangerously-skip-permissions "$@"; }
-cx(){ aicoding_launch codex --dangerously-bypass-approvals-and-sandbox "$@"; }
+cx(){ CODEX_TUI_DISABLE_KEYBOARD_ENHANCEMENT=1 aicoding_launch codex --dangerously-bypass-approvals-and-sandbox "$@"; }
 cursor(){ aicoding_launch cursor --yolo "$@"; }
 google(){ aicoding_launch antigravity --dangerously-skip-permissions "$@"; }
 grok(){ aicoding_launch grok --yolo "$@"; }
