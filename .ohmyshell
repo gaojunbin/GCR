@@ -1332,6 +1332,20 @@ fi
 
 # clear terminal
 alias cl='clear'
+
+# Terminate iCloud sync processes to help with stalled syncing on macOS.
+icloudfix() {
+    if [ "$(uname -s)" != "Darwin" ]; then
+        ui_err "icloudfix is only available on macOS"
+        return 1
+    fi
+
+    local result=0
+    killall bird || result=$?
+    killall cloudd || result=$?
+    return "$result"
+}
+
 # view code with format
 alias pcat='pygmentize -g'
 # open tensorboard with tb

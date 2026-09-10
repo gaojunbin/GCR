@@ -271,6 +271,7 @@ Users only need to memorize one-level functions to access all gcr functions!
 |           |              |             pcat              |                       pygmentize -g                        |     Yes     |                                                              |
 |           |              |              tb               |                        tensorboard                         |     No      |                                                              |
 |           |              |        download/upload        |               Download/upload files/folders                |   Option    |                        rely on trzsz                         |
+|           |              |           icloudfix           | Run `killall bird`, then `killall cloudd` to help with stalled iCloud syncing | No | macOS only; no arguments; process errors remain visible |
 |           |              |           startvpn            |                      VPN for terminal                      |     No      |                        rely on clash                         |
 |           |              |            stopvpn            |                   close VPN for terminal                   |     No      |                                                              |
 |           |              |           dockeradd           |               Add user to docker user group                |     No      |                     need root permission                     |

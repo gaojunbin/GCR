@@ -1,3 +1,8 @@
+2026-09-10  Add icloudfix for stalled iCloud syncing
+
+Added icloudfix on macOS to run killall bird and killall cloudd with one command, without arguments.
+Both commands are attempted even if the first fails; command errors remain visible.
+
 2026-09-05  交互体验升级：搜索过滤、多选、返回上一级
 
 菜单新增 / 键即输即搜过滤，长列表自动滚动，方向键不再有一秒延迟；
