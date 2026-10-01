@@ -18,7 +18,7 @@
 # |
 # --- mygit - Git tools.
 # |
-# --- AI coding launchers - cc, cx, cx_init, cursor, google, grok.
+# --- AI coding launchers and setup - cc, cx, cx_init, cursor, google, grok, pi_init.
 # |
 # --- Others
 # ========Outline end============
@@ -361,6 +361,10 @@ show_GCR_info(){
     ui_item "cursor" "Cursor CLI agent in YOLO mode" 16
     ui_item "google" "Antigravity CLI in bypass mode" 16
     ui_item "grok" "Grok Build in YOLO mode" 16
+
+    ui_heading "AI Coding Setup" "configure a custom endpoint and API key"
+    ui_item "cx_init" "Configure Codex" 16
+    ui_item "pi_init" "Configure Pi and discover available models" 16
 
     ui_gap
     ui_note "run ohmytool to install Docker, VPN, SpaceVim, AI agents and server tools"
@@ -1301,6 +1305,160 @@ TOML
     ui_ok "wrote ${dir}/config.toml"
     ui_ok "wrote ${dir}/auth.json"
     ui_gap
+}
+
+# pi_init: configure an OpenAI-compatible endpoint using its advertised models.
+# Keep credentials on a private file descriptor, outside command arguments.
+pi_init(){
+    local dir=${PI_CODING_AGENT_DIR:-$HOME/.pi/agent} endpoint key model
+    ui_heading "pi_init" "Pi endpoint and API key"
+    if ! command -v node >/dev/null 2>&1; then
+        ui_err "Node.js is required; install Pi with install_aicoding first"
+        return 1
+    fi
+
+    ui_ask "Base URL (include /v1 if required)" "https://ai.junbingao.com/v1" || return 1
+    endpoint=$UI_ANSWER
+    printf '  %s%s%s %sAPI key%s %s(hidden)%s %s›%s ' "$UI_ACCENT" "$UI_G_POINTER" "$UI_RESET" "$UI_BOLD" "$UI_RESET" "$UI_MUTED" "$UI_RESET" "$UI_ACCENT" "$UI_RESET"
+    if ! IFS= read -rs key; then
+        printf '\n'
+        return 1
+    fi
+    printf '\n'
+    if [ -z "$key" ]; then
+        ui_err "no API key given"
+        return 1
+    fi
+
+    ui_note "Reading models from the endpoint"
+    if ! model=$(pi_configure_endpoint "$dir" "$endpoint" 3<<< "$key"); then
+        return 1
+    fi
+    ui_ok "configured Pi in ${dir}"
+    ui_field "Default model" "$model"
+    ui_note "run pi to start; use /model to switch models"
+    ui_gap
+}
+
+# Merge Pi's native JSON files in place so existing symlinks remain intact.
+pi_configure_endpoint(){
+    command node - "$1" "$2" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+const [directory, input] = process.argv.slice(2);
+const provider = "openai-compatible";
+
+function object(value, label) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+        throw new Error(`${label} must be a JSON object`);
+    }
+    return value;
+}
+
+function readConfig(name) {
+    let content;
+    try {
+        const filename = path.join(directory, name);
+        content = fs.readFileSync(filename, "utf8");
+        fs.accessSync(filename, fs.constants.W_OK);
+    } catch (error) {
+        if (error.code === "ENOENT") return {};
+        throw new Error(`could not read or update ${name}`);
+    }
+    let value;
+    try {
+        value = JSON.parse(content.replace(/^\uFEFF/, ""));
+    } catch {
+        throw new Error(`${name} contains invalid JSON; no configuration was written`);
+    }
+    return object(value, name);
+}
+
+async function discoverModels(endpoint, key) {
+    let response;
+    let payload;
+    try {
+        response = await fetch(`${endpoint}/models`, {
+            headers: { Authorization: `Bearer ${key}` },
+            redirect: "error",
+            signal: AbortSignal.timeout(15000),
+        });
+    } catch {
+        throw new Error("could not reach the models endpoint; check the Base URL and connection");
+    }
+    if (!response.ok) throw new Error(`models endpoint returned HTTP ${response.status}`);
+    try {
+        payload = await response.json();
+    } catch {
+        throw new Error("models endpoint did not return valid JSON");
+    }
+    const ids = Array.isArray(payload?.data) ? payload.data.map(model => model?.id) : [];
+    const models = [...new Set(ids.filter(id =>
+        typeof id === "string" && id.trim() && !/[\u0000-\u001f\u007f]/.test(id)))];
+    if (!models.length) throw new Error("models endpoint returned no model IDs; no configuration was written");
+    return models;
+}
+
+function writeConfig(name, value) {
+    const filename = path.join(directory, name);
+    let fd;
+    try {
+        fd = fs.openSync(filename, fs.existsSync(filename) ? "r+" : "w", 0o600);
+        fs.fchmodSync(fd, 0o600);
+        const content = JSON.stringify(value, null, 2) + "\n";
+        fs.writeFileSync(fd, content);
+        fs.ftruncateSync(fd, Buffer.byteLength(content));
+    } catch {
+        throw new Error(`could not write ${name}`);
+    } finally {
+        if (fd !== undefined) fs.closeSync(fd);
+    }
+}
+
+async function configure() {
+    const endpoint = input.trim().replace(/\/+$/, "");
+    let url;
+    try { url = new URL(endpoint); } catch { throw new Error("Base URL must be an HTTP or HTTPS URL"); }
+    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password || url.search || url.hash) {
+        throw new Error("Base URL must use HTTP or HTTPS without credentials, a query, or a fragment");
+    }
+    const key = fs.readFileSync(3, "utf8").replace(/\n$/, "");
+    if (!key.trim() || /[\u0000-\u001f\u007f]/.test(key)) throw new Error("API key is empty or contains control characters");
+
+    const models = readConfig("models.json");
+    const auth = readConfig("auth.json");
+    const settings = readConfig("settings.json");
+    models.providers = object(models.providers ?? {}, "models.json providers");
+    const ids = await discoverModels(endpoint, key);
+    const defaultModel = ids.includes(settings.defaultModel) ? settings.defaultModel : ids[0];
+    models.providers[provider] = {
+        baseUrl: endpoint,
+        api: "openai-completions",
+        models: ids.map(id => ({ id })),
+    };
+    // Pi resolves $variables and !commands in credentials; escape literal keys.
+    const literalKey = key.replace(/\$/g, () => "$$").replace(/^!/, "$!");
+    auth[provider] = { type: "api_key", key: literalKey };
+    settings.defaultProvider = provider;
+    settings.defaultModel = defaultModel;
+    // Pi starts with the first scoped model when a model cycle is configured.
+    if (Array.isArray(settings.enabledModels) && settings.enabledModels.length) {
+        const selected = `${provider}/${defaultModel}`;
+        settings.enabledModels = [selected, ...settings.enabledModels.filter(model => model !== selected)];
+    }
+
+    fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+    writeConfig("auth.json", auth);
+    writeConfig("models.json", models);
+    writeConfig("settings.json", settings);
+    console.log(defaultModel);
+}
+
+configure().catch(error => {
+    console.error(`pi_init: ${error.message}`);
+    process.exitCode = 1;
+});
+NODE
 }
 # <<< AI coding end <<<
 

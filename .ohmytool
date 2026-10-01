@@ -76,7 +76,7 @@
 # |
 # --- install_joshuto - Install joshuto.
 # |
-# --- install_aicoding - Install and update AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI.
+# --- install_aicoding - Install and update AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI, Pi agent.
 # |
 # --- install_herdr - Install Herdr, a terminal runtime for coding agents.
 # |
@@ -156,7 +156,7 @@ if [ -n "${ZSH_VERSION:-}" ];then
         ["install_safe_rm"]="Install safe-rm."
         ["install_discard_vim"]="Install discard-vim to enable use vscode or sublime to edit file."
         ["install_joshuto"]="Install joshuto for better file browsing."
-        ["install_aicoding"]="Install and update AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI."
+        ["install_aicoding"]="Install and update AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI, Pi agent."
         ["install_herdr"]="Install Herdr, a terminal runtime for coding agents."
     )
 fi
@@ -197,7 +197,7 @@ _ohmytool_title() {
 _ohmytool_items() {
     case "$1" in
         aicoding) printf '%s\n' \
-            "install_aicoding|Install or update Claude Code, Codex, Cursor CLI, Grok Build, Antigravity" \
+            "install_aicoding|Install or update Claude Code, Codex, Cursor CLI, Grok Build, Antigravity, Pi agent" \
             "install_herdr|Install Herdr terminal runtime for coding agents" ;;
         base) printf '%s\n' \
             "install_base|Essential command-line tools (autojump, fzf, trzsz)" \
@@ -1525,10 +1525,10 @@ install_herdr() {
 }
 
 # =================================== AI coding agents ==========================================
-# One registry for Claude Code, Codex, Cursor CLI, Grok Build and Antigravity
-# CLI, shared by install_aicoding here and the launchers (cc, cx, cursor,
-# google, grok) in .ohmyshell. Every installer is the vendor's per-user script:
-# no sudo, the binary lands in ~/.local/bin (Grok Build uses ~/.grok/bin).
+# One registry for Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI
+# and Pi agent, shared by install_aicoding here and the launchers in .ohmyshell.
+# Use each vendor's installer and CLI updater. Pi may install its launcher in
+# ~/.pi/agent/bin; the other tools use ~/.local/bin or ~/.grok/bin.
 
 # aicoding_info <tool> -> AICODING_NAME, AICODING_CMD, AICODING_URL,
 # AICODING_INSTALL, AICODING_UPDATE_ARGS
@@ -1570,6 +1570,13 @@ aicoding_info() {
             AICODING_INSTALL="curl -fsSL https://antigravity.google/cli/install.sh | bash"
             AICODING_UPDATE_ARGS="update"
             ;;
+        pi)
+            AICODING_NAME="Pi agent"
+            AICODING_CMD="pi"
+            AICODING_URL="https://pi.dev/docs/latest"
+            AICODING_INSTALL="curl -fsSL https://pi.dev/install.sh | sh"
+            AICODING_UPDATE_ARGS="update"
+            ;;
         *)
             ui_err "unknown AI coding tool: $1"
             return 1
@@ -1592,12 +1599,16 @@ aicoding_which() {
 # vendor directories are checked as well, so a tool installed a moment ago
 # works before the shell profile is reloaded.
 aicoding_bin() {
-    local dir
+    local dir dirs
     aicoding_info "$1" || return 1
     if aicoding_which "$AICODING_CMD"; then
         return 0
     fi
-    for dir in "$HOME/.local/bin" "$HOME/.grok/bin"; do
+    dirs=("$HOME/.local/bin" "$HOME/.grok/bin")
+    if [ "$1" = pi ]; then
+        dirs+=("${PI_CODING_AGENT_DIR:-$HOME/.pi/agent}/bin")
+    fi
+    for dir in "${dirs[@]}"; do
         if [ -x "$dir/$AICODING_CMD" ]; then
             AICODING_BIN="$dir/$AICODING_CMD"
             return 0
@@ -1724,6 +1735,13 @@ aicoding_latest_version() {
             release_base=${release_base:-https://antigravity-cli-auto-updater-974169037036.us-central1.run.app}
             payload=$(aicoding_fetch \
                 "${release_base}/manifests/${platform}.json" \
+                2>/dev/null || true)
+            latest=$(printf '%s\n' "$payload" | sed -n \
+                's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
+            ;;
+        pi)
+            payload=$(aicoding_fetch \
+                "${PI_INSTALLER_API_BASE:-https://pi.dev/api/installer/releases}/latest" \
                 2>/dev/null || true)
             latest=$(printf '%s\n' "$payload" | sed -n \
                 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
@@ -1894,7 +1912,7 @@ aicoding_install() {
 # aicoding_update <tool>: use the CLI's first-party updater, then verify which
 # version the active binary reports. No update is run during the check phase.
 aicoding_update() {
-    local before expected after update_bin update_help
+    local before expected after update_bin update_help update_pattern update_args
     aicoding_info "$1" || return 1
     if ! aicoding_bin "$1"; then
         ui_err "${AICODING_NAME} is not installed"
@@ -1903,9 +1921,18 @@ aicoding_update() {
     update_bin="$AICODING_BIN"
     aicoding_current_version "$1" || true
     before="$AICODING_CURRENT"
-    update_help=$("$update_bin" --help </dev/null 2>&1 || true)
+    update_args=("$AICODING_UPDATE_ARGS")
+    if [ "$1" = pi ]; then
+        # Require self-update support so Pi's package updater is never selected.
+        update_help=$("$update_bin" update --help </dev/null 2>&1 || true)
+        update_pattern='^[[:space:]]*--self([[:space:]]|$)'
+        update_args+=("--self")
+    else
+        update_help=$("$update_bin" --help </dev/null 2>&1 || true)
+        update_pattern='^[[:space:]]*update([^[:alnum:]_]|$)'
+    fi
     if ! printf '%s\n' "$update_help" | \
-        command grep -E '^[[:space:]]*update([^[:alnum:]_]|$)' >/dev/null; then
+        command grep -E "$update_pattern" >/dev/null; then
         ui_err "${AICODING_NAME} ${before:+${before} }does not expose a safe update command"
         ui_note "update it from ${AICODING_URL}"
         ui_gap
@@ -1915,9 +1942,9 @@ aicoding_update() {
     expected="$AICODING_LATEST"
 
     ui_heading "update ${AICODING_NAME}" "$AICODING_URL"
-    ui_command "${update_bin} ${AICODING_UPDATE_ARGS}"
+    ui_command "${update_bin} ${update_args[*]}"
     ui_gap
-    if ! "$update_bin" "$AICODING_UPDATE_ARGS"; then
+    if ! "$update_bin" "${update_args[@]}"; then
         ui_gap
         ui_err "${AICODING_NAME} update failed, see ${AICODING_URL}"
         ui_gap
@@ -1944,7 +1971,7 @@ aicoding_update() {
     ui_gap
 }
 
-# Install or update AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI.
+# Install or update AI coding agents: Claude Code, Codex, Cursor CLI, Grok Build, Antigravity CLI, Pi agent.
 # Every tool is checked behind a spinner, then the ones that can be installed
 # or updated are offered in a multi-select list.
 install_aicoding() {
@@ -1954,7 +1981,7 @@ install_aicoding() {
     # tools holds action:tool pairs in the order of the choose list.
     tools=()
     items=()
-    for tool in claude codex cursor grok antigravity; do
+    for tool in claude codex cursor grok antigravity pi; do
         i=$((i + 1))
         aicoding_info "$tool" || continue
         ui_spin_start "Checking ${AICODING_NAME}"
@@ -1983,7 +2010,7 @@ install_aicoding() {
         else
             ui_warn "everything is installed; ${unknown_count} update check(s) could not be completed"
         fi
-        ui_note "launchers: cc, cx, cursor, google, grok"
+        ui_note "commands: cc, cx, cursor, google, grok, pi"
         ui_gap
         return 0
     fi
@@ -2017,7 +2044,7 @@ install_aicoding() {
     done
 
     if [ "$completed" -gt 0 ]; then
-        ui_note "launchers: cc, cx, cursor, google, grok work now, the plain commands after a new shell"
+        ui_note "run cc, cx, cursor, google, grok or pi to start an agent"
     fi
     if [ "$failed" -gt 0 ]; then
         ui_warn "${failed} install/update operation(s) failed"
