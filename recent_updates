@@ -1,3 +1,10 @@
+2026-10-02  Add Pi agent installation and endpoint setup
+
+Pi agent is now available in install_aicoding for installation, version checks and updates.
+Run pi_init to configure an OpenAI-compatible Base URL and API key; models are detected automatically.
+Existing providers, preferences and configuration file symlinks are preserved.
+After myupdate, restart your shell, then run install_aicoding, pi_init and pi to get started.
+
 2026-09-10  Add icloudfix for stalled iCloud syncing
 
 Added icloudfix on macOS to run killall bird and killall cloudd with one command, without arguments.
